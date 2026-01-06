@@ -4,7 +4,7 @@
 - **Project:** Lexicon
 - **Description:** Wikipedia + Perplexity for story universes
 - **Started:** January 6, 2026
-- **Current Stage:** Stage 1 - Concept Lock
+- **Current Stage:** Stage 4 - Foundation Pour (COMPLETE)
 
 ---
 
@@ -81,22 +81,28 @@
 
 ---
 
-### Stage 4: Foundation Pour 🔄
+### Stage 4: Foundation Pour ✅
 **Checkpoint:** "Can we deploy an empty shell?"
 
 **Checklist:**
 - [x] Project scaffolding (Next.js 15, TypeScript, Tailwind)
 - [x] Package dependencies defined
 - [x] File structure created
-- [ ] Neo4j Aura instance created
-- [ ] Supabase project created
-- [ ] Auth implemented (Supabase Auth)
-- [ ] Deployment pipeline (Vercel)
-- [ ] Environment variables configured
-- [ ] Empty shell deploying successfully
+- [x] Neo4j Aura instance created (id8Labs, ID: 0078a27e)
+- [x] Supabase integration (using ID8Labs shared project)
+- [x] Supabase client library with universe CRUD operations
+- [x] universes table migration applied
+- [x] Deployment pipeline (Vercel)
+- [x] Environment variables configured (with whitespace trimming fix)
+- [x] Empty shell deploying successfully
+- [x] Health check endpoint passing (API + Neo4j)
 
-**Status:** IN PROGRESS
-**Blockers:** None yet
+**Production URL:** https://lexicon-phi.vercel.app
+
+**Status:** CLEARED
+**Date:** January 6, 2026
+
+**Key Fix:** Neo4j authentication was failing due to trailing newlines in Vercel environment variables. Fixed by adding `.trim()` to environment variable reads in the Neo4j driver initialization.
 
 ---
 
@@ -164,6 +170,9 @@
 | 2026-01-05 | Use Neo4j for graph storage | Relational DBs make relationship traversal painful |
 | 2026-01-05 | Split databases (Neo4j + Supabase) | Different data models need different optimizations |
 | 2026-01-05 | D3.js over vis-network | More control, better performance with large graphs |
+| 2026-01-06 | Neo4j Aura Free tier | Sufficient for MVP, easy to upgrade later |
+| 2026-01-06 | Use ID8Labs shared Supabase | Already has infrastructure, reduces setup time |
+| 2026-01-06 | Trim env vars in driver init | Vercel can include newlines when pasting values |
 
 ---
 
@@ -176,4 +185,4 @@
 
 ---
 
-*Last Updated: January 6, 2026*
+*Last Updated: January 6, 2026 - Stage 4 CLEARED*
