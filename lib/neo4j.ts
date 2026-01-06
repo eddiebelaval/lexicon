@@ -95,7 +95,8 @@ function neo4jValueToJs(value: unknown): unknown {
 
   // Handle Neo4j integers
   if (neo4j.isInt(value)) {
-    return (value as neo4j.Integer).toNumber();
+    const intValue = value as { toNumber(): number };
+    return intValue.toNumber();
   }
 
   // Handle Neo4j nodes
@@ -129,11 +130,14 @@ export async function closeDriver(): Promise<void> {
  */
 export async function healthCheck(): Promise<boolean> {
   try {
-    const session = getDriver().session();
-    await session.run('RETURN 1');
+    const driver = getDriver();
+    const session = driver.session();
+    const result = await session.run('RETURN 1 as test');
     await session.close();
-    return true;
-  } catch {
-    return false;
+    return result.records.length > 0;
+  } catch (error) {
+    // Log error for debugging but still return false
+    console.error('Neo4j health check failed:', error);
+    throw error; // Re-throw so the API route can capture it
   }
 }
