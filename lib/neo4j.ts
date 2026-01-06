@@ -17,9 +17,10 @@ let driver: Driver | null = null;
  */
 export function getDriver(): Driver {
   if (!driver) {
-    const uri = process.env.NEO4J_URI;
-    const username = process.env.NEO4J_USERNAME;
-    const password = process.env.NEO4J_PASSWORD;
+    // Trim whitespace from env vars - Vercel can accidentally include newlines
+    const uri = process.env.NEO4J_URI?.trim();
+    const username = process.env.NEO4J_USERNAME?.trim();
+    const password = process.env.NEO4J_PASSWORD?.trim();
 
     if (!uri || !username || !password) {
       throw new Error(
