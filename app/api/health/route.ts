@@ -12,51 +12,19 @@ export async function GET() {
     api: boolean;
     neo4j: boolean;
     timestamp: string;
-    neo4j_error?: string;
-    env_check?: {
-      uri: boolean;
-      uri_value: string;
-      username: boolean;
-      username_value: string;
-      password: boolean;
-      password_length: number;
-      password_preview: string;
-      password_trimmed_length: number;
-      username_trimmed_length: number;
-    };
   } = {
     api: true,
     neo4j: false,
     timestamp: new Date().toISOString(),
   };
 
-  // Debug: check if env vars are set and their format
-  const password = process.env.NEO4J_PASSWORD || '';
-  const uri = process.env.NEO4J_URI || '';
-  const username = process.env.NEO4J_USERNAME || '';
-  checks.env_check = {
-    uri: !!uri,
-    uri_value: uri, // Show actual URI for debugging
-    username: !!username,
-    username_value: username, // Show actual username
-    password: !!password,
-    password_length: password.length,
-    password_preview: password.length > 0 ? `${password[0]}...${password.slice(-3)}` : 'empty',
-    // Check for whitespace issues
-    password_trimmed_length: password.trim().length,
-    username_trimmed_length: username.trim().length,
-  };
-
   try {
     checks.neo4j = await neo4jHealthCheck();
-  } catch (error) {
+  } catch {
     checks.neo4j = false;
-    checks.neo4j_error = error instanceof Error ? error.message : 'Unknown error';
   }
 
-  const allHealthy = Object.values(checks).every(
-    (v) => v === true || typeof v === 'string'
-  );
+  const allHealthy = checks.api && checks.neo4j;
 
   return NextResponse.json(
     {
