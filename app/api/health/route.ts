@@ -15,10 +15,14 @@ export async function GET() {
     neo4j_error?: string;
     env_check?: {
       uri: boolean;
+      uri_value: string;
       username: boolean;
+      username_value: string;
       password: boolean;
       password_length: number;
       password_preview: string;
+      password_trimmed_length: number;
+      username_trimmed_length: number;
     };
   } = {
     api: true,
@@ -28,12 +32,19 @@ export async function GET() {
 
   // Debug: check if env vars are set and their format
   const password = process.env.NEO4J_PASSWORD || '';
+  const uri = process.env.NEO4J_URI || '';
+  const username = process.env.NEO4J_USERNAME || '';
   checks.env_check = {
-    uri: !!process.env.NEO4J_URI,
-    username: !!process.env.NEO4J_USERNAME,
-    password: !!process.env.NEO4J_PASSWORD,
+    uri: !!uri,
+    uri_value: uri, // Show actual URI for debugging
+    username: !!username,
+    username_value: username, // Show actual username
+    password: !!password,
     password_length: password.length,
     password_preview: password.length > 0 ? `${password[0]}...${password.slice(-3)}` : 'empty',
+    // Check for whitespace issues
+    password_trimmed_length: password.trim().length,
+    username_trimmed_length: username.trim().length,
   };
 
   try {
