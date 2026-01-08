@@ -16,7 +16,8 @@ import { useParams } from 'next/navigation';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { EntityList, EntityDetail, EntityForm } from '@/components/entities';
-import type { Entity } from '@/types';
+import { GraphViewer } from '@/components/graph';
+import type { Entity, GraphNode } from '@/types';
 
 export default function UniversePage() {
   const params = useParams();
@@ -27,6 +28,7 @@ export default function UniversePage() {
   const [entityToEdit, setEntityToEdit] = useState<Entity | undefined>(undefined);
   const [showEntityForm, setShowEntityForm] = useState(false);
   const [listKey, setListKey] = useState(0); // Force refresh entity list
+  const [graphKey, setGraphKey] = useState(0); // Force refresh graph
 
   // Handlers
   const handleSelectEntity = useCallback((entity: Entity) => {
@@ -58,6 +60,7 @@ export default function UniversePage() {
       if (data.success) {
         setSelectedEntity(null);
         setListKey((k) => k + 1); // Refresh list
+        setGraphKey((k) => k + 1); // Refresh graph
       } else {
         alert(data.error?.message || 'Failed to delete entity');
       }
@@ -69,10 +72,30 @@ export default function UniversePage() {
   const handleEntityFormSuccess = useCallback((entity: Entity) => {
     setSelectedEntity(entity);
     setListKey((k) => k + 1); // Refresh list
+    setGraphKey((k) => k + 1); // Refresh graph
   }, []);
 
   const handleCloseDetail = useCallback(() => {
     setSelectedEntity(null);
+  }, []);
+
+  // Handle graph node selection - fetch full entity data
+  const handleGraphNodeSelect = useCallback(async (node: GraphNode | null) => {
+    if (!node) {
+      setSelectedEntity(null);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/entities/${node.id}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setSelectedEntity(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch entity details:', error);
+    }
   }, []);
 
   return (
@@ -122,17 +145,12 @@ export default function UniversePage() {
         {/* Main Content - Graph + Results */}
         <main className="flex-1 flex flex-col min-w-0">
           {/* Graph Visualization Area */}
-          <div className="flex-1 relative bg-muted/10">
-            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-              {/* TODO: D3.js Graph Component */}
-              <div className="text-center">
-                <p className="text-lg">Graph Visualization</p>
-                <p className="text-sm">D3.js component will render here</p>
-                <p className="text-xs mt-2 text-muted-foreground/60">
-                  Select an entity from the sidebar to view details
-                </p>
-              </div>
-            </div>
+          <div className="flex-1 relative bg-muted/10 p-4 overflow-hidden">
+            <GraphViewer
+              key={graphKey}
+              universeId={universeId}
+              onNodeSelect={handleGraphNodeSelect}
+            />
           </div>
 
           {/* Search Results Panel */}

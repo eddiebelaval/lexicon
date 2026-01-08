@@ -315,7 +315,8 @@ export interface RelationshipImportRow {
 export interface ImportResult {
   success: boolean;
   entitiesCreated: number;
-  relationshipsCreated: number;
+  entitiesSkipped: number;
+  relationshipsCreated?: number;
   errors: {
     row: number;
     message: string;

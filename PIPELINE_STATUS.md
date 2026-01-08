@@ -4,7 +4,7 @@
 - **Project:** Lexicon
 - **Description:** Wikipedia + Perplexity for story universes
 - **Started:** January 6, 2026
-- **Current Stage:** Stage 4 - Foundation Pour (COMPLETE)
+- **Current Stage:** Stage 5 - Feature Blocks (COMPLETE)
 
 ---
 
@@ -106,27 +106,67 @@
 
 ---
 
-### Stage 5: Feature Blocks ⏳
+### Stage 5: Feature Blocks ✅
 **Checkpoint:** "Does this feature work completely, right now?"
 
 **Planned Vertical Slices:**
 1. [x] Entity CRUD (create, read, update, delete entities) ✅
-2. [ ] Relationship CRUD (connect entities)
-3. [ ] Basic Search (graph-only, no web augmentation)
-4. [ ] Graph Visualization (render entities/relationships)
-5. [ ] AI Search (add Claude synthesis + web)
-6. [ ] CSV Import (bulk entity creation)
+2. [x] Relationship CRUD (connect entities) ✅
+3. [x] Basic Search (graph-only, no web augmentation) ✅
+4. [x] Graph Visualization (render entities/relationships) ✅
+5. [x] AI Search (add Claude synthesis + web) ✅
+6. [x] CSV Import (bulk entity creation) ✅
 
-**Entity CRUD Implementation (Complete - January 8, 2026):**
+**Feature 1: Entity CRUD (Complete - January 8, 2026):**
 - `lib/entities.ts` - Neo4j CRUD operations
 - `lib/validation/entity.ts` - Zod validation schemas
 - `app/api/entities/route.ts` - POST (create) + GET (list)
 - `app/api/entities/[id]/route.ts` - GET, PUT, DELETE
 - UI Components: EntityList, EntityCard, EntityDetail, EntityForm, EntityTypeBadge
-- Tag-style alias input with add/remove chips
-- Full integration in Universe workspace page
 
-**Status:** IN PROGRESS (1/6 features complete)
+**Feature 2: Relationship CRUD (Complete - January 8, 2026):**
+- `lib/relationships.ts` - Neo4j CRUD operations for relationships
+- `lib/validation/relationship.ts` - Zod validation schemas
+- `app/api/relationships/route.ts` - POST + GET endpoints
+- `app/api/relationships/[id]/route.ts` - GET, PUT, DELETE
+- UI Components: RelationshipList, RelationshipCard, RelationshipForm, RelationshipTypeBadge
+
+**Feature 3: Basic Search (Complete - January 8, 2026):**
+- `app/api/search/route.ts` - Search API endpoint with timing metrics
+- `lib/search.ts` - Added `executeGraphSearch()` function
+- UI Components: SearchBar (debounced), SearchResults (entity/relationship cards)
+- Keyboard shortcut (Cmd/Ctrl+K), loading states, empty states
+
+**Feature 4: Graph Visualization (Complete - January 8, 2026):**
+- `app/api/graph/route.ts` - Graph data endpoint for D3.js
+- `components/graph/force-graph.tsx` - D3.js force-directed graph (360 lines)
+- `components/graph/graph-controls.tsx` - Zoom, filter, layout controls
+- `components/graph/graph-legend.tsx` - Entity type legend with colors
+- `components/graph/graph-viewer.tsx` - Complete ready-to-use component
+- Features: drag, zoom, pan, entity filtering, responsive sizing
+
+**Feature 5: AI Search (Complete - January 8, 2026):**
+- `app/api/search/route.ts` - Added `ai=true` mode for Claude-powered search
+- `components/search/ai-answer.tsx` - AI answer display with markdown, citations
+- Integration with existing `lib/claude.ts` for `parseQuery()` and `synthesizeAnswer()`
+- Graceful fallback to basic search if Claude API fails
+
+**Feature 6: CSV Import (Complete - January 8, 2026):**
+- `lib/import/csv-parser.ts` - CSV parsing with delimiter detection
+- `lib/validation/import.ts` - Import validation schemas
+- `app/api/import/route.ts` - Batch import endpoint with transactions
+- `components/import/csv-import-dialog.tsx` - Multi-step import wizard
+- `components/import/import-progress.tsx` - Progress tracking component
+- 18 unit tests for CSV parsing
+
+**Status:** CLEARED
+**Date:** January 8, 2026
+
+**Orchestration:** Claude orchestrated 4 parallel agent sessions to build features concurrently:
+- Phase 1: Relationship CRUD + Graph API (parallel)
+- Phase 2: Graph Visualization + Basic Search UI (parallel)
+- Phase 3: AI Search with Claude
+- Phase 4: CSV Import
 
 ---
 
