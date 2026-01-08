@@ -110,14 +110,23 @@
 **Checkpoint:** "Does this feature work completely, right now?"
 
 **Planned Vertical Slices:**
-1. [ ] Entity CRUD (create, read, update, delete entities)
+1. [x] Entity CRUD (create, read, update, delete entities) ✅
 2. [ ] Relationship CRUD (connect entities)
 3. [ ] Basic Search (graph-only, no web augmentation)
 4. [ ] Graph Visualization (render entities/relationships)
 5. [ ] AI Search (add Claude synthesis + web)
 6. [ ] CSV Import (bulk entity creation)
 
-**Status:** NOT STARTED
+**Entity CRUD Implementation (Complete - January 8, 2026):**
+- `lib/entities.ts` - Neo4j CRUD operations
+- `lib/validation/entity.ts` - Zod validation schemas
+- `app/api/entities/route.ts` - POST (create) + GET (list)
+- `app/api/entities/[id]/route.ts` - GET, PUT, DELETE
+- UI Components: EntityList, EntityCard, EntityDetail, EntityForm, EntityTypeBadge
+- Tag-style alias input with add/remove chips
+- Full integration in Universe workspace page
+
+**Status:** IN PROGRESS (1/6 features complete)
 
 ---
 
@@ -185,4 +194,4 @@
 
 ---
 
-*Last Updated: January 6, 2026 - Stage 4 CLEARED*
+*Last Updated: January 8, 2026 - Stage 5 IN PROGRESS (Entity CRUD complete)*

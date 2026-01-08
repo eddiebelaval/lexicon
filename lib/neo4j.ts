@@ -7,7 +7,7 @@
  * - Common query patterns for entities and relationships
  */
 
-import neo4j, { Driver, Session, Record as Neo4jRecord } from 'neo4j-driver';
+import neo4j, { Driver, Record as Neo4jRecord } from 'neo4j-driver';
 
 // Singleton driver instance
 let driver: Driver | null = null;

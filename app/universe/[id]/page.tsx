@@ -1,22 +1,79 @@
+'use client';
+
 /**
  * Universe View - Main workspace for a story universe
  *
  * Features:
  * - Search bar (primary action)
  * - Entity list (sidebar)
+ * - Entity detail (right panel)
  * - Graph visualization (main area)
  * - Search results panel
  */
 
-interface UniversePageProps {
-  params: Promise<{ id: string }>;
-}
+import { useState, useCallback } from 'react';
+import { useParams } from 'next/navigation';
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { EntityList, EntityDetail, EntityForm } from '@/components/entities';
+import type { Entity } from '@/types';
 
-export default async function UniversePage({ params }: UniversePageProps) {
-  const { id } = await params;
+export default function UniversePage() {
+  const params = useParams();
+  const universeId = params.id as string;
 
-  // TODO: Fetch universe data from Neo4j
-  // TODO: Load entities and relationships
+  // State
+  const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
+  const [entityToEdit, setEntityToEdit] = useState<Entity | undefined>(undefined);
+  const [showEntityForm, setShowEntityForm] = useState(false);
+  const [listKey, setListKey] = useState(0); // Force refresh entity list
+
+  // Handlers
+  const handleSelectEntity = useCallback((entity: Entity) => {
+    setSelectedEntity(entity);
+  }, []);
+
+  const handleCreateEntity = useCallback(() => {
+    setEntityToEdit(undefined);
+    setShowEntityForm(true);
+  }, []);
+
+  const handleEditEntity = useCallback((entity: Entity) => {
+    setEntityToEdit(entity);
+    setShowEntityForm(true);
+  }, []);
+
+  const handleDeleteEntity = useCallback(async (entity: Entity) => {
+    if (!confirm(`Are you sure you want to delete "${entity.name}"? This will also remove all its relationships.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/entities/${entity.id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSelectedEntity(null);
+        setListKey((k) => k + 1); // Refresh list
+      } else {
+        alert(data.error?.message || 'Failed to delete entity');
+      }
+    } catch {
+      alert('Failed to delete entity');
+    }
+  }, []);
+
+  const handleEntityFormSuccess = useCallback((entity: Entity) => {
+    setSelectedEntity(entity);
+    setListKey((k) => k + 1); // Refresh list
+  }, []);
+
+  const handleCloseDetail = useCallback(() => {
+    setSelectedEntity(null);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -31,30 +88,18 @@ export default async function UniversePage({ params }: UniversePageProps) {
             {/* Search Bar - Primary Action */}
             <div className="flex-1 max-w-2xl">
               <div className="relative">
-                <input
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
                   type="text"
                   placeholder="Ask your universe anything..."
-                  className="w-full px-4 py-2 pl-10 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-lexicon-500 focus:border-transparent"
+                  className="w-full pl-10"
                 />
-                <svg
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
               </div>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-sm text-muted-foreground">
-                Universe: {id}
+              <span className="text-sm text-muted-foreground truncate max-w-[200px]">
+                Universe: {universeId}
               </span>
             </div>
           </div>
@@ -62,46 +107,20 @@ export default async function UniversePage({ params }: UniversePageProps) {
       </header>
 
       {/* Main Layout */}
-      <div className="flex-1 flex">
+      <div className="flex-1 flex overflow-hidden">
         {/* Sidebar - Entity List */}
-        <aside className="w-64 border-r bg-muted/20 p-4 hidden md:block">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="font-semibold">Entities</h2>
-            <button className="text-sm text-lexicon-600 hover:underline">
-              + Add
-            </button>
-          </div>
-
-          {/* Entity Type Filters */}
-          <div className="flex flex-wrap gap-1 mb-4">
-            {['All', 'Characters', 'Locations', 'Events'].map((type) => (
-              <button
-                key={type}
-                className="px-2 py-1 text-xs rounded-full bg-background border hover:bg-accent"
-              >
-                {type}
-              </button>
-            ))}
-          </div>
-
-          {/* Entity List Placeholder */}
-          <nav className="space-y-1">
-            {['Athos', 'Porthos', 'Aramis', "d'Artagnan", 'Milady'].map(
-              (name) => (
-                <button
-                  key={name}
-                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent text-sm flex items-center gap-2"
-                >
-                  <span className="w-2 h-2 rounded-full bg-graph-character" />
-                  {name}
-                </button>
-              )
-            )}
-          </nav>
+        <aside className="w-64 border-r bg-muted/20 hidden md:flex flex-col">
+          <EntityList
+            key={listKey}
+            universeId={universeId}
+            onSelectEntity={handleSelectEntity}
+            onCreateEntity={handleCreateEntity}
+            selectedEntityId={selectedEntity?.id}
+          />
         </aside>
 
         {/* Main Content - Graph + Results */}
-        <main className="flex-1 flex flex-col">
+        <main className="flex-1 flex flex-col min-w-0">
           {/* Graph Visualization Area */}
           <div className="flex-1 relative bg-muted/10">
             <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
@@ -109,6 +128,9 @@ export default async function UniversePage({ params }: UniversePageProps) {
               <div className="text-center">
                 <p className="text-lg">Graph Visualization</p>
                 <p className="text-sm">D3.js component will render here</p>
+                <p className="text-xs mt-2 text-muted-foreground/60">
+                  Select an entity from the sidebar to view details
+                </p>
               </div>
             </div>
           </div>
@@ -122,7 +144,28 @@ export default async function UniversePage({ params }: UniversePageProps) {
             </div>
           </div>
         </main>
+
+        {/* Right Panel - Entity Detail */}
+        {selectedEntity && (
+          <aside className="w-80 border-l hidden lg:flex flex-col">
+            <EntityDetail
+              entity={selectedEntity}
+              onEdit={handleEditEntity}
+              onDelete={handleDeleteEntity}
+              onClose={handleCloseDetail}
+            />
+          </aside>
+        )}
       </div>
+
+      {/* Entity Create/Edit Dialog */}
+      <EntityForm
+        universeId={universeId}
+        entity={entityToEdit}
+        open={showEntityForm}
+        onOpenChange={setShowEntityForm}
+        onSuccess={handleEntityFormSuccess}
+      />
     </div>
   );
 }
