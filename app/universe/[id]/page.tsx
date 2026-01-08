@@ -4,33 +4,56 @@
  * Universe View - Main workspace for a story universe
  *
  * Features:
- * - Search bar (primary action)
+ * - Search bar with debouncing (primary action)
  * - Entity list (sidebar)
- * - Entity detail (right panel)
+ * - Entity detail with relationships (right panel)
  * - Graph visualization (main area)
- * - Search results panel
+ * - Search results panel with AI answers
+ * - CSV import functionality
  */
 
 import { useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import { Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Upload } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { EntityList, EntityDetail, EntityForm } from '@/components/entities';
 import { GraphViewer } from '@/components/graph';
-import type { Entity, GraphNode } from '@/types';
+import { SearchBar, SearchResults } from '@/components/search';
+import { CSVImportDialog } from '@/components/import';
+import type { Entity, GraphNode, RelationshipWithEntities, SynthesizedAnswer, SearchSource } from '@/types';
+import type { GraphSearchResult } from '@/lib/search';
+import type { DisplayEntity } from '@/components/entities/entity-card';
 
 export default function UniversePage() {
   const params = useParams();
   const universeId = params.id as string;
 
-  // State
+  // Entity state
   const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
   const [entityToEdit, setEntityToEdit] = useState<Entity | undefined>(undefined);
   const [showEntityForm, setShowEntityForm] = useState(false);
   const [listKey, setListKey] = useState(0); // Force refresh entity list
   const [graphKey, setGraphKey] = useState(0); // Force refresh graph
 
-  // Handlers
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<GraphSearchResult & { query: string }>({
+    query: '',
+    entities: [],
+    relationships: [],
+  });
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  // AI Search state
+  const [aiMode, setAiMode] = useState(false);
+  const [aiAnswer, setAiAnswer] = useState<SynthesizedAnswer | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  // Import state
+  const [showImportDialog, setShowImportDialog] = useState(false);
+
+  // Entity handlers
   const handleSelectEntity = useCallback((entity: Entity) => {
     setSelectedEntity(entity);
   }, []);
@@ -98,6 +121,93 @@ export default function UniversePage() {
     }
   }, []);
 
+  // Search handlers
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    if (query.trim()) {
+      setSearchLoading(true);
+    }
+  }, []);
+
+  const handleSearchResults = useCallback((results: GraphSearchResult & { query: string }) => {
+    setSearchResults(results);
+    setSearchLoading(false);
+  }, []);
+
+  // Handle selecting entity from search results - fetch full entity data
+  const handleSearchEntitySelect = useCallback(async (entity: DisplayEntity) => {
+    try {
+      const response = await fetch(`/api/entities/${entity.id}`);
+      const data = await response.json();
+      if (data.success) {
+        setSelectedEntity(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch entity:', error);
+    }
+  }, []);
+
+  // Handle selecting relationship from search results
+  const handleSearchRelationshipSelect = useCallback((relationship: RelationshipWithEntities) => {
+    // Select the source entity of the relationship
+    setSelectedEntity(relationship.source);
+  }, []);
+
+  // Handle AI source click - fetch full entity data
+  const handleSourceClick = useCallback(async (source: SearchSource) => {
+    // If it's an entity source with an entity ID, fetch and select that entity
+    if (source.type === 'entity' && source.entityId) {
+      try {
+        const response = await fetch(`/api/entities/${source.entityId}`);
+        const data = await response.json();
+        if (data.success) {
+          setSelectedEntity(data.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch entity:', error);
+      }
+    }
+  }, []);
+
+  // Toggle AI mode
+  const handleToggleAiMode = useCallback(async () => {
+    const newMode = !aiMode;
+    setAiMode(newMode);
+
+    // If turning on AI mode and we have a query, fetch AI answer
+    if (newMode && searchQuery.trim()) {
+      setAiLoading(true);
+      setAiError(null);
+
+      try {
+        const response = await fetch(
+          `/api/search?universeId=${encodeURIComponent(universeId)}&q=${encodeURIComponent(searchQuery)}&ai=true`
+        );
+        const result = await response.json();
+
+        if (result.success && result.data.aiAnswer) {
+          setAiAnswer(result.data.aiAnswer);
+        } else {
+          setAiError('AI search unavailable');
+        }
+      } catch {
+        setAiError('Failed to get AI answer');
+      } finally {
+        setAiLoading(false);
+      }
+    } else if (!newMode) {
+      setAiAnswer(null);
+      setAiError(null);
+    }
+  }, [aiMode, searchQuery, universeId]);
+
+  // Import handlers
+  const handleImportSuccess = useCallback(() => {
+    setListKey((k) => k + 1); // Refresh list
+    setGraphKey((k) => k + 1); // Refresh graph
+    setShowImportDialog(false);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header with Search */}
@@ -110,19 +220,36 @@ export default function UniversePage() {
 
             {/* Search Bar - Primary Action */}
             <div className="flex-1 max-w-2xl">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Ask your universe anything..."
-                  className="w-full pl-10"
-                />
-              </div>
+              <SearchBar
+                universeId={universeId}
+                onSearch={handleSearch}
+                onResults={handleSearchResults}
+              />
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
+              {/* AI Mode Toggle */}
+              <Button
+                variant={aiMode ? 'default' : 'outline'}
+                size="sm"
+                onClick={handleToggleAiMode}
+                className={aiMode ? 'bg-lexicon-600 hover:bg-lexicon-700' : ''}
+              >
+                AI
+              </Button>
+
+              {/* CSV Import Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowImportDialog(true)}
+              >
+                <Upload className="h-4 w-4 mr-1" />
+                Import
+              </Button>
+
               <span className="text-sm text-muted-foreground truncate max-w-[200px]">
-                Universe: {universeId}
+                {universeId}
               </span>
             </div>
           </div>
@@ -155,11 +282,19 @@ export default function UniversePage() {
 
           {/* Search Results Panel */}
           <div className="h-1/3 border-t bg-background p-4 overflow-auto">
-            <h3 className="font-semibold mb-2">Search Results</h3>
-            <div className="text-sm text-muted-foreground">
-              Ask a question above to see AI-synthesized answers from your
-              knowledge graph + web search.
-            </div>
+            <SearchResults
+              entities={searchResults.entities}
+              relationships={searchResults.relationships}
+              query={searchResults.query}
+              onSelectEntity={handleSearchEntitySelect}
+              onSelectRelationship={handleSearchRelationshipSelect}
+              loading={searchLoading}
+              aiMode={aiMode}
+              aiAnswer={aiAnswer}
+              aiLoading={aiLoading}
+              aiError={aiError}
+              onSourceClick={handleSourceClick}
+            />
           </div>
         </main>
 
@@ -171,6 +306,7 @@ export default function UniversePage() {
               onEdit={handleEditEntity}
               onDelete={handleDeleteEntity}
               onClose={handleCloseDetail}
+              onSelectRelatedEntity={setSelectedEntity}
             />
           </aside>
         )}
@@ -183,6 +319,14 @@ export default function UniversePage() {
         open={showEntityForm}
         onOpenChange={setShowEntityForm}
         onSuccess={handleEntityFormSuccess}
+      />
+
+      {/* CSV Import Dialog */}
+      <CSVImportDialog
+        universeId={universeId}
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        onImportComplete={handleImportSuccess}
       />
     </div>
   );

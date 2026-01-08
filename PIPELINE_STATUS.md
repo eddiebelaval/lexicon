@@ -170,10 +170,31 @@
 
 ---
 
-### Stage 6: Integration Pass ⏳
+### Stage 6: Integration Pass ✅
 **Checkpoint:** "Do all the pieces talk to each other?"
 
-**Status:** NOT STARTED
+**Integration Points Verified:**
+1. **Search → Entity Detail**: SearchBar connected to API, clicking search results selects entity
+2. **Graph → Entity Detail**: Graph node clicks fetch and display full entity data
+3. **Entity Detail → Relationships**: EntityDetail fetches and displays relationships with navigation
+4. **CSV Import → Refresh**: Import success triggers graph and list refresh via key updates
+5. **AI Mode Toggle**: Search supports both basic and AI-powered modes with toggle
+
+**Key Integrations Completed:**
+- `SearchBar` component integrated into universe page header
+- `SearchResults` displays entities and relationships from API
+- `GraphViewer` node selection wired to entity detail panel
+- `CSVImportDialog` connected with refresh callbacks
+- `EntityDetail` now fetches and displays relationships
+- Clicking related entities navigates to them
+
+**Type System Improvements:**
+- Created `DisplayEntity` interface for flexible date handling (string | Date)
+- Updated `GraphEntity` to use `EntityType` and `EntityStatus`
+- Aligned types across search results, entity cards, and detail views
+
+**Status:** CLEARED
+**Date:** January 8, 2026
 
 ---
 
@@ -234,4 +255,4 @@
 
 ---
 
-*Last Updated: January 8, 2026 - Stage 5 IN PROGRESS (Entity CRUD complete)*
+*Last Updated: January 8, 2026 - Stage 6 CLEARED (Integration Pass complete)*

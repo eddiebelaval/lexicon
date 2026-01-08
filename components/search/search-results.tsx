@@ -2,33 +2,20 @@
 
 import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import { EntityCard } from '@/components/entities/entity-card';
+import { EntityCard, type DisplayEntity } from '@/components/entities/entity-card';
 import { Loader2, Search as SearchIcon, Sparkles } from 'lucide-react';
-import type { Entity, RelationshipWithEntities, SynthesizedAnswer, SearchSource } from '@/types';
+import type { RelationshipWithEntities, SynthesizedAnswer, SearchSource } from '@/types';
+import type { GraphEntity, GraphRelationship } from '@/lib/search';
 import { ArrowRight } from 'lucide-react';
 import { EntityTypeBadge } from '@/components/entities/entity-type-badge';
 import { RelationshipTypeBadge } from '@/components/relationships/relationship-type-badge';
 import { AIAnswer } from './ai-answer';
 
-/**
- * Simple relationship type from graph search
- * (before enrichment with full entity data)
- */
-interface GraphRelationship {
-  id: string;
-  from: string;
-  fromName: string;
-  to: string;
-  toName: string;
-  type: string;
-  context?: string;
-}
-
 interface SearchResultsProps {
-  entities: Entity[];
+  entities: GraphEntity[];
   relationships: GraphRelationship[];
   query: string;
-  onSelectEntity: (entity: Entity) => void;
+  onSelectEntity: (entity: DisplayEntity) => void;
   onSelectRelationship: (relationship: RelationshipWithEntities) => void;
   loading: boolean;
   className?: string;
@@ -51,12 +38,19 @@ function CompactRelationshipCard({
   onClick,
 }: {
   relationship: GraphRelationship;
-  source: Entity | undefined;
-  target: Entity | undefined;
+  source: GraphEntity | undefined;
+  target: GraphEntity | undefined;
   onClick: (relationship: RelationshipWithEntities) => void;
 }) {
   // If we don't have both entities, don't render
   if (!source || !target) return null;
+
+  // Convert GraphEntity to Entity format for RelationshipWithEntities
+  const toEntity = (ge: GraphEntity) => ({
+    ...ge,
+    createdAt: new Date(ge.createdAt),
+    updatedAt: new Date(ge.updatedAt),
+  });
 
   const enrichedRelationship: RelationshipWithEntities = {
     id: relationship.id,
@@ -67,8 +61,8 @@ function CompactRelationshipCard({
     strength: 3, // Default strength since we don't have it from simple search
     ongoing: true, // Default to true
     metadata: {},
-    source,
-    target,
+    source: toEntity(source),
+    target: toEntity(target),
   };
 
   return (
@@ -167,7 +161,7 @@ export function SearchResults({
 
   // Create entity lookup map for enriching relationships
   const entityMap = useMemo(() => {
-    const map = new Map<string, Entity>();
+    const map = new Map<string, GraphEntity>();
     entities.forEach((entity) => {
       map.set(entity.id, entity);
     });

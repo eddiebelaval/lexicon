@@ -212,6 +212,7 @@ export interface SearchSource {
   type: 'entity' | 'relationship' | 'web';
   name: string;
   url?: string;
+  entityId?: string; // For entity sources, the ID of the referenced entity
 }
 
 /**

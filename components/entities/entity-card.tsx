@@ -2,12 +2,30 @@
 
 import { cn, truncate, formatDate } from '@/lib/utils';
 import { EntityTypeBadge } from './entity-type-badge';
-import type { Entity } from '@/types';
+import type { EntityType, EntityStatus } from '@/types';
+
+/**
+ * Entity-like object that can be displayed in a card
+ * Works with both Entity (Date) and GraphEntity (string) date formats
+ */
+export interface DisplayEntity {
+  id: string;
+  name: string;
+  type: EntityType;
+  description: string;
+  aliases: string[];
+  status: EntityStatus;
+  imageUrl?: string;
+  metadata: Record<string, unknown>;
+  universeId: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
 
 interface EntityCardProps {
-  entity: Entity;
+  entity: DisplayEntity;
   isSelected?: boolean;
-  onClick?: (entity: Entity) => void;
+  onClick?: (entity: DisplayEntity) => void;
   className?: string;
 }
 

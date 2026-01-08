@@ -14,6 +14,7 @@ import {
   type QueryUnderstanding,
   type SynthesizedAnswer,
 } from './claude';
+import type { EntityType, EntityStatus } from '@/types';
 
 export interface SearchOptions {
   universeId: string;
@@ -40,15 +41,29 @@ export interface SearchResult {
   };
 }
 
-interface GraphEntity {
+/**
+ * Entity as returned from Neo4j graph queries
+ * Compatible with Entity type for UI display
+ */
+export interface GraphEntity {
   id: string;
   name: string;
-  type: string;
+  type: EntityType;
   description: string;
   aliases: string[];
+  status: EntityStatus;
+  imageUrl?: string;
+  metadata: Record<string, unknown>;
+  universeId: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-interface GraphRelationship {
+/**
+ * Relationship as returned from Neo4j graph queries
+ * Simplified version with entity names for display
+ */
+export interface GraphRelationship {
   id: string;
   from: string;
   fromName: string;
@@ -299,22 +314,8 @@ export async function executeGraphSearch(
   const searchTerm = query.trim();
 
   // Search for entities by name, alias, or description
-  // Return all entity properties to match Entity interface
-  const entityResults = await readQuery<{
-    e: {
-      id: string;
-      type: string;
-      name: string;
-      aliases: string[];
-      description: string;
-      status: string;
-      imageUrl?: string;
-      metadata: Record<string, unknown>;
-      universeId: string;
-      createdAt: Date;
-      updatedAt: Date;
-    }
-  }>(
+  // Return all entity properties to match GraphEntity interface
+  const entityResults = await readQuery<{ e: GraphEntity }>(
     `
     MATCH (e:Entity {universeId: $universeId})
     WHERE e.name =~ '(?i).*' + $search + '.*'
