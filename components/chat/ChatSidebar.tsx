@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { MessageSquare, Folder, Compass, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
+import { MessageSquare, Folder, Compass, Settings, ChevronLeft, ChevronRight, Home, Network, LayoutDashboard } from 'lucide-react';
 import { ChatHistory } from './ChatHistory';
 import { ProjectsTree } from './ProjectsTree';
 import { DiscoverPanel } from './DiscoverPanel';
@@ -60,12 +61,12 @@ export function ChatSidebar({
       `}
       aria-label="Chat sidebar"
     >
-      {/* Header */}
+      {/* Header with Logo and Navigation */}
       <div className="flex items-center justify-between p-4 border-b border-sidebar-border bg-panel-header">
         {!isCollapsed && (
-          <h2 className="text-lg font-semibold text-white">
+          <Link href="/" className="text-lg font-semibold text-white hover:text-vhs transition-colors">
             Lexicon
-          </h2>
+          </Link>
         )}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
@@ -79,6 +80,36 @@ export function ChatSidebar({
           )}
         </button>
       </div>
+
+      {/* Quick Navigation Links */}
+      {!isCollapsed && (
+        <div className="flex items-center gap-1 px-3 py-2 border-b border-sidebar-border bg-panel-header">
+          <Link
+            href="/"
+            className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-gray-400 hover:text-white hover:bg-sidebar-hover rounded-md transition-colors"
+            title="Home"
+          >
+            <Home className="w-3.5 h-3.5" />
+            <span>Home</span>
+          </Link>
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-gray-400 hover:text-white hover:bg-sidebar-hover rounded-md transition-colors"
+            title="Dashboard"
+          >
+            <LayoutDashboard className="w-3.5 h-3.5" />
+            <span>Dashboard</span>
+          </Link>
+          <Link
+            href={`/universe/${universeId}`}
+            className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-gray-400 hover:text-white hover:bg-sidebar-hover rounded-md transition-colors"
+            title="Graph View"
+          >
+            <Network className="w-3.5 h-3.5" />
+            <span>Graph</span>
+          </Link>
+        </div>
+      )}
 
       {/* Tabs */}
       {!isCollapsed && (

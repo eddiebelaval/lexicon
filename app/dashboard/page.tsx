@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BookOpen, Plus, Users, MapPin, Calendar, ArrowRight } from 'lucide-react';
+import { BookOpen, Plus, Users, MapPin, Calendar, ArrowRight, MessageSquare, Network } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/notification-bell';
 import { DigestWidget } from '@/components/dashboard/digest-widget';
 
@@ -59,20 +59,16 @@ export default function DashboardPage() {
             {/* Universe Grid */}
             <div className="grid md:grid-cols-2 gap-6">
               {/* Three Musketeers Universe Card */}
-              <Link
-                href="/universe/11111111-1111-1111-1111-111111111111"
-                className="group bg-[#111111] hover:bg-[#151515] rounded-xl border border-[#1f1f1f] hover:border-[#2a2a2a] p-6 transition-all duration-300 hover:-translate-y-1"
-              >
+              <div className="group bg-[#111111] hover:bg-[#151515] rounded-xl border border-[#1f1f1f] hover:border-[#2a2a2a] p-6 transition-all duration-300">
                 <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-xl font-semibold text-white group-hover:text-[#38bdf8] transition-colors">
+                  <h3 className="text-xl font-semibold text-white">
                     Three Musketeers
                   </h3>
-                  <ArrowRight className="w-5 h-5 text-[#444] group-hover:text-[#38bdf8] transition-colors" />
                 </div>
                 <p className="text-sm text-[#777] mb-4 leading-relaxed">
                   Classic adventure with Athos, Porthos, Aramis, and d&apos;Artagnan
                 </p>
-                <div className="flex gap-4 text-sm">
+                <div className="flex gap-4 text-sm mb-4">
                   <span className="flex items-center gap-1.5 text-[#8b5cf6]">
                     <Users className="w-3.5 h-3.5" />
                     15 Characters
@@ -86,7 +82,24 @@ export default function DashboardPage() {
                     5 Events
                   </span>
                 </div>
-              </Link>
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-3 border-t border-[#1f1f1f]">
+                  <Link
+                    href="/universe/11111111-1111-1111-1111-111111111111/chat"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#38bdf8] text-[#0a0a0a] font-medium text-sm hover:bg-[#5ccfff] transition-colors"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Chat
+                  </Link>
+                  <Link
+                    href="/universe/11111111-1111-1111-1111-111111111111"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#1f1f1f] text-white font-medium text-sm hover:bg-[#2a2a2a] border border-[#333] transition-colors"
+                  >
+                    <Network className="w-4 h-4" />
+                    Graph
+                  </Link>
+                </div>
+              </div>
 
               {/* Empty State Card */}
               <button className="bg-[#0d0d0d] hover:bg-[#111111] rounded-xl border border-dashed border-[#252525] hover:border-[#38bdf8]/30 p-6 flex flex-col items-center justify-center text-center min-h-[200px] transition-all duration-300 group">

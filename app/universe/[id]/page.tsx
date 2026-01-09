@@ -18,7 +18,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Upload, X, AlertCircle, BookOpen, Network, FileText } from 'lucide-react';
+import { Upload, X, AlertCircle, BookOpen, Network, FileText, MessageSquare, Home } from 'lucide-react';
 import { EntityList, EntityDetail, EntityForm } from '@/components/entities';
 import { GraphViewer } from '@/components/graph';
 import { SearchBar, SearchResults } from '@/components/search';
@@ -267,10 +267,28 @@ export default function UniversePage() {
       >
         <div className="max-w-full px-4 py-3">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="flex items-center gap-2 group shrink-0">
+            <Link href="/" className="flex items-center gap-2 group shrink-0">
               <BookOpen className="w-5 h-5 text-[#38bdf8] group-hover:text-[#5ccfff] transition-colors" />
               <span className="text-lg font-semibold text-white">Lexicon</span>
             </Link>
+
+            {/* Quick Nav Links */}
+            <nav className="hidden md:flex items-center gap-1">
+              <Link
+                href="/"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-[#888] hover:text-white hover:bg-[#1f1f1f] transition-all"
+              >
+                <Home className="w-4 h-4" />
+                Home
+              </Link>
+              <Link
+                href={`/universe/${universeId}/chat`}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-[#888] hover:text-white hover:bg-[#1f1f1f] transition-all"
+              >
+                <MessageSquare className="w-4 h-4" />
+                Chat
+              </Link>
+            </nav>
 
             {/* Search Bar - Primary Action */}
             <div className="flex-1 max-w-2xl">
