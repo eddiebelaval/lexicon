@@ -5,7 +5,7 @@
  * Storylines are long-form narratives for couples/story arcs in the Living Universe.
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type {
   Storyline,
   StorylineWithCast,
@@ -15,15 +15,28 @@ import type {
   CreateStorylineUpdateInput,
   StorylineSearchResult,
   PaginatedResponse,
-  Entity,
 } from '@/types';
 import { getEntitiesByIds } from './entities';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+// Lazy-initialize Supabase client to avoid build-time errors
+// Note: Using untyped client since storylines table isn't in generated types yet
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _supabase: SupabaseClient<any> | null = null;
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getSupabase(): SupabaseClient<any> {
+  if (!_supabase) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing Supabase environment variables');
+    }
+
+    _supabase = createClient(supabaseUrl, supabaseServiceKey);
+  }
+  return _supabase;
+}
 
 /**
  * Generate a URL-friendly slug from a title
@@ -97,7 +110,7 @@ export async function createStoryline(
 ): Promise<Storyline> {
   const slug = input.slug || generateSlug(input.title);
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('storylines')
     .insert({
       universe_id: input.universeId,
@@ -128,7 +141,7 @@ export async function createStoryline(
  * Get a storyline by ID
  */
 export async function getStoryline(id: string): Promise<Storyline | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('storylines')
     .select('*')
     .eq('id', id)
@@ -175,7 +188,7 @@ export async function getStorylineBySlug(
   universeId: string,
   slug: string
 ): Promise<Storyline | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('storylines')
     .select('*')
     .eq('universe_id', universeId)
@@ -216,7 +229,7 @@ export async function listStorylines(
   } = options;
 
   // Build query
-  let query = supabase
+  let query = getSupabase()
     .from('storylines')
     .select('*', { count: 'exact' })
     .eq('universe_id', universeId);
@@ -289,7 +302,7 @@ export async function updateStoryline(
   if (input.episodeRange !== undefined) updates.episode_range = input.episodeRange;
   if (input.tags !== undefined) updates.tags = input.tags;
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('storylines')
     .update(updates)
     .eq('id', id)
@@ -308,7 +321,7 @@ export async function updateStoryline(
  * Delete a storyline
  */
 export async function deleteStoryline(id: string): Promise<boolean> {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from('storylines')
     .delete()
     .eq('id', id);
@@ -333,7 +346,7 @@ export async function searchStorylines(
   limit = 10
 ): Promise<StorylineSearchResult[]> {
   // Use PostgreSQL full-text search
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('storylines')
     .select('id, title, synopsis, narrative, primary_cast')
     .eq('universe_id', universeId)
@@ -365,7 +378,7 @@ export async function getStorylinesForEntity(
   entityId: string,
   limit = 20
 ): Promise<Storyline[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('storylines')
     .select('*')
     .or(
@@ -391,7 +404,7 @@ export async function getStorylinesForEntity(
 export async function createStorylineUpdate(
   input: CreateStorylineUpdateInput
 ): Promise<StorylineUpdate> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('storyline_updates')
     .insert({
       storyline_id: input.storylineId,
@@ -428,7 +441,7 @@ export async function getStorylineUpdates(
 ): Promise<PaginatedResponse<StorylineUpdate>> {
   const { updateType, includedInDigest, limit = 50, offset = 0 } = options;
 
-  let query = supabase
+  let query = getSupabase()
     .from('storyline_updates')
     .select('*', { count: 'exact' })
     .eq('storyline_id', storylineId);
@@ -474,7 +487,7 @@ export async function getUnprocessedUpdates(
   let storylineIds: string[] | undefined;
 
   if (universeId) {
-    const { data: storylines } = await supabase
+    const { data: storylines } = await getSupabase()
       .from('storylines')
       .select('id')
       .eq('universe_id', universeId);
@@ -485,7 +498,7 @@ export async function getUnprocessedUpdates(
     }
   }
 
-  let query = supabase
+  let query = getSupabase()
     .from('storyline_updates')
     .select('*')
     .eq('included_in_digest', false)
@@ -512,7 +525,7 @@ export async function getUnprocessedUpdates(
 export async function markUpdatesAsProcessed(updateIds: string[]): Promise<void> {
   if (updateIds.length === 0) return;
 
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from('storyline_updates')
     .update({
       included_in_digest: true,
@@ -546,7 +559,7 @@ export async function updateEnrichmentStatus(
 
   const enrichmentSources = [...storyline.enrichmentSources, newSource];
 
-  await supabase
+  await getSupabase()
     .from('storylines')
     .update({
       last_enriched_at: new Date().toISOString(),
@@ -595,7 +608,7 @@ export async function getStorylinesNeedingEnrichment(
   const cutoff = new Date();
   cutoff.setHours(cutoff.getHours() - hoursThreshold);
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('storylines')
     .select('*')
     .eq('universe_id', universeId)
