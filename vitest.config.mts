@@ -10,6 +10,10 @@ export default defineConfig({
     setupFiles: ['./tests/setup.ts'],
     include: ['tests/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['tests/e2e/**', 'node_modules'],
+    environmentMatchGlobs: [
+      // Use node environment for unit tests that don't need DOM
+      ['tests/unit/**', 'node'],
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

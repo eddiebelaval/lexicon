@@ -8,7 +8,11 @@ import { NextResponse } from 'next/server';
 import { healthCheck as neo4jHealthCheck } from '@/lib/neo4j';
 
 export async function GET() {
-  const checks = {
+  const checks: {
+    api: boolean;
+    neo4j: boolean;
+    timestamp: string;
+  } = {
     api: true,
     neo4j: false,
     timestamp: new Date().toISOString(),
@@ -20,9 +24,7 @@ export async function GET() {
     checks.neo4j = false;
   }
 
-  const allHealthy = Object.values(checks).every(
-    (v) => v === true || typeof v === 'string'
-  );
+  const allHealthy = checks.api && checks.neo4j;
 
   return NextResponse.json(
     {

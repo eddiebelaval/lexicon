@@ -14,6 +14,7 @@ import {
   type QueryUnderstanding,
   type SynthesizedAnswer,
 } from './claude';
+import type { EntityType, EntityStatus } from '@/types';
 
 export interface SearchOptions {
   universeId: string;
@@ -40,15 +41,29 @@ export interface SearchResult {
   };
 }
 
-interface GraphEntity {
+/**
+ * Entity as returned from Neo4j graph queries
+ * Compatible with Entity type for UI display
+ */
+export interface GraphEntity {
   id: string;
   name: string;
-  type: string;
+  type: EntityType;
   description: string;
   aliases: string[];
+  status: EntityStatus;
+  imageUrl?: string;
+  metadata: Record<string, unknown>;
+  universeId: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-interface GraphRelationship {
+/**
+ * Relationship as returned from Neo4j graph queries
+ * Simplified version with entity names for display
+ */
+export interface GraphRelationship {
   id: string;
   from: string;
   fromName: string;
@@ -86,7 +101,7 @@ export async function search(
 
   // Step 2: Execute graph search
   const graphStart = Date.now();
-  const graphData = await executeGraphSearch(
+  const graphData = await executeAdvancedGraphSearch(
     understanding,
     options.universeId,
     options.maxEntities ?? 20,
@@ -137,8 +152,9 @@ export async function search(
 
 /**
  * Execute Neo4j graph search based on query understanding
+ * (Used by advanced search with Claude parsing)
  */
-async function executeGraphSearch(
+async function executeAdvancedGraphSearch(
   understanding: QueryUnderstanding,
   universeId: string,
   maxEntities: number,
@@ -267,4 +283,86 @@ export async function getUniverseEntities(
   );
 
   return results.map((r) => r.e);
+}
+
+/**
+ * Simple graph search result type
+ * Returns GraphEntity and GraphRelationship (not full Entity types)
+ * For UI display, these need to be compatible with Entity type
+ */
+export interface GraphSearchResult {
+  entities: GraphEntity[];
+  relationships: GraphRelationship[];
+}
+
+/**
+ * Simple graph search - just searches entity names/aliases
+ * Does NOT use Claude for parsing - this is a lightweight search
+ */
+export async function executeGraphSearch(
+  universeId: string,
+  query: string
+): Promise<GraphSearchResult> {
+  const entities: GraphEntity[] = [];
+  const relationships: GraphRelationship[] = [];
+
+  // If query is empty, return empty results
+  if (!query || query.trim().length === 0) {
+    return { entities, relationships };
+  }
+
+  const searchTerm = query.trim();
+
+  // Search for entities by name, alias, or description
+  // Return all entity properties to match GraphEntity interface
+  const entityResults = await readQuery<{ e: GraphEntity }>(
+    `
+    MATCH (e:Entity {universeId: $universeId})
+    WHERE e.name =~ '(?i).*' + $search + '.*'
+       OR ANY(alias IN e.aliases WHERE alias =~ '(?i).*' + $search + '.*')
+       OR e.description =~ '(?i).*' + $search + '.*'
+    RETURN e
+    LIMIT 20
+    `,
+    { universeId, search: searchTerm }
+  );
+
+  entities.push(...entityResults.map((r) => r.e));
+
+  // Get relationships between found entities
+  // Note: For now, we only return relationships WHERE BOTH entities were found
+  // This keeps the result set clean and relevant
+  if (entities.length > 0) {
+    const entityIds = entities.map((e) => e.id);
+
+    const relResults = await readQuery<{
+      r: {
+        id: string;
+        from: string;
+        to: string;
+        type: string;
+        context?: string;
+      };
+      fromName: string;
+      toName: string;
+    }>(
+      `
+      MATCH (a:Entity)-[r]->(b:Entity)
+      WHERE a.id IN $entityIds AND b.id IN $entityIds
+      RETURN r, a.name as fromName, b.name as toName
+      LIMIT 50
+      `,
+      { entityIds }
+    );
+
+    relationships.push(
+      ...relResults.map((result) => ({
+        ...result.r,
+        fromName: result.fromName,
+        toName: result.toName,
+      }))
+    );
+  }
+
+  return { entities, relationships };
 }

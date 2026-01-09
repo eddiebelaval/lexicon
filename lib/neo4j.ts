@@ -7,7 +7,7 @@
  * - Common query patterns for entities and relationships
  */
 
-import neo4j, { Driver, Session, Record as Neo4jRecord } from 'neo4j-driver';
+import neo4j, { Driver, Record as Neo4jRecord } from 'neo4j-driver';
 
 // Singleton driver instance
 let driver: Driver | null = null;
@@ -17,9 +17,10 @@ let driver: Driver | null = null;
  */
 export function getDriver(): Driver {
   if (!driver) {
-    const uri = process.env.NEO4J_URI;
-    const username = process.env.NEO4J_USERNAME;
-    const password = process.env.NEO4J_PASSWORD;
+    // Trim whitespace from env vars - Vercel can accidentally include newlines
+    const uri = process.env.NEO4J_URI?.trim();
+    const username = process.env.NEO4J_USERNAME?.trim();
+    const password = process.env.NEO4J_PASSWORD?.trim();
 
     if (!uri || !username || !password) {
       throw new Error(
@@ -95,7 +96,8 @@ function neo4jValueToJs(value: unknown): unknown {
 
   // Handle Neo4j integers
   if (neo4j.isInt(value)) {
-    return (value as neo4j.Integer).toNumber();
+    const intValue = value as { toNumber(): number };
+    return intValue.toNumber();
   }
 
   // Handle Neo4j nodes
@@ -129,11 +131,14 @@ export async function closeDriver(): Promise<void> {
  */
 export async function healthCheck(): Promise<boolean> {
   try {
-    const session = getDriver().session();
-    await session.run('RETURN 1');
+    const driver = getDriver();
+    const session = driver.session();
+    const result = await session.run('RETURN 1 as test');
     await session.close();
-    return true;
-  } catch {
-    return false;
+    return result.records.length > 0;
+  } catch (error) {
+    // Log error for debugging but still return false
+    console.error('Neo4j health check failed:', error);
+    throw error; // Re-throw so the API route can capture it
   }
 }

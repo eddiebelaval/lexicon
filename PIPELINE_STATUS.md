@@ -4,7 +4,7 @@
 - **Project:** Lexicon
 - **Description:** Wikipedia + Perplexity for story universes
 - **Started:** January 6, 2026
-- **Current Stage:** Stage 1 - Concept Lock
+- **Current Stage:** Stage 5 - Feature Blocks (COMPLETE)
 
 ---
 
@@ -81,44 +81,120 @@
 
 ---
 
-### Stage 4: Foundation Pour 🔄
+### Stage 4: Foundation Pour ✅
 **Checkpoint:** "Can we deploy an empty shell?"
 
 **Checklist:**
 - [x] Project scaffolding (Next.js 15, TypeScript, Tailwind)
 - [x] Package dependencies defined
 - [x] File structure created
-- [ ] Neo4j Aura instance created
-- [ ] Supabase project created
-- [ ] Auth implemented (Supabase Auth)
-- [ ] Deployment pipeline (Vercel)
-- [ ] Environment variables configured
-- [ ] Empty shell deploying successfully
+- [x] Neo4j Aura instance created (id8Labs, ID: 0078a27e)
+- [x] Supabase integration (using ID8Labs shared project)
+- [x] Supabase client library with universe CRUD operations
+- [x] universes table migration applied
+- [x] Deployment pipeline (Vercel)
+- [x] Environment variables configured (with whitespace trimming fix)
+- [x] Empty shell deploying successfully
+- [x] Health check endpoint passing (API + Neo4j)
 
-**Status:** IN PROGRESS
-**Blockers:** None yet
+**Production URL:** https://lexicon-phi.vercel.app
+
+**Status:** CLEARED
+**Date:** January 6, 2026
+
+**Key Fix:** Neo4j authentication was failing due to trailing newlines in Vercel environment variables. Fixed by adding `.trim()` to environment variable reads in the Neo4j driver initialization.
 
 ---
 
-### Stage 5: Feature Blocks ⏳
+### Stage 5: Feature Blocks ✅
 **Checkpoint:** "Does this feature work completely, right now?"
 
 **Planned Vertical Slices:**
-1. [ ] Entity CRUD (create, read, update, delete entities)
-2. [ ] Relationship CRUD (connect entities)
-3. [ ] Basic Search (graph-only, no web augmentation)
-4. [ ] Graph Visualization (render entities/relationships)
-5. [ ] AI Search (add Claude synthesis + web)
-6. [ ] CSV Import (bulk entity creation)
+1. [x] Entity CRUD (create, read, update, delete entities) ✅
+2. [x] Relationship CRUD (connect entities) ✅
+3. [x] Basic Search (graph-only, no web augmentation) ✅
+4. [x] Graph Visualization (render entities/relationships) ✅
+5. [x] AI Search (add Claude synthesis + web) ✅
+6. [x] CSV Import (bulk entity creation) ✅
 
-**Status:** NOT STARTED
+**Feature 1: Entity CRUD (Complete - January 8, 2026):**
+- `lib/entities.ts` - Neo4j CRUD operations
+- `lib/validation/entity.ts` - Zod validation schemas
+- `app/api/entities/route.ts` - POST (create) + GET (list)
+- `app/api/entities/[id]/route.ts` - GET, PUT, DELETE
+- UI Components: EntityList, EntityCard, EntityDetail, EntityForm, EntityTypeBadge
+
+**Feature 2: Relationship CRUD (Complete - January 8, 2026):**
+- `lib/relationships.ts` - Neo4j CRUD operations for relationships
+- `lib/validation/relationship.ts` - Zod validation schemas
+- `app/api/relationships/route.ts` - POST + GET endpoints
+- `app/api/relationships/[id]/route.ts` - GET, PUT, DELETE
+- UI Components: RelationshipList, RelationshipCard, RelationshipForm, RelationshipTypeBadge
+
+**Feature 3: Basic Search (Complete - January 8, 2026):**
+- `app/api/search/route.ts` - Search API endpoint with timing metrics
+- `lib/search.ts` - Added `executeGraphSearch()` function
+- UI Components: SearchBar (debounced), SearchResults (entity/relationship cards)
+- Keyboard shortcut (Cmd/Ctrl+K), loading states, empty states
+
+**Feature 4: Graph Visualization (Complete - January 8, 2026):**
+- `app/api/graph/route.ts` - Graph data endpoint for D3.js
+- `components/graph/force-graph.tsx` - D3.js force-directed graph (360 lines)
+- `components/graph/graph-controls.tsx` - Zoom, filter, layout controls
+- `components/graph/graph-legend.tsx` - Entity type legend with colors
+- `components/graph/graph-viewer.tsx` - Complete ready-to-use component
+- Features: drag, zoom, pan, entity filtering, responsive sizing
+
+**Feature 5: AI Search (Complete - January 8, 2026):**
+- `app/api/search/route.ts` - Added `ai=true` mode for Claude-powered search
+- `components/search/ai-answer.tsx` - AI answer display with markdown, citations
+- Integration with existing `lib/claude.ts` for `parseQuery()` and `synthesizeAnswer()`
+- Graceful fallback to basic search if Claude API fails
+
+**Feature 6: CSV Import (Complete - January 8, 2026):**
+- `lib/import/csv-parser.ts` - CSV parsing with delimiter detection
+- `lib/validation/import.ts` - Import validation schemas
+- `app/api/import/route.ts` - Batch import endpoint with transactions
+- `components/import/csv-import-dialog.tsx` - Multi-step import wizard
+- `components/import/import-progress.tsx` - Progress tracking component
+- 18 unit tests for CSV parsing
+
+**Status:** CLEARED
+**Date:** January 8, 2026
+
+**Orchestration:** Claude orchestrated 4 parallel agent sessions to build features concurrently:
+- Phase 1: Relationship CRUD + Graph API (parallel)
+- Phase 2: Graph Visualization + Basic Search UI (parallel)
+- Phase 3: AI Search with Claude
+- Phase 4: CSV Import
 
 ---
 
-### Stage 6: Integration Pass ⏳
+### Stage 6: Integration Pass ✅
 **Checkpoint:** "Do all the pieces talk to each other?"
 
-**Status:** NOT STARTED
+**Integration Points Verified:**
+1. **Search → Entity Detail**: SearchBar connected to API, clicking search results selects entity
+2. **Graph → Entity Detail**: Graph node clicks fetch and display full entity data
+3. **Entity Detail → Relationships**: EntityDetail fetches and displays relationships with navigation
+4. **CSV Import → Refresh**: Import success triggers graph and list refresh via key updates
+5. **AI Mode Toggle**: Search supports both basic and AI-powered modes with toggle
+
+**Key Integrations Completed:**
+- `SearchBar` component integrated into universe page header
+- `SearchResults` displays entities and relationships from API
+- `GraphViewer` node selection wired to entity detail panel
+- `CSVImportDialog` connected with refresh callbacks
+- `EntityDetail` now fetches and displays relationships
+- Clicking related entities navigates to them
+
+**Type System Improvements:**
+- Created `DisplayEntity` interface for flexible date handling (string | Date)
+- Updated `GraphEntity` to use `EntityType` and `EntityStatus`
+- Aligned types across search results, entity cards, and detail views
+
+**Status:** CLEARED
+**Date:** January 8, 2026
 
 ---
 
@@ -164,6 +240,9 @@
 | 2026-01-05 | Use Neo4j for graph storage | Relational DBs make relationship traversal painful |
 | 2026-01-05 | Split databases (Neo4j + Supabase) | Different data models need different optimizations |
 | 2026-01-05 | D3.js over vis-network | More control, better performance with large graphs |
+| 2026-01-06 | Neo4j Aura Free tier | Sufficient for MVP, easy to upgrade later |
+| 2026-01-06 | Use ID8Labs shared Supabase | Already has infrastructure, reduces setup time |
+| 2026-01-06 | Trim env vars in driver init | Vercel can include newlines when pasting values |
 
 ---
 
@@ -176,4 +255,4 @@
 
 ---
 
-*Last Updated: January 6, 2026*
+*Last Updated: January 8, 2026 - Stage 6 CLEARED (Integration Pass complete)*

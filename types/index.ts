@@ -212,6 +212,7 @@ export interface SearchSource {
   type: 'entity' | 'relationship' | 'web';
   name: string;
   url?: string;
+  entityId?: string; // For entity sources, the ID of the referenced entity
 }
 
 /**
@@ -315,7 +316,8 @@ export interface RelationshipImportRow {
 export interface ImportResult {
   success: boolean;
   entitiesCreated: number;
-  relationshipsCreated: number;
+  entitiesSkipped: number;
+  relationshipsCreated?: number;
   errors: {
     row: number;
     message: string;
