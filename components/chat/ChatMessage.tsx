@@ -35,19 +35,23 @@ export function ChatMessage({ message, onCitationClick }: ChatMessageProps) {
 
     // Simple implementation: show content with citation chips at the end
     // For production, you'd want to parse citation markers in the content
+    const citations = Array.isArray(message.citations) ? message.citations : [];
+
     return (
       <div>
         <p className="whitespace-pre-wrap">{message.content}</p>
-        <div className="flex flex-wrap gap-1 mt-2">
-          {message.citations.map((citation, index) => (
-            <CitationChip
-              key={citation.id}
-              citation={citation}
-              index={index}
-              onClick={onCitationClick}
-            />
-          ))}
-        </div>
+        {citations.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {citations.map((citation, index) => (
+              <CitationChip
+                key={citation.id}
+                citation={citation}
+                index={index}
+                onClick={onCitationClick}
+              />
+            ))}
+          </div>
+        )}
       </div>
     );
   };
@@ -74,7 +78,7 @@ export function ChatMessage({ message, onCitationClick }: ChatMessageProps) {
         </div>
 
         {/* Tool calls section (assistant only) */}
-        {!isUser && message.toolCalls && message.toolCalls.length > 0 && (
+        {!isUser && Array.isArray(message.toolCalls) && message.toolCalls.length > 0 && (
           <div className="w-full">
             <button
               onClick={() => setShowToolCalls(!showToolCalls)}
@@ -137,7 +141,7 @@ export function ChatMessage({ message, onCitationClick }: ChatMessageProps) {
         )}
 
         {/* Citations list (assistant only) */}
-        {!isUser && message.citations && message.citations.length > 0 && (
+        {!isUser && Array.isArray(message.citations) && message.citations.length > 0 && (
           <div className="w-full mt-1">
             <div className="text-xs text-gray-500">Sources:</div>
             <div className="mt-1 space-y-1">
