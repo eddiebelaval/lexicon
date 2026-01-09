@@ -78,10 +78,20 @@ Respond in JSON format:
 }
 
 /**
+ * Storyline search result for synthesis context
+ */
+interface StorylineContext {
+  id: string;
+  title: string;
+  synopsis: string | null;
+  rank: number;
+}
+
+/**
  * Synthesize answer from graph results and optional web results
  */
 export interface SearchSource {
-  type: 'entity' | 'relationship' | 'web';
+  type: 'entity' | 'relationship' | 'web' | 'storyline';
   name: string;
   url?: string;
 }
@@ -103,7 +113,8 @@ export async function synthesizeAnswer(
       context?: string;
     }>;
   },
-  webResults?: Array<{ title: string; snippet: string; url: string }>
+  webResults?: Array<{ title: string; snippet: string; url: string }>,
+  storylines?: StorylineContext[]
 ): Promise<SynthesizedAnswer> {
   const graphContext = `
 GRAPH DATA:
@@ -113,6 +124,13 @@ ${graphResults.entities.map((e) => `- ${e.name} (${e.type}): ${e.description}`).
 Relationships found:
 ${graphResults.relationships.map((r) => `- ${r.from} --[${r.type}]--> ${r.to}${r.context ? `: ${r.context}` : ''}`).join('\n')}
 `;
+
+  const storylineContext = storylines?.length
+    ? `
+STORYLINES FOUND:
+${storylines.map((s) => `- "${s.title}": ${s.synopsis || 'No synopsis available'}`).join('\n')}
+`
+    : '';
 
   const webContext = webResults?.length
     ? `
@@ -130,15 +148,16 @@ ${webResults.map((w) => `- ${w.title}: ${w.snippet}`).join('\n')}
         content: `You are answering questions about a story universe. Use the provided data to give a clear, narrative answer.
 
 ${graphContext}
+${storylineContext}
 ${webContext}
 
 User question: "${query}"
 
-Provide a natural, conversational answer that synthesizes the information. Be specific about relationships and events. If information is missing, say so.
+Provide a natural, conversational answer that synthesizes the information. Be specific about relationships and events. Reference storylines when relevant. If information is missing, say so.
 
 After your answer, list the sources you used in this format:
 SOURCES:
-- [Entity: Name] or [Web: Title]`,
+- [Entity: Name] or [Storyline: Title] or [Web: Title]`,
       },
     ],
   });
@@ -160,6 +179,14 @@ SOURCES:
     }
   });
 
+  // Parse storyline sources
+  storylines?.forEach((s) => {
+    if (answerPart.toLowerCase().includes(s.title.toLowerCase()) ||
+        sourcesPart?.includes(s.title)) {
+      sources.push({ type: 'storyline', name: s.title });
+    }
+  });
+
   // Parse web sources
   webResults?.forEach((w) => {
     if (sourcesPart?.includes(w.title)) {
@@ -167,13 +194,18 @@ SOURCES:
     }
   });
 
+  // Determine confidence based on available data
+  const hasGraphData = graphResults.entities.length > 0 || graphResults.relationships.length > 0;
+  const hasStorylines = (storylines?.length || 0) > 0;
+  const hasWebData = (webResults?.length || 0) > 0;
+
   return {
     answer: answerPart.trim(),
     sources,
     confidence:
-      graphResults.entities.length > 0 || graphResults.relationships.length > 0
+      hasGraphData || hasStorylines
         ? 'high'
-        : webResults?.length
+        : hasWebData
           ? 'medium'
           : 'low',
   };

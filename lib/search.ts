@@ -14,7 +14,8 @@ import {
   type QueryUnderstanding,
   type SynthesizedAnswer,
 } from './claude';
-import type { EntityType, EntityStatus } from '@/types';
+import { searchStorylines } from './storylines';
+import type { EntityType, EntityStatus, StorylineSearchResult } from '@/types';
 
 export interface SearchOptions {
   universeId: string;
@@ -31,10 +32,12 @@ export interface SearchResult {
     entities: GraphEntity[];
     relationships: GraphRelationship[];
   };
+  storylines?: StorylineSearchResult[];
   webResults?: WebResult[];
   timing: {
     parseMs: number;
     graphMs: number;
+    storylineMs?: number;
     webMs?: number;
     synthesisMs: number;
     totalMs: number;
@@ -109,6 +112,17 @@ export async function search(
   );
   timing.graphMs = Date.now() - graphStart;
 
+  // Step 2.5: Search storylines (run in parallel with web if enabled)
+  const storylineStart = Date.now();
+  let storylines: StorylineSearchResult[] = [];
+  try {
+    storylines = await searchStorylines(options.universeId, query, 5);
+    timing.storylineMs = Date.now() - storylineStart;
+  } catch (error) {
+    console.error('Storyline search error:', error);
+    timing.storylineMs = Date.now() - storylineStart;
+  }
+
   // Step 3: Optional web search
   let webResults: WebResult[] | undefined;
   if (options.includeWebSearch && understanding.webSearchRecommended) {
@@ -117,7 +131,7 @@ export async function search(
     timing.webMs = Date.now() - webStart;
   }
 
-  // Step 4: Synthesize answer
+  // Step 4: Synthesize answer (now includes storylines)
   const synthesisStart = Date.now();
   const answer = await synthesizeAnswer(
     query,
@@ -134,7 +148,8 @@ export async function search(
         context: r.context,
       })),
     },
-    webResults
+    webResults,
+    storylines
   );
   timing.synthesisMs = Date.now() - synthesisStart;
 
@@ -145,6 +160,7 @@ export async function search(
     understanding,
     answer,
     rawGraphData: graphData,
+    storylines: storylines.length > 0 ? storylines : undefined,
     webResults,
     timing,
   };

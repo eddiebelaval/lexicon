@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
+  ScrollText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -80,6 +81,7 @@ function SourceCitation({
     entity: <BookOpen className="h-3.5 w-3.5" />,
     relationship: <Link2 className="h-3.5 w-3.5" />,
     web: <Globe className="h-3.5 w-3.5" />,
+    storyline: <ScrollText className="h-3.5 w-3.5" />,
   };
 
   const handleClick = () => {

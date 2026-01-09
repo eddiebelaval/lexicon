@@ -14,26 +14,45 @@ import type {
   ApiError,
 } from '@/types';
 
-// Environment validation
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Environment validation - lazy to avoid build-time errors
+const getSupabaseUrl = () => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) {
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable');
+  }
+  return url;
+};
 
-if (!supabaseUrl) {
-  throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable');
-}
-
-if (!supabaseAnonKey) {
-  throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable');
-}
+const getSupabaseAnonKey = () => {
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!key) {
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable');
+  }
+  return key;
+};
 
 /**
- * Supabase client for browser-side operations
+ * Supabase client singleton - lazily initialized
  * Uses anon key with RLS policies enforced
  */
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
+let _supabase: ReturnType<typeof createClient<Database>> | null = null;
+
+export function getSupabase() {
+  if (!_supabase) {
+    _supabase = createClient<Database>(getSupabaseUrl(), getSupabaseAnonKey(), {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+    });
+  }
+  return _supabase;
+}
+
+// Legacy export for backwards compatibility
+export const supabase = new Proxy({} as ReturnType<typeof createClient<Database>>, {
+  get(_, prop) {
+    return (getSupabase() as unknown as Record<string, unknown>)[prop as string];
   },
 });
 
@@ -48,7 +67,7 @@ export function createAdminClient() {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
   }
 
-  return createClient<Database>(supabaseUrl!, serviceRoleKey, {
+  return createClient<Database>(getSupabaseUrl(), serviceRoleKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
