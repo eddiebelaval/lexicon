@@ -146,11 +146,16 @@ export function ChatLayout({ universeId, initialQuery }: ChatLayoutProps) {
               try {
                 const parsed = JSON.parse(data);
 
-                if (parsed.type === 'content') {
-                  assistantContent += parsed.content;
+                // Handle text streaming events from the API
+                // API sends: { type: 'text', data: { content: '...' } }
+                if (parsed.type === 'text' && parsed.data?.content) {
+                  assistantContent += parsed.data.content;
                   setStreamingContent(assistantContent);
-                } else if (parsed.type === 'conversationId') {
-                  setActiveConversationId(parsed.conversationId);
+                } else if (parsed.type === 'done' && parsed.data?.message) {
+                  // Use the complete message from the server
+                  setActiveConversationId(parsed.data.message.conversationId);
+                } else if (parsed.type === 'error') {
+                  console.error('Chat error:', parsed.data);
                 }
               } catch (e) {
                 console.error('Error parsing SSE data:', e);
