@@ -4,7 +4,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { HeroSearch } from '@/components/search/HeroSearch';
 import { SuggestedQueries } from '@/components/search/SuggestedQueries';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 import { Network, Sparkles, Globe, BookOpen } from 'lucide-react';
+
+// Demo user ID - replace with auth context in production
+const DEMO_USER_ID = '11111111-1111-1111-1111-111111111111';
 
 export default function HomePage() {
   const router = useRouter();
@@ -24,18 +28,21 @@ export default function HomePage() {
           <BookOpen className="w-6 h-6 text-[#38bdf8] group-hover:text-[#5ccfff] transition-colors" />
           <span className="text-xl font-semibold text-white">Lexicon</span>
         </Link>
-        <Link
-          href="/dashboard"
-          className="
-            px-4 py-2 rounded-xl
-            text-sm font-medium text-[#999]
-            bg-[#141414] hover:bg-[#1a1a1a]
-            border border-[#252525] hover:border-[#333]
-            transition-all duration-200
-          "
-        >
-          Dashboard
-        </Link>
+        <div className="flex items-center gap-3">
+          <NotificationBell userId={DEMO_USER_ID} />
+          <Link
+            href="/dashboard"
+            className="
+              px-4 py-2 rounded-xl
+              text-sm font-medium text-[#999]
+              bg-[#141414] hover:bg-[#1a1a1a]
+              border border-[#252525] hover:border-[#333]
+              transition-all duration-200
+            "
+          >
+            Dashboard
+          </Link>
+        </div>
       </header>
 
       {/* Hero Section - Search First */}
