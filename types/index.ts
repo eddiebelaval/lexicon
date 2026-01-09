@@ -4,6 +4,9 @@
  * Central location for all TypeScript interfaces used across the application.
  */
 
+// Re-export chat types
+export * from './chat';
+
 // ============================================
 // Entity Types
 // ============================================
@@ -362,4 +365,218 @@ export interface PaginatedResponse<T> {
   page: number;
   pageSize: number;
   hasMore: boolean;
+}
+
+// ============================================
+// Storyline Types (Living Universe)
+// ============================================
+
+export type StorylineStatus = 'active' | 'archived' | 'developing';
+
+export type UpdateType = 'news' | 'social_media' | 'manual' | 'ai_enrichment';
+
+export type NotificationType = 'digest_ready' | 'cast_news' | 'storyline_update' | 'system' | 'enrichment_complete';
+
+export type EmailFrequency = 'daily' | 'weekly' | 'never';
+
+/**
+ * Storyline - Long-form narrative for a couple/story arc
+ *
+ * Stored in PostgreSQL (Supabase)
+ */
+export interface Storyline {
+  id: string;
+  universeId: string;
+  title: string;
+  slug: string;
+  synopsis: string | null;
+  narrative: string | null;
+  primaryCast: string[];      // Neo4j entity IDs
+  supportingCast: string[];   // Neo4j entity IDs
+  status: StorylineStatus;
+  season: string | null;
+  episodeRange: string | null;
+  tags: string[];
+  lastEnrichedAt: Date | null;
+  enrichmentSources: EnrichmentSource[];
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy: string | null;
+  updatedBy: string | null;
+}
+
+/**
+ * Enrichment source tracking
+ */
+export interface EnrichmentSource {
+  type: 'web' | 'social' | 'manual';
+  name: string;
+  url?: string;
+  enrichedAt: string;
+}
+
+/**
+ * Storyline with populated cast entities
+ */
+export interface StorylineWithCast extends Storyline {
+  primaryCastEntities: Entity[];
+  supportingCastEntities: Entity[];
+}
+
+/**
+ * Storyline creation input
+ */
+export interface CreateStorylineInput {
+  universeId: string;
+  title: string;
+  slug?: string;
+  synopsis?: string;
+  narrative?: string;
+  primaryCast?: string[];
+  supportingCast?: string[];
+  status?: StorylineStatus;
+  season?: string;
+  episodeRange?: string;
+  tags?: string[];
+}
+
+/**
+ * Storyline update input
+ */
+export interface UpdateStorylineInput {
+  title?: string;
+  slug?: string;
+  synopsis?: string;
+  narrative?: string;
+  primaryCast?: string[];
+  supportingCast?: string[];
+  status?: StorylineStatus;
+  season?: string;
+  episodeRange?: string;
+  tags?: string[];
+}
+
+/**
+ * Storyline update (news/monitoring result)
+ */
+export interface StorylineUpdate {
+  id: string;
+  storylineId: string;
+  updateType: UpdateType;
+  sourceUrl: string | null;
+  sourceName: string | null;
+  title: string | null;
+  content: string;
+  summary: string | null;
+  confidenceScore: number | null;
+  processedAt: Date | null;
+  includedInDigest: boolean;
+  publishedAt: Date | null;
+  createdAt: Date;
+}
+
+/**
+ * Storyline update creation input
+ */
+export interface CreateStorylineUpdateInput {
+  storylineId: string;
+  updateType: UpdateType;
+  sourceUrl?: string;
+  sourceName?: string;
+  title?: string;
+  content: string;
+  summary?: string;
+  confidenceScore?: number;
+  publishedAt?: Date;
+}
+
+/**
+ * Daily digest
+ */
+export interface Digest {
+  id: string;
+  userId: string;
+  universeId: string | null;
+  title: string;
+  summary: string;
+  fullContent: string;
+  updatesCount: number;
+  storylinesCount: number;
+  periodStart: Date;
+  periodEnd: Date;
+  generatedAt: Date;
+  viewedAt: Date | null;
+  emailedAt: Date | null;
+  updateIds: string[];
+}
+
+/**
+ * User notification
+ */
+export interface Notification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  actionUrl: string | null;
+  actionLabel: string | null;
+  digestId: string | null;
+  storylineId: string | null;
+  readAt: Date | null;
+  dismissedAt: Date | null;
+  priority: number;
+  createdAt: Date;
+}
+
+/**
+ * User preferences
+ */
+export interface UserPreferences {
+  userId: string;
+  emailDigests: boolean;
+  emailFrequency: EmailFrequency;
+  showConfidenceScores: boolean;
+  autoExpandUpdates: boolean;
+  monitoringEnabled: boolean;
+  timezone: string;
+  updatedAt: Date;
+}
+
+/**
+ * Storyline search result
+ */
+export interface StorylineSearchResult {
+  id: string;
+  title: string;
+  synopsis: string | null;
+  narrative: string | null;
+  primaryCast: string[];
+  rank: number;
+}
+
+/**
+ * Monitoring result from web sources
+ */
+export interface MonitoringResult {
+  sourceType: 'social' | 'news' | 'web';
+  sourceName: string;
+  sourceUrl: string;
+  title: string;
+  content: string;
+  publishedAt: Date;
+  rawData?: Record<string, unknown>;
+}
+
+/**
+ * Storyline import row (CSV)
+ */
+export interface StorylineImportRow {
+  title: string;
+  synopsis?: string;
+  narrative?: string;
+  primaryCastNames?: string;   // Comma-separated names
+  supportingCastNames?: string; // Comma-separated names
+  season?: string;
+  tags?: string;               // Comma-separated tags
 }

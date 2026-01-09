@@ -9,8 +9,11 @@ import { Network, Sparkles, Globe, BookOpen } from 'lucide-react';
 export default function HomePage() {
   const router = useRouter();
 
+  // Default to Three Musketeers universe for demo
+  const DEFAULT_UNIVERSE_ID = '11111111-1111-1111-1111-111111111111';
+
   const handleSearch = (query: string) => {
-    router.push(`/dashboard?search=${encodeURIComponent(query)}`);
+    router.push(`/universe/${DEFAULT_UNIVERSE_ID}/chat?q=${encodeURIComponent(query)}`);
   };
 
   return (

@@ -82,6 +82,26 @@ export async function getEntity(id: string): Promise<Entity | null> {
 }
 
 /**
+ * Get multiple entities by IDs
+ */
+export async function getEntitiesByIds(ids: string[]): Promise<Entity[]> {
+  if (ids.length === 0) {
+    return [];
+  }
+
+  const results = await readQuery<{ e: Record<string, unknown> }>(
+    `
+    MATCH (e:Entity)
+    WHERE e.id IN $ids
+    RETURN e
+    `,
+    { ids }
+  );
+
+  return results.map((r) => parseEntityFromNeo4j(r.e));
+}
+
+/**
  * List entities for a universe with optional filtering
  */
 export async function listEntities(
