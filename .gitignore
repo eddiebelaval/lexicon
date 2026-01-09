@@ -49,3 +49,7 @@ prisma/migrations/
 
 # Playwright
 /playwright/.cache/
+
+# Context files
+PARITY_MAP.md
+context.md
