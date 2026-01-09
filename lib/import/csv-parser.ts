@@ -204,7 +204,7 @@ export function parseCSV(
 }
 
 /**
- * Common column name mappings for auto-detection
+ * Common column name mappings for auto-detection (entities)
  */
 export const COMMON_COLUMN_MAPPINGS: Record<string, string[]> = {
   name: ['name', 'title', 'entity', 'entity_name', 'entityname'],
@@ -229,6 +229,30 @@ export const COMMON_COLUMN_MAPPINGS: Record<string, string[]> = {
   ],
   status: ['status', 'state', 'active', 'is_active'],
   imageUrl: ['image', 'imageurl', 'image_url', 'avatar', 'picture', 'photo'],
+};
+
+/**
+ * Storyline-specific column name mappings for auto-detection
+ */
+export const STORYLINE_COLUMN_MAPPINGS: Record<string, string[]> = {
+  title: ['title', 'storyline', 'storyline_title', 'storylinetitle', 'name', 'story'],
+  synopsis: ['synopsis', 'summary', 'short_summary', 'shortsummary', 'description', 'overview'],
+  narrative: ['narrative', 'story', 'full_story', 'fullstory', 'content', 'body', 'text', 'details'],
+  primaryCastNames: [
+    'primary_cast', 'primarycast', 'main_cast', 'maincast', 'leads', 'main_characters',
+    'primary', 'principals', 'main'
+  ],
+  supportingCastNames: [
+    'supporting_cast', 'supportingcast', 'supporting', 'secondary_cast', 'secondarycast',
+    'secondary', 'other_cast', 'extras'
+  ],
+  season: ['season', 'season_number', 'seasonnumber', 'series'],
+  episodeRange: [
+    'episode_range', 'episoderange', 'episodes', 'episode_numbers', 'episodenumbers',
+    'episode', 'ep_range'
+  ],
+  tags: ['tags', 'categories', 'labels', 'keywords', 'themes'],
+  status: ['status', 'state', 'storyline_status'],
 };
 
 /**
@@ -296,6 +320,107 @@ export function generateSampleCSV(): string {
         .map((cell) => {
           // Quote cells that contain commas or quotes
           if (cell.includes(',') || cell.includes('"')) {
+            return `"${cell.replace(/"/g, '""')}"`;
+          }
+          return cell;
+        })
+        .join(',')
+    ),
+  ].join('\n');
+
+  return csvContent;
+}
+
+/**
+ * Auto-detect storyline column mappings based on header names
+ */
+export function autoDetectStorylineColumnMappings(
+  headers: string[]
+): Record<string, string | undefined> {
+  const mappings: Record<string, string | undefined> = {
+    title: undefined,
+    synopsis: undefined,
+    narrative: undefined,
+    primaryCastNames: undefined,
+    supportingCastNames: undefined,
+    season: undefined,
+    episodeRange: undefined,
+    tags: undefined,
+    status: undefined,
+  };
+
+  const normalizedHeaders = headers.map((h) => h.toLowerCase().replace(/[_\s-]/g, ''));
+
+  for (const [field, possibleNames] of Object.entries(STORYLINE_COLUMN_MAPPINGS)) {
+    for (let i = 0; i < normalizedHeaders.length; i++) {
+      if (possibleNames.includes(normalizedHeaders[i])) {
+        mappings[field] = headers[i];
+        break;
+      }
+    }
+  }
+
+  return mappings;
+}
+
+/**
+ * Generate a sample storyline CSV string for download template
+ */
+export function generateStorylineSampleCSV(): string {
+  const headers = [
+    'title',
+    'synopsis',
+    'narrative',
+    'primary_cast',
+    'supporting_cast',
+    'season',
+    'episode_range',
+    'tags',
+    'status',
+  ];
+  const rows = [
+    [
+      'Jorge & Anfisa: K-1 Journey',
+      'A Russian beauty and her American fiancé navigate visa struggles and cultural clashes.',
+      'Jorge met Anfisa online and fell in love with her stunning looks and direct personality. After months of video calls, they applied for a K-1 visa. When Anfisa arrived in the US, tensions arose immediately...',
+      'Jorge Nava,Anfisa Arkhipchenko',
+      'Jorge\'s Sister,Immigration Lawyer',
+      'Season 4',
+      '1-12',
+      'K-1 Visa,Long Distance,Cultural Clash',
+      'active',
+    ],
+    [
+      'Darcey & Jesse: Transatlantic Romance',
+      'Connecticut single mom pursues love with a younger Dutch fitness coach.',
+      'Darcey and Jesse\'s relationship was marked by intense passion and equally intense arguments. Their age gap and cultural differences created constant friction...',
+      'Darcey Silva,Jesse Meester',
+      'Stacey Silva,Jesse\'s Stepfather',
+      'Season 1',
+      '5-10',
+      'Age Gap,International,Drama',
+      'archived',
+    ],
+    [
+      'Nicole & Azan: Moroccan Love Story',
+      'A Florida mom travels to Morocco to meet the man she fell in love with online.',
+      'Nicole and Azan\'s story began on a dating app. Despite never meeting in person, Nicole was convinced Azan was her soulmate...',
+      'Nicole Nafziger,Azan Tefou',
+      'Nicole\'s Mom,May (daughter)',
+      'Season 4',
+      '3-8',
+      'Long Distance,Morocco,Online Dating',
+      'developing',
+    ],
+  ];
+
+  const csvContent = [
+    headers.join(','),
+    ...rows.map((row) =>
+      row
+        .map((cell) => {
+          // Quote cells that contain commas, quotes, or newlines
+          if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
             return `"${cell.replace(/"/g, '""')}"`;
           }
           return cell;

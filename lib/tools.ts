@@ -38,6 +38,15 @@ import {
   listRelationships,
   getEntityRelationships,
 } from './relationships';
+import {
+  getStoryline,
+  getStorylineWithCast,
+  searchStorylines,
+  listStorylines,
+  updateStoryline,
+  getStorylinesForEntity,
+} from './storylines';
+import type { Storyline, StorylineWithCast, StorylineStatus } from '@/types';
 import { readQuery } from './neo4j';
 
 // ============================================
@@ -435,6 +444,137 @@ export const lexiconTools: Tool[] = [
         },
       },
       required: ['query'],
+    },
+  },
+
+  // ----------------------------------------
+  // Storyline Operations
+  // ----------------------------------------
+  {
+    name: 'search_storylines',
+    description:
+      'Search storylines by title, synopsis, narrative content, or cast members. Use this to find storylines involving specific characters, themes, or events. Returns matching storylines with titles and synopses.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        query: {
+          type: 'string',
+          description:
+            'Search query to match against storyline titles, synopses, narratives, and tags',
+        },
+        status: {
+          type: 'string',
+          enum: ['active', 'archived', 'developing'],
+          description: 'Optional filter by storyline status',
+        },
+        season: {
+          type: 'string',
+          description: 'Optional filter by season (e.g., "Season 4")',
+        },
+        castEntityId: {
+          type: 'string',
+          description: 'Optional filter by cast member entity ID',
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of results to return (default: 10, max: 50)',
+        },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'get_storyline',
+    description:
+      'Get full details of a specific storyline including the complete narrative, cast members, and metadata. Use this when you need the full story content to answer detailed questions about a storyline.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        storylineId: {
+          type: 'string',
+          description: 'The unique ID of the storyline to retrieve',
+        },
+        includeCast: {
+          type: 'boolean',
+          description:
+            'Whether to include full cast entity details (default: true)',
+        },
+      },
+      required: ['storylineId'],
+    },
+  },
+  {
+    name: 'get_storylines_for_cast',
+    description:
+      'Get all storylines that feature a specific cast member (entity). Use this to find what storylines a character appears in.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        entityId: {
+          type: 'string',
+          description: 'The entity ID of the cast member to find storylines for',
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of storylines to return (default: 20)',
+        },
+      },
+      required: ['entityId'],
+    },
+  },
+  {
+    name: 'update_storyline',
+    description:
+      'Update an existing storyline with new or corrected information. Use this to modify the narrative, synopsis, cast, or other storyline properties based on user input.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        storylineId: {
+          type: 'string',
+          description: 'The ID of the storyline to update',
+        },
+        title: {
+          type: 'string',
+          description: 'New title for the storyline (if changing)',
+        },
+        synopsis: {
+          type: 'string',
+          description: 'Updated synopsis (brief summary, ~300 words)',
+        },
+        narrative: {
+          type: 'string',
+          description: 'Updated full narrative content',
+        },
+        primaryCast: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Updated list of primary cast entity IDs',
+        },
+        supportingCast: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Updated list of supporting cast entity IDs',
+        },
+        status: {
+          type: 'string',
+          enum: ['active', 'archived', 'developing'],
+          description: 'Updated storyline status',
+        },
+        season: {
+          type: 'string',
+          description: 'Updated season identifier',
+        },
+        episodeRange: {
+          type: 'string',
+          description: 'Updated episode range',
+        },
+        tags: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Updated list of tags',
+        },
+      },
+      required: ['storylineId'],
     },
   },
 ];
@@ -901,6 +1041,135 @@ export async function executeToolCall(
         };
       }
 
+      // ----------------------------------------
+      // Storyline Operations
+      // ----------------------------------------
+      case 'search_storylines': {
+        const query = input.query as string;
+        const limit = Math.min((input.limit as number) || 10, 50);
+
+        const storylines = await searchStorylines(universeId, query, limit);
+        return {
+          success: true,
+          result: {
+            count: storylines.length,
+            storylines: storylines.map(formatStorylineSearchResultForResponse),
+          },
+        };
+      }
+
+      case 'get_storyline': {
+        const storylineId = input.storylineId as string;
+        const includeCast = input.includeCast !== false;
+
+        const storyline = includeCast
+          ? await getStorylineWithCast(storylineId)
+          : await getStoryline(storylineId);
+
+        if (!storyline) {
+          return {
+            success: false,
+            result: null,
+            error: `Storyline not found with ID: ${storylineId}`,
+          };
+        }
+
+        // Verify storyline belongs to the universe
+        if (storyline.universeId !== universeId) {
+          return {
+            success: false,
+            result: null,
+            error: 'Storyline belongs to a different universe',
+          };
+        }
+
+        return {
+          success: true,
+          result: formatStorylineForResponse(storyline, includeCast),
+        };
+      }
+
+      case 'get_storylines_for_cast': {
+        const entityId = input.entityId as string;
+        const limit = Math.min((input.limit as number) || 20, 100);
+
+        // Verify entity exists and belongs to universe
+        const entity = await getEntity(entityId);
+        if (!entity) {
+          return {
+            success: false,
+            result: null,
+            error: `Entity not found with ID: ${entityId}`,
+          };
+        }
+        if (entity.universeId !== universeId) {
+          return {
+            success: false,
+            result: null,
+            error: 'Entity belongs to a different universe',
+          };
+        }
+
+        const storylines = await getStorylinesForEntity(entityId, limit);
+        return {
+          success: true,
+          result: {
+            entityName: entity.name,
+            count: storylines.length,
+            storylines: storylines.map((s) => formatStorylineForResponse(s, false)),
+          },
+        };
+      }
+
+      case 'update_storyline': {
+        const storylineId = input.storylineId as string;
+
+        // Verify storyline exists and belongs to universe
+        const existing = await getStoryline(storylineId);
+        if (!existing) {
+          return {
+            success: false,
+            result: null,
+            error: `Storyline not found with ID: ${storylineId}`,
+          };
+        }
+        if (existing.universeId !== universeId) {
+          return {
+            success: false,
+            result: null,
+            error: 'Storyline belongs to a different universe',
+          };
+        }
+
+        const updateInput: Record<string, unknown> = {};
+        if (input.title !== undefined) updateInput.title = input.title as string;
+        if (input.synopsis !== undefined) updateInput.synopsis = input.synopsis as string;
+        if (input.narrative !== undefined) updateInput.narrative = input.narrative as string;
+        if (input.primaryCast !== undefined) updateInput.primaryCast = input.primaryCast as string[];
+        if (input.supportingCast !== undefined) updateInput.supportingCast = input.supportingCast as string[];
+        if (input.status !== undefined) updateInput.status = input.status as StorylineStatus;
+        if (input.season !== undefined) updateInput.season = input.season as string;
+        if (input.episodeRange !== undefined) updateInput.episodeRange = input.episodeRange as string;
+        if (input.tags !== undefined) updateInput.tags = input.tags as string[];
+
+        const updated = await updateStoryline(storylineId, updateInput);
+        if (!updated) {
+          return {
+            success: false,
+            result: null,
+            error: 'Failed to update storyline',
+          };
+        }
+
+        return {
+          success: true,
+          result: {
+            message: `Updated storyline "${updated.title}"`,
+            storyline: formatStorylineForResponse(updated, false),
+          },
+        };
+      }
+
       default:
         return {
           success: false,
@@ -1051,6 +1320,65 @@ async function getGraphNeighborhood(
       context: r.r.context || '',
     })),
   };
+}
+
+/**
+ * Format storyline search result for response (lightweight)
+ */
+function formatStorylineSearchResultForResponse(
+  result: { id: string; title: string; synopsis: string | null; rank: number }
+): Record<string, unknown> {
+  return {
+    id: result.id,
+    title: result.title,
+    synopsis: result.synopsis,
+    relevance: result.rank,
+  };
+}
+
+/**
+ * Format storyline for response (full details)
+ */
+function formatStorylineForResponse(
+  storyline: Storyline | StorylineWithCast,
+  includeCast: boolean
+): Record<string, unknown> {
+  const base: Record<string, unknown> = {
+    id: storyline.id,
+    title: storyline.title,
+    slug: storyline.slug,
+    synopsis: storyline.synopsis,
+    narrative: storyline.narrative,
+    status: storyline.status,
+    season: storyline.season,
+    episodeRange: storyline.episodeRange,
+    tags: storyline.tags,
+    createdAt: storyline.createdAt instanceof Date
+      ? storyline.createdAt.toISOString()
+      : storyline.createdAt,
+    updatedAt: storyline.updatedAt instanceof Date
+      ? storyline.updatedAt.toISOString()
+      : storyline.updatedAt,
+  };
+
+  if (includeCast && 'primaryCastEntities' in storyline) {
+    const withCast = storyline as StorylineWithCast;
+    base.primaryCast = withCast.primaryCastEntities?.map((e) => ({
+      id: e.id,
+      name: e.name,
+      type: e.type,
+    })) || [];
+    base.supportingCast = withCast.supportingCastEntities?.map((e) => ({
+      id: e.id,
+      name: e.name,
+      type: e.type,
+    })) || [];
+  } else {
+    base.primaryCastIds = storyline.primaryCast;
+    base.supportingCastIds = storyline.supportingCast;
+  }
+
+  return base;
 }
 
 /**

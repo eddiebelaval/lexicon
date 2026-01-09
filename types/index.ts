@@ -212,10 +212,11 @@ export interface QueryUnderstanding {
  * Search source citation
  */
 export interface SearchSource {
-  type: 'entity' | 'relationship' | 'web';
+  type: 'entity' | 'relationship' | 'web' | 'storyline';
   name: string;
   url?: string;
   entityId?: string; // For entity sources, the ID of the referenced entity
+  storylineId?: string; // For storyline sources, the ID of the referenced storyline
 }
 
 /**
