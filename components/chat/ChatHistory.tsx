@@ -65,7 +65,8 @@ export function ChatHistory({
       }
 
       const data = await response.json();
-      setConversations(data.conversations || []);
+      // API returns { success: true, data: [...conversations] }
+      setConversations(data.data || data.conversations || []);
     } catch (err) {
       console.error('Error fetching conversations:', err);
       setError('Failed to load conversations');
