@@ -4,19 +4,55 @@
 
 @layer base {
   :root {
-    /* ID8Labs Dark Mode Design System - Dark mode first */
-    --bg-primary: #0A0A0A;
-    --bg-secondary: #151515;
-    --bg-tertiary: #1F1F1F;
+    /* ID8Labs VHS Design System - Dark mode first */
+    /* Blue-black backgrounds for cinematic feel (matching ID8Composer) */
+    --bg-primary: hsl(240 4% 4%);
+    --bg-secondary: hsl(240 4% 6%);
+    --bg-tertiary: hsl(240 4% 8%);
+    --bg-elevated: hsl(240 4% 10%);
+
+    /* Surface hierarchy for cards and panels */
+    --surface-primary: hsl(240 4% 4%);
+    --surface-secondary: hsl(240 4% 6%);
+    --surface-tertiary: hsl(240 4% 8%);
+
+    /* Panel colors */
+    --panel-bg: hsl(240 4% 5%);
+    --panel-border: hsl(0 0% 15%);
+    --panel-header: hsl(240 4% 7%);
+
+    /* Sidebar colors */
+    --sidebar-bg: hsl(240 4% 6%);
+    --sidebar-border: hsl(0 0% 15%);
+    --sidebar-hover: hsl(0 0% 12%);
+    --sidebar-active: hsl(17 85% 12%);
+
+    /* Card colors */
+    --card-bg: hsl(240 4% 6%);
+    --card-border: hsl(240 4% 12%);
+    --card-hover: hsl(240 4% 8%);
 
     /* Text colors */
-    --text-primary: #FAFAFA;
-    --text-secondary: #A3A3A3;
-    --text-tertiary: #737373;
+    --text-primary: #F2F2F2;
+    --text-secondary: hsl(0 0% 60%);
+    --text-tertiary: hsl(0 0% 45%);
+    --text-muted: hsl(0 0% 40%);
 
-    /* Lexicon brand blue */
+    /* VHS Orange accent (ID8Labs brand) */
+    --vhs-orange: hsl(17 85% 62%);
+    --vhs-orange-hover: hsl(17 94% 53%);
+    --vhs-orange-light: hsl(17 85% 15%);
+    --vhs-orange-glow: hsl(17 94% 53%);
+
+    /* Lexicon brand blue (secondary accent) */
     --lexicon-blue: #38bdf8;
     --lexicon-blue-dim: #0284c7;
+
+    /* Borders */
+    --border-default: hsl(0 0% 18%);
+    --border-hover: hsl(0 0% 24%);
+    --border-strong: hsl(0 0% 30%);
+    --border-subtle: hsl(0 0% 12%);
 
     /* Border radius system - NO 90° angles */
     --radius-xs: 0.25rem;
@@ -27,59 +63,64 @@
     --radius-2xl: 2rem;
     --radius-full: 9999px;
 
-    /* Glow effects */
+    /* Glow effects - VHS Orange */
+    --vhs-glow: 0 0 30px hsla(17, 85%, 62%, 0.4), 0 0 60px hsla(17, 85%, 62%, 0.2);
+    --vhs-glow-sm: 0 0 15px hsla(17, 85%, 62%, 0.3);
+    --vhs-glow-lg: 0 0 50px hsla(17, 85%, 62%, 0.5), 0 0 100px hsla(17, 85%, 62%, 0.25);
+
+    /* Legacy Lexicon blue glow (kept for compatibility) */
     --lexicon-glow: 0 0 30px rgba(56, 189, 248, 0.4), 0 0 60px rgba(56, 189, 248, 0.2);
     --lexicon-glow-sm: 0 0 15px rgba(56, 189, 248, 0.3);
     --lexicon-glow-lg: 0 0 50px rgba(56, 189, 248, 0.5), 0 0 100px rgba(56, 189, 248, 0.25);
 
     /* Glass surfaces */
-    --glass-bg: rgba(21, 21, 21, 0.8);
+    --glass-bg: hsla(240, 4%, 6%, 0.8);
     --glass-border: rgba(255, 255, 255, 0.1);
 
     /* Shadcn compatibility - dark mode values */
-    --background: 0 0% 4%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 8%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 8%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 199 89% 60%;
-    --primary-foreground: 0 0% 4%;
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 64%;
-    --accent: 0 0% 12%;
-    --accent-foreground: 0 0% 98%;
+    --background: 240 4% 4%;
+    --foreground: 0 0% 95%;
+    --card: 240 4% 6%;
+    --card-foreground: 0 0% 95%;
+    --popover: 240 4% 6%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 17 85% 62%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 80%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 95%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 199 89% 60%;
+    --input: 0 0% 14%;
+    --ring: 17 85% 55%;
     --radius: 0.75rem;
   }
 
   /* Dark class redundant since we're dark-first, but kept for compatibility */
   .dark {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 8%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 8%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 199 89% 60%;
-    --primary-foreground: 0 0% 4%;
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 64%;
-    --accent: 0 0% 12%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62% 30%;
+    --background: 240 4% 4%;
+    --foreground: 0 0% 95%;
+    --card: 240 4% 6%;
+    --card-foreground: 0 0% 95%;
+    --popover: 240 4% 6%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 17 85% 62%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 80%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 95%;
+    --destructive: 0 84% 65%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 199 89% 60%;
+    --input: 0 0% 14%;
+    --ring: 17 85% 55%;
   }
 }
 
@@ -99,32 +140,40 @@
   }
 }
 
-/* Custom Scrollbar - ID8Labs style */
+/* Custom Scrollbar - VHS Orange Pill Style */
 @layer utilities {
   /* Scrollbar for webkit browsers */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
   }
 
   ::-webkit-scrollbar-track {
-    background: var(--bg-secondary);
-    border-radius: var(--radius-full);
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-full);
+    background: hsla(17, 85%, 62%, 0.5);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--lexicon-blue-dim);
+    background: hsla(17, 85%, 62%, 0.7);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background: hsla(17, 85%, 62%, 0.9);
   }
 
   /* Firefox */
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--bg-tertiary) var(--bg-secondary);
+    scrollbar-color: hsla(17, 85%, 62%, 0.5) transparent;
   }
 }
 

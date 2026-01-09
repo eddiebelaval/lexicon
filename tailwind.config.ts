@@ -10,13 +10,41 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // ID8Labs Surface colors
+        // ID8Labs VHS Surface colors (blue-black for cinematic feel)
         surface: {
-          primary: "#0A0A0A",
-          secondary: "#151515",
-          tertiary: "#1F1F1F",
+          primary: "hsl(240 4% 4%)",
+          secondary: "hsl(240 4% 6%)",
+          tertiary: "hsl(240 4% 8%)",
+          elevated: "hsl(240 4% 10%)",
         },
-        // Lexicon brand colors - defined with DEFAULT for opacity support
+        // VHS Orange - ID8Labs brand accent
+        vhs: {
+          DEFAULT: "hsl(17 85% 62%)",
+          50: "hsl(17 85% 95%)",
+          100: "hsl(17 85% 90%)",
+          200: "hsl(17 85% 80%)",
+          300: "hsl(17 85% 70%)",
+          400: "hsl(17 85% 62%)",
+          500: "hsl(17 94% 53%)",
+          600: "hsl(17 85% 45%)",
+          700: "hsl(17 85% 35%)",
+          800: "hsl(17 85% 25%)",
+          900: "hsl(17 85% 15%)",
+          950: "hsl(17 85% 8%)",
+        },
+        // Panel and sidebar semantic colors
+        panel: {
+          bg: "hsl(240 4% 5%)",
+          border: "hsl(0 0% 15%)",
+          header: "hsl(240 4% 7%)",
+        },
+        sidebar: {
+          bg: "hsl(240 4% 6%)",
+          border: "hsl(0 0% 15%)",
+          hover: "hsl(0 0% 12%)",
+          active: "hsl(17 85% 12%)",
+        },
+        // Lexicon brand colors - kept for compatibility
         lexicon: {
           DEFAULT: "#0ea5e9",
           50: "#f0f9ff",
@@ -73,10 +101,17 @@ const config: Config = {
         ring: "hsl(var(--ring))",
       },
       boxShadow: {
+        // VHS Orange glows
+        "vhs-sm": "0 0 15px hsla(17, 85%, 62%, 0.3)",
+        "vhs": "0 0 30px hsla(17, 85%, 62%, 0.4), 0 0 60px hsla(17, 85%, 62%, 0.2)",
+        "vhs-lg": "0 0 50px hsla(17, 85%, 62%, 0.5), 0 0 100px hsla(17, 85%, 62%, 0.25)",
+        // Legacy Lexicon blue glows
         "glow-sm": "0 0 15px rgba(56, 189, 248, 0.3)",
         glow: "0 0 30px rgba(56, 189, 248, 0.4), 0 0 60px rgba(56, 189, 248, 0.2)",
         "glow-lg": "0 0 50px rgba(56, 189, 248, 0.5), 0 0 100px rgba(56, 189, 248, 0.25)",
+        // General effects
         glass: "0 8px 32px rgba(0, 0, 0, 0.3)",
+        "card-hover": "0 4px 20px rgba(0, 0, 0, 0.4)",
       },
       borderRadius: {
         xs: "0.25rem",

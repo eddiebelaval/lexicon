@@ -7,28 +7,57 @@
  * - Search bar with debouncing (primary action)
  * - Entity list (sidebar)
  * - Entity detail with relationships (right panel)
- * - Graph visualization (main area)
+ * - Graph visualization (main area) OR Wiki view
  * - Search results panel with AI answers
  * - CSV import functionality
+ * - View toggle: Graph vs Wiki
  *
  * Design: ID8Labs dark mode first, Lexicon blue accent
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Upload, X, AlertCircle, BookOpen } from 'lucide-react';
+import { Upload, X, AlertCircle, BookOpen, Network, FileText } from 'lucide-react';
 import { EntityList, EntityDetail, EntityForm } from '@/components/entities';
 import { GraphViewer } from '@/components/graph';
 import { SearchBar, SearchResults } from '@/components/search';
 import { CSVImportDialog } from '@/components/import';
+import { UniverseWiki } from '@/components/wiki';
 import type { Entity, GraphNode, RelationshipWithEntities, SynthesizedAnswer, SearchSource } from '@/types';
 import type { GraphSearchResult } from '@/lib/search';
 import type { DisplayEntity } from '@/components/entities/entity-card';
+import { cn } from '@/lib/utils';
+
+type ViewMode = 'graph' | 'wiki';
 
 export default function UniversePage() {
   const params = useParams();
   const universeId = params.id as string;
+
+  // View mode state
+  const [viewMode, setViewMode] = useState<ViewMode>('graph');
+
+  // Universe metadata (for Wiki view)
+  const [universeName, setUniverseName] = useState<string>('');
+  const [universeDescription, setUniverseDescription] = useState<string>('');
+
+  // Fetch universe metadata
+  useEffect(() => {
+    async function fetchUniverse() {
+      try {
+        const response = await fetch(`/api/universes/${universeId}`);
+        const data = await response.json();
+        if (data.success) {
+          setUniverseName(data.data.name || 'Universe');
+          setUniverseDescription(data.data.description || '');
+        }
+      } catch {
+        // Silent fail - universe name is optional
+      }
+    }
+    fetchUniverse();
+  }, [universeId]);
 
   // Entity state
   const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
@@ -253,17 +282,45 @@ export default function UniversePage() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
+              {/* View Mode Toggle */}
+              <div className="flex items-center bg-surface-secondary rounded-lg p-0.5 border border-[hsl(0,0%,18%)]">
+                <button
+                  onClick={() => setViewMode('graph')}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200",
+                    viewMode === 'graph'
+                      ? "bg-vhs-900 text-vhs-400 shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  title="Graph View"
+                >
+                  <Network className="h-4 w-4" />
+                  <span className="hidden sm:inline">Graph</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('wiki')}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200",
+                    viewMode === 'wiki'
+                      ? "bg-vhs-900 text-vhs-400 shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  title="Wiki View"
+                >
+                  <FileText className="h-4 w-4" />
+                  <span className="hidden sm:inline">Wiki</span>
+                </button>
+              </div>
+
               {/* AI Mode Toggle */}
               <button
                 onClick={handleToggleAiMode}
-                className={`
-                  flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-                  text-sm font-medium transition-all duration-200
-                  ${aiMode
-                    ? 'bg-[#38bdf8]/20 text-[#38bdf8] border border-[#38bdf8]/40'
-                    : 'bg-[#1f1f1f] text-[#888] border border-[#333] hover:border-[#444]'
-                  }
-                `}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
+                  aiMode
+                    ? "bg-[#38bdf8]/20 text-[#38bdf8] border border-[#38bdf8]/40"
+                    : "bg-[#1f1f1f] text-[#888] border border-[#333] hover:border-[#444]"
+                )}
               >
                 AI
               </button>
@@ -297,57 +354,73 @@ export default function UniversePage() {
 
       {/* Main Layout */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar - Entity List */}
-        <aside className="w-64 border-r border-[#1a1a1a] bg-[#0d0d0d] hidden md:flex flex-col">
-          <EntityList
-            key={listKey}
+        {viewMode === 'graph' ? (
+          <>
+            {/* Sidebar - Entity List */}
+            <aside className="w-64 border-r border-[#1a1a1a] bg-[#0d0d0d] hidden md:flex flex-col">
+              <EntityList
+                key={listKey}
+                universeId={universeId}
+                onSelectEntity={handleSelectEntity}
+                onCreateEntity={handleCreateEntity}
+                selectedEntityId={selectedEntity?.id}
+              />
+            </aside>
+
+            {/* Main Content - Graph + Results */}
+            <main className="flex-1 flex flex-col min-w-0">
+              {/* Graph Visualization Area */}
+              <div className="flex-1 relative bg-[#080808] p-4 overflow-hidden">
+                <GraphViewer
+                  key={graphKey}
+                  universeId={universeId}
+                  onNodeSelect={handleGraphNodeSelect}
+                />
+              </div>
+
+              {/* Search Results Panel */}
+              <div className="h-1/3 border-t border-[#1a1a1a] bg-[#0a0a0a] p-4 overflow-auto">
+                <SearchResults
+                  entities={searchResults.entities}
+                  relationships={searchResults.relationships}
+                  query={searchResults.query}
+                  onSelectEntity={handleSearchEntitySelect}
+                  onSelectRelationship={handleSearchRelationshipSelect}
+                  loading={searchLoading}
+                  aiMode={aiMode}
+                  aiAnswer={aiAnswer}
+                  aiLoading={aiLoading}
+                  aiError={aiError}
+                  onSourceClick={handleSourceClick}
+                />
+              </div>
+            </main>
+
+            {/* Right Panel - Entity Detail */}
+            {selectedEntity && (
+              <aside className="w-80 border-l border-[#1a1a1a] bg-[#0d0d0d] hidden lg:flex flex-col">
+                <EntityDetail
+                  entity={selectedEntity}
+                  onEdit={handleEditEntity}
+                  onDelete={handleDeleteEntity}
+                  onClose={handleCloseDetail}
+                  onSelectRelatedEntity={setSelectedEntity}
+                />
+              </aside>
+            )}
+          </>
+        ) : (
+          /* Wiki View - Full Width Editorial Layout */
+          <UniverseWiki
             universeId={universeId}
-            onSelectEntity={handleSelectEntity}
-            onCreateEntity={handleCreateEntity}
-            selectedEntityId={selectedEntity?.id}
+            universeName={universeName}
+            universeDescription={universeDescription}
+            onEntityClick={(entity) => {
+              setSelectedEntity(entity);
+              // Optionally switch to graph view to show detail panel
+              // setViewMode('graph');
+            }}
           />
-        </aside>
-
-        {/* Main Content - Graph + Results */}
-        <main className="flex-1 flex flex-col min-w-0">
-          {/* Graph Visualization Area */}
-          <div className="flex-1 relative bg-[#080808] p-4 overflow-hidden">
-            <GraphViewer
-              key={graphKey}
-              universeId={universeId}
-              onNodeSelect={handleGraphNodeSelect}
-            />
-          </div>
-
-          {/* Search Results Panel */}
-          <div className="h-1/3 border-t border-[#1a1a1a] bg-[#0a0a0a] p-4 overflow-auto">
-            <SearchResults
-              entities={searchResults.entities}
-              relationships={searchResults.relationships}
-              query={searchResults.query}
-              onSelectEntity={handleSearchEntitySelect}
-              onSelectRelationship={handleSearchRelationshipSelect}
-              loading={searchLoading}
-              aiMode={aiMode}
-              aiAnswer={aiAnswer}
-              aiLoading={aiLoading}
-              aiError={aiError}
-              onSourceClick={handleSourceClick}
-            />
-          </div>
-        </main>
-
-        {/* Right Panel - Entity Detail */}
-        {selectedEntity && (
-          <aside className="w-80 border-l border-[#1a1a1a] bg-[#0d0d0d] hidden lg:flex flex-col">
-            <EntityDetail
-              entity={selectedEntity}
-              onEdit={handleEditEntity}
-              onDelete={handleDeleteEntity}
-              onClose={handleCloseDetail}
-              onSelectRelatedEntity={setSelectedEntity}
-            />
-          </aside>
         )}
       </div>
 
