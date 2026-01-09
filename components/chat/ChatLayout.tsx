@@ -68,7 +68,8 @@ export function ChatLayout({ universeId, initialQuery }: ChatLayoutProps) {
       }
 
       const data = await response.json();
-      setMessages(data.conversation?.messages || data.messages || []);
+      // API returns { success: true, data: { ...conversation, messages: [...] } }
+      setMessages(data.data?.messages || data.conversation?.messages || data.messages || []);
     } catch (err) {
       console.error('Error loading messages:', err);
     } finally {
