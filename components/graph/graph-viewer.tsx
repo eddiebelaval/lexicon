@@ -37,13 +37,20 @@ export function GraphViewer({ universeId, onNodeSelect }: GraphViewerProps) {
     const updateDimensions = () => {
       if (containerRef.current) {
         const { width, height } = containerRef.current.getBoundingClientRect();
-        setDimensions({ width: width - 272, height: height }); // Subtract sidebar width (256px + 16px gap)
+        // Subtract sidebar width (256px + 16px gap), ensure minimum dimensions
+        const graphWidth = Math.max(400, width - 272);
+        const graphHeight = Math.max(400, height);
+        setDimensions({ width: graphWidth, height: graphHeight });
       }
     };
 
-    updateDimensions();
+    // Small delay to ensure container has rendered
+    const timeoutId = setTimeout(updateDimensions, 50);
     window.addEventListener('resize', updateDimensions);
-    return () => window.removeEventListener('resize', updateDimensions);
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', updateDimensions);
+    };
   }, []);
 
   // Handle node click

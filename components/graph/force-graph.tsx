@@ -160,9 +160,9 @@ export function ForceGraph({
       .enter()
       .append('line')
       .attr('class', 'graph-link')
-      .attr('stroke', '#94a3b8')
-      .attr('stroke-opacity', 0.6)
-      .attr('stroke-width', (d) => Math.sqrt(d.strength));
+      .attr('stroke', '#64748b')
+      .attr('stroke-opacity', 0.8)
+      .attr('stroke-width', (d) => Math.sqrt(d.strength) + 1);
 
     const link = linkEnter.merge(linkSelection);
 
@@ -197,7 +197,7 @@ export function ForceGraph({
       .attr('class', 'graph-label')
       .attr('dy', 25)
       .attr('text-anchor', 'middle')
-      .attr('fill', '#1e293b')
+      .attr('fill', '#e5e7eb')
       .attr('font-size', '11px')
       .attr('font-weight', '500')
       .text((d) => d.name);
