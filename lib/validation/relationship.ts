@@ -38,8 +38,8 @@ export const strengthSchema = z.union([
  */
 export const createRelationshipSchema = z.object({
   type: relationshipTypeSchema,
-  sourceId: z.string().uuid('Invalid source entity ID'),
-  targetId: z.string().uuid('Invalid target entity ID'),
+  sourceId: z.string().min(1, 'Source entity ID is required'),
+  targetId: z.string().min(1, 'Target entity ID is required'),
   context: z
     .string()
     .max(2000, 'Context must be 2000 characters or less')
@@ -100,7 +100,7 @@ export const updateRelationshipSchema = z
  */
 export const listRelationshipsQuerySchema = z.object({
   universeId: z.string().uuid('Invalid universe ID'),
-  entityId: z.string().uuid('Invalid entity ID').optional(),
+  entityId: z.string().min(1, 'Entity ID cannot be empty').optional(),
   type: relationshipTypeSchema.optional(),
   limit: z.coerce.number().int().min(1).max(100).optional().default(50),
   offset: z.coerce.number().int().min(0).optional().default(0),

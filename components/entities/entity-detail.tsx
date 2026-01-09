@@ -39,7 +39,7 @@ export function EntityDetail({
       setLoadingRelationships(true);
       setRelationshipError(null);
       try {
-        const response = await fetch(`/api/relationships?entityId=${entity.id}`, {
+        const response = await fetch(`/api/relationships?universeId=${entity.universeId}&entityId=${entity.id}`, {
           signal: controller.signal,
         });
         const data = await response.json();

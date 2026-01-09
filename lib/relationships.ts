@@ -140,9 +140,11 @@ export async function listRelationships(
   const orderClause = `r.${sortBy} ${sortOrder.toUpperCase()}`;
 
   // Get total count
+  // Note: Relationships can have different labels (KNOWS, OPPOSES, etc.)
+  // so we match any relationship type with [r]
   const countResult = await readQuery<{ count: number }>(
     `
-    MATCH (source:Entity)-[r:RELATES_TO]->(target:Entity)
+    MATCH (source:Entity)-[r]->(target:Entity)
     WHERE ${whereClause}
     RETURN count(r) as count
     `,
@@ -158,7 +160,7 @@ export async function listRelationships(
     target: Record<string, unknown>;
   }>(
     `
-    MATCH (source:Entity)-[r:RELATES_TO]->(target:Entity)
+    MATCH (source:Entity)-[r]->(target:Entity)
     WHERE ${whereClause}
     RETURN r, source, target
     ORDER BY ${orderClause}
