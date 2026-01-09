@@ -37,14 +37,14 @@ export function GraphControls({
   onToggleType,
 }: GraphControlsProps) {
   return (
-    <div className="flex flex-col gap-4 p-4 bg-white border border-slate-200 rounded-lg shadow-sm">
+    <div className="flex flex-col gap-4 p-4 bg-[#141414] border border-[#1f1f1f] rounded-lg">
       {/* Zoom Controls */}
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-slate-700">Zoom</h3>
+        <h3 className="text-sm font-semibold text-white">Zoom</h3>
         <div className="flex gap-2">
           <button
             onClick={onZoomIn}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-[#ccc] bg-[#1f1f1f] hover:bg-[#252525] hover:text-white rounded-lg transition-colors"
             title="Zoom in"
           >
             <ZoomIn className="w-4 h-4" />
@@ -52,7 +52,7 @@ export function GraphControls({
           </button>
           <button
             onClick={onZoomOut}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-[#ccc] bg-[#1f1f1f] hover:bg-[#252525] hover:text-white rounded-lg transition-colors"
             title="Zoom out"
           >
             <ZoomOut className="w-4 h-4" />
@@ -61,7 +61,7 @@ export function GraphControls({
         </div>
         <button
           onClick={onResetZoom}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-[#ccc] bg-[#1f1f1f] hover:bg-[#252525] hover:text-white rounded-lg transition-colors"
           title="Reset zoom to fit view"
         >
           <Maximize2 className="w-4 h-4" />
@@ -71,26 +71,26 @@ export function GraphControls({
 
       {/* Entity Type Filters */}
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-slate-700">Show/Hide Types</h3>
+        <h3 className="text-sm font-semibold text-white">Show/Hide Types</h3>
         <div className="space-y-1.5">
           {ENTITY_TYPES.map(({ type, label, color }) => {
             const isVisible = !hiddenTypes.has(type);
             return (
               <label
                 key={type}
-                className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 px-2 py-1.5 rounded transition-colors"
+                className="flex items-center gap-2 cursor-pointer hover:bg-[#1f1f1f] px-2 py-1.5 rounded-lg transition-colors"
               >
                 <input
                   type="checkbox"
                   checked={isVisible}
                   onChange={() => onToggleType(type)}
-                  className="w-4 h-4 rounded border-slate-300 text-lexicon-600 focus:ring-lexicon-500"
+                  className="w-4 h-4 rounded border-[#333] bg-[#1a1a1a] text-[#38bdf8] focus:ring-[#38bdf8] focus:ring-offset-0"
                 />
                 <div
-                  className="w-3 h-3 rounded-full border border-white"
+                  className="w-3 h-3 rounded-full"
                   style={{ backgroundColor: color }}
                 />
-                <span className="text-sm text-slate-700">{label}</span>
+                <span className="text-sm text-[#ccc]">{label}</span>
               </label>
             );
           })}
@@ -99,10 +99,10 @@ export function GraphControls({
 
       {/* Layout Controls */}
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-slate-700">Layout</h3>
+        <h3 className="text-sm font-semibold text-white">Layout</h3>
         <button
           onClick={onRestartSimulation}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-white bg-lexicon-600 hover:bg-lexicon-700 rounded-md transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-[#0a0a0a] bg-[#38bdf8] hover:bg-[#5ccfff] rounded-lg transition-colors"
           title="Reset layout and restart physics simulation"
         >
           <RefreshCw className="w-4 h-4" />

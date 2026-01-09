@@ -4,48 +4,82 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 199 89% 48%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 199 89% 48%;
-    --radius: 0.5rem;
+    /* ID8Labs Dark Mode Design System - Dark mode first */
+    --bg-primary: #0A0A0A;
+    --bg-secondary: #151515;
+    --bg-tertiary: #1F1F1F;
+
+    /* Text colors */
+    --text-primary: #FAFAFA;
+    --text-secondary: #A3A3A3;
+    --text-tertiary: #737373;
+
+    /* Lexicon brand blue */
+    --lexicon-blue: #38bdf8;
+    --lexicon-blue-dim: #0284c7;
+
+    /* Border radius system - NO 90° angles */
+    --radius-xs: 0.25rem;
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+    --radius-2xl: 2rem;
+    --radius-full: 9999px;
+
+    /* Glow effects */
+    --lexicon-glow: 0 0 30px rgba(56, 189, 248, 0.4), 0 0 60px rgba(56, 189, 248, 0.2);
+    --lexicon-glow-sm: 0 0 15px rgba(56, 189, 248, 0.3);
+    --lexicon-glow-lg: 0 0 50px rgba(56, 189, 248, 0.5), 0 0 100px rgba(56, 189, 248, 0.25);
+
+    /* Glass surfaces */
+    --glass-bg: rgba(21, 21, 21, 0.8);
+    --glass-border: rgba(255, 255, 255, 0.1);
+
+    /* Shadcn compatibility - dark mode values */
+    --background: 0 0% 4%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 199 89% 60%;
+    --primary-foreground: 0 0% 4%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 0 0% 12%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 199 89% 60%;
+    --radius: 0.75rem;
   }
 
+  /* Dark class redundant since we're dark-first, but kept for compatibility */
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 199 89% 48%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 199 89% 48%;
+    --background: 0 0% 4%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 199 89% 60%;
+    --primary-foreground: 0 0% 4%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 0 0% 12%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 199 89% 60%;
   }
 }
 
@@ -53,8 +87,153 @@
   * {
     @apply border-border;
   }
+
+  html {
+    /* Force dark mode - prevent flash of light content */
+    color-scheme: dark;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    background-color: var(--bg-primary);
+  }
+}
+
+/* Custom Scrollbar - ID8Labs style */
+@layer utilities {
+  /* Scrollbar for webkit browsers */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-full);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-full);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--lexicon-blue-dim);
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--bg-tertiary) var(--bg-secondary);
+  }
+}
+
+/* Glass Morphism Utilities */
+@layer components {
+  .glass-surface {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+  }
+
+  .glass-input {
+    background: rgba(31, 31, 31, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s ease;
+  }
+
+  .glass-input:focus {
+    border-color: var(--lexicon-blue);
+    box-shadow: var(--lexicon-glow-sm);
+    outline: none;
+  }
+
+  .glass-card {
+    background: rgba(21, 21, 21, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-lg);
+  }
+}
+
+/* Hover Effects */
+@layer components {
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-4px);
+  }
+
+  .hover-glow {
+    transition: box-shadow 0.3s ease;
+  }
+
+  .hover-glow:hover {
+    box-shadow: var(--lexicon-glow-sm);
+  }
+
+  .hover-lift-glow {
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+  }
+
+  .hover-lift-glow:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--lexicon-glow);
+  }
+}
+
+/* Glow Effects */
+@layer components {
+  .glow {
+    box-shadow: var(--lexicon-glow);
+  }
+
+  .glow-sm {
+    box-shadow: var(--lexicon-glow-sm);
+  }
+
+  .glow-lg {
+    box-shadow: var(--lexicon-glow-lg);
+  }
+
+  .text-glow {
+    text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+  }
+}
+
+/* Surface backgrounds */
+@layer utilities {
+  .bg-surface-primary {
+    background-color: var(--bg-primary);
+  }
+
+  .bg-surface-secondary {
+    background-color: var(--bg-secondary);
+  }
+
+  .bg-surface-tertiary {
+    background-color: var(--bg-tertiary);
+  }
+}
+
+/* Text colors */
+@layer utilities {
+  .text-primary-custom {
+    color: var(--text-primary);
+  }
+
+  .text-secondary-custom {
+    color: var(--text-secondary);
+  }
+
+  .text-tertiary-custom {
+    color: var(--text-tertiary);
   }
 }
 
@@ -82,11 +261,57 @@
 }
 
 .graph-label {
-  @apply text-xs fill-foreground pointer-events-none;
+  @apply text-xs pointer-events-none;
+  fill: var(--text-primary);
   text-anchor: middle;
 }
 
 /* Search highlight */
 .search-highlight {
-  @apply bg-yellow-200 dark:bg-yellow-800 px-0.5 rounded;
+  @apply px-0.5 rounded;
+  background-color: rgba(56, 189, 248, 0.3);
+}
+
+/* Animations */
+@layer utilities {
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: var(--lexicon-glow-sm);
+    }
+    50% {
+      box-shadow: var(--lexicon-glow);
+    }
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out forwards;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
 }

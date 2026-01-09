@@ -10,12 +10,14 @@
  * - Graph visualization (main area)
  * - Search results panel with AI answers
  * - CSV import functionality
+ *
+ * Design: ID8Labs dark mode first, Lexicon blue accent
  */
 
 import { useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import { Upload } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { Upload, X, AlertCircle, BookOpen } from 'lucide-react';
 import { EntityList, EntityDetail, EntityForm } from '@/components/entities';
 import { GraphViewer } from '@/components/graph';
 import { SearchBar, SearchResults } from '@/components/search';
@@ -52,6 +54,15 @@ export default function UniversePage() {
 
   // Import state
   const [showImportDialog, setShowImportDialog] = useState(false);
+
+  // Error state for user feedback
+  const [pageError, setPageError] = useState<string | null>(null);
+
+  // Auto-dismiss error after 5 seconds
+  const showError = useCallback((message: string) => {
+    setPageError(message);
+    setTimeout(() => setPageError(null), 5000);
+  }, []);
 
   // Entity handlers
   const handleSelectEntity = useCallback((entity: Entity) => {
@@ -115,11 +126,13 @@ export default function UniversePage() {
 
       if (data.success) {
         setSelectedEntity(data.data);
+      } else {
+        showError(data.error?.message || 'Failed to load entity details');
       }
-    } catch (error) {
-      console.error('Failed to fetch entity details:', error);
+    } catch {
+      showError('Network error: Could not load entity details');
     }
-  }, []);
+  }, [showError]);
 
   // Search handlers
   const handleSearch = useCallback((query: string) => {
@@ -141,11 +154,13 @@ export default function UniversePage() {
       const data = await response.json();
       if (data.success) {
         setSelectedEntity(data.data);
+      } else {
+        showError(data.error?.message || 'Failed to load entity');
       }
-    } catch (error) {
-      console.error('Failed to fetch entity:', error);
+    } catch {
+      showError('Network error: Could not load entity');
     }
-  }, []);
+  }, [showError]);
 
   // Handle selecting relationship from search results
   const handleSearchRelationshipSelect = useCallback((relationship: RelationshipWithEntities) => {
@@ -162,12 +177,14 @@ export default function UniversePage() {
         const data = await response.json();
         if (data.success) {
           setSelectedEntity(data.data);
+        } else {
+          showError(data.error?.message || 'Failed to load source entity');
         }
-      } catch (error) {
-        console.error('Failed to fetch entity:', error);
+      } catch {
+        showError('Network error: Could not load source entity');
       }
     }
-  }, []);
+  }, [showError]);
 
   // Toggle AI mode
   const handleToggleAiMode = useCallback(async () => {
@@ -209,14 +226,22 @@ export default function UniversePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-[#0a0a0a] flex flex-col">
       {/* Header with Search */}
-      <header className="border-b sticky top-0 bg-background/95 backdrop-blur z-50">
+      <header
+        className="border-b border-[#1a1a1a] sticky top-0 z-50"
+        style={{
+          backgroundColor: 'rgba(10, 10, 10, 0.95)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+        }}
+      >
         <div className="max-w-full px-4 py-3">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-lexicon-600 shrink-0">
-              Lexicon
-            </h1>
+            <Link href="/dashboard" className="flex items-center gap-2 group shrink-0">
+              <BookOpen className="w-5 h-5 text-[#38bdf8] group-hover:text-[#5ccfff] transition-colors" />
+              <span className="text-lg font-semibold text-white">Lexicon</span>
+            </Link>
 
             {/* Search Bar - Primary Action */}
             <div className="flex-1 max-w-2xl">
@@ -229,37 +254,51 @@ export default function UniversePage() {
 
             <div className="flex items-center gap-2 shrink-0">
               {/* AI Mode Toggle */}
-              <Button
-                variant={aiMode ? 'default' : 'outline'}
-                size="sm"
+              <button
                 onClick={handleToggleAiMode}
-                className={aiMode ? 'bg-lexicon-600 hover:bg-lexicon-700' : ''}
+                className={`
+                  flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                  text-sm font-medium transition-all duration-200
+                  ${aiMode
+                    ? 'bg-[#38bdf8]/20 text-[#38bdf8] border border-[#38bdf8]/40'
+                    : 'bg-[#1f1f1f] text-[#888] border border-[#333] hover:border-[#444]'
+                  }
+                `}
               >
                 AI
-              </Button>
+              </button>
 
               {/* CSV Import Button */}
-              <Button
-                variant="outline"
-                size="sm"
+              <button
                 onClick={() => setShowImportDialog(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1f1f1f] text-[#888] border border-[#333] hover:border-[#444] text-sm font-medium transition-all duration-200"
               >
-                <Upload className="h-4 w-4 mr-1" />
+                <Upload className="h-4 w-4" />
                 Import
-              </Button>
-
-              <span className="text-sm text-muted-foreground truncate max-w-[200px]">
-                {universeId}
-              </span>
+              </button>
             </div>
           </div>
         </div>
       </header>
 
+      {/* Error Banner */}
+      {pageError && (
+        <div className="bg-red-900/20 border-b border-red-800/30 px-4 py-2 flex items-center gap-2 text-red-400">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span className="text-sm flex-1">{pageError}</span>
+          <button
+            onClick={() => setPageError(null)}
+            className="text-red-500 hover:text-red-400 p-1 transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {/* Main Layout */}
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar - Entity List */}
-        <aside className="w-64 border-r bg-muted/20 hidden md:flex flex-col">
+        <aside className="w-64 border-r border-[#1a1a1a] bg-[#0d0d0d] hidden md:flex flex-col">
           <EntityList
             key={listKey}
             universeId={universeId}
@@ -272,7 +311,7 @@ export default function UniversePage() {
         {/* Main Content - Graph + Results */}
         <main className="flex-1 flex flex-col min-w-0">
           {/* Graph Visualization Area */}
-          <div className="flex-1 relative bg-muted/10 p-4 overflow-hidden">
+          <div className="flex-1 relative bg-[#080808] p-4 overflow-hidden">
             <GraphViewer
               key={graphKey}
               universeId={universeId}
@@ -281,7 +320,7 @@ export default function UniversePage() {
           </div>
 
           {/* Search Results Panel */}
-          <div className="h-1/3 border-t bg-background p-4 overflow-auto">
+          <div className="h-1/3 border-t border-[#1a1a1a] bg-[#0a0a0a] p-4 overflow-auto">
             <SearchResults
               entities={searchResults.entities}
               relationships={searchResults.relationships}
@@ -300,7 +339,7 @@ export default function UniversePage() {
 
         {/* Right Panel - Entity Detail */}
         {selectedEntity && (
-          <aside className="w-80 border-l hidden lg:flex flex-col">
+          <aside className="w-80 border-l border-[#1a1a1a] bg-[#0d0d0d] hidden lg:flex flex-col">
             <EntityDetail
               entity={selectedEntity}
               onEdit={handleEditEntity}

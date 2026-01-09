@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Search, X, Loader2 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { cn, debounce } from '@/lib/utils';
 import type { GraphSearchResult } from '@/lib/search';
 
@@ -107,22 +106,22 @@ export function SearchBar({
   return (
     <div className={cn('relative flex items-center gap-2', className)}>
       <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#666]" />
+        <input
           id="search-input"
           type="text"
           placeholder="Search entities, relationships..."
           value={query}
           onChange={handleChange}
-          className="pl-9 pr-9"
+          className="w-full h-10 pl-9 pr-9 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-white placeholder:text-[#666] text-sm focus:outline-none focus:border-[#38bdf8] transition-colors"
         />
         {isLoading && (
-          <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+          <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-[#666]" />
         )}
         {!isLoading && query && (
           <button
             onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#666] hover:text-white transition-colors"
             aria-label="Clear search"
           >
             <X className="h-4 w-4" />
@@ -130,8 +129,8 @@ export function SearchBar({
         )}
       </div>
 
-      <div className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground">
-        <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100">
+      <div className="hidden sm:flex items-center gap-1 text-xs text-[#666]">
+        <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded-md border border-[#333] bg-[#1f1f1f] px-1.5 font-mono text-[10px] font-medium text-[#888]">
           <span className="text-xs">⌘</span>K
         </kbd>
       </div>

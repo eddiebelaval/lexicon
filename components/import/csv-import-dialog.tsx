@@ -94,6 +94,7 @@ export function CSVImportDialog({
     errors: [] as { row: number; message: string }[],
   });
   const [isDragging, setIsDragging] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
 
   // Reset state when dialog closes
   const handleOpenChange = (newOpen: boolean) => {
@@ -113,6 +114,7 @@ export function CSVImportDialog({
         skipped: 0,
         errors: [],
       });
+      setParseError(null);
     }
     onOpenChange(newOpen);
   };
@@ -120,10 +122,20 @@ export function CSVImportDialog({
   // File handling
   const handleFileSelect = useCallback(async (selectedFile: File) => {
     setFile(selectedFile);
+    setParseError(null);
 
     try {
       const text = await selectedFile.text();
       const result = parseCSV(text);
+
+      // Check for valid data
+      if (result.headers.length === 0) {
+        throw new Error('No headers found in CSV file');
+      }
+      if (result.rows.length === 0) {
+        throw new Error('No data rows found in CSV file');
+      }
+
       setCSVData(result);
 
       // Auto-detect column mappings
@@ -141,6 +153,9 @@ export function CSVImportDialog({
       setStep('mapping');
     } catch (error) {
       console.error('Error parsing CSV:', error);
+      setParseError(error instanceof Error ? error.message : 'Failed to parse CSV file');
+      setFile(null);
+      setCSVData(null);
     }
   }, []);
 
@@ -345,6 +360,27 @@ export function CSVImportDialog({
           {/* Step 1: Upload */}
           {step === 'upload' && (
             <div className="space-y-4">
+              {/* Parse Error Display */}
+              {parseError && (
+                <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 p-3 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-red-700 dark:text-red-400">
+                      Failed to parse CSV file
+                    </p>
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                      {parseError}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setParseError(null)}
+                    className="text-red-500 hover:text-red-700 p-1"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+
               <div
                 className={cn(
                   'border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer',

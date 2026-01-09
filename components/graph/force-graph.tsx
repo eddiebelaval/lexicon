@@ -61,33 +61,53 @@ export function ForceGraph({
   const simulationRef = useRef<d3.Simulation<GraphNode, GraphLink> | null>(null);
   const zoomBehaviorRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
 
-  // Fetch graph data
-  useEffect(() => {
+  // Fetch graph data with abort support
+  const fetchGraph = useCallback(async (signal?: AbortSignal) => {
     if (!universeId) return;
 
     setLoading(true);
     setError(null);
 
-    fetch(`/api/graph?universeId=${universeId}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed to fetch graph data');
-        return res.json();
-      })
-      .then((result) => {
-        if (result.success) {
-          setGraphData(result.data);
-        } else {
-          throw new Error(result.error?.message || 'Unknown error');
-        }
-      })
-      .catch((err) => {
-        console.error('Graph fetch error:', err);
-        setError(err.message);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    try {
+      const res = await fetch(`/api/graph?universeId=${universeId}`, { signal });
+      if (!res.ok) throw new Error('Failed to fetch graph data');
+
+      const result = await res.json();
+      if (result.success) {
+        setGraphData(result.data);
+      } else {
+        throw new Error(result.error?.message || 'Unknown error');
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return;
+      console.error('Graph fetch error:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setLoading(false);
+    }
   }, [universeId]);
+
+  // Initial fetch and cleanup with timeout
+  useEffect(() => {
+    const controller = new AbortController();
+    const FETCH_TIMEOUT_MS = 30000; // 30 seconds
+
+    // Auto-abort if fetch takes too long
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+      setError('Graph loading timed out. Try again.');
+      setLoading(false);
+    }, FETCH_TIMEOUT_MS);
+
+    fetchGraph(controller.signal).finally(() => {
+      clearTimeout(timeoutId);
+    });
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [fetchGraph]);
 
   // Initialize and update D3 visualization
   useEffect(() => {
@@ -309,12 +329,12 @@ export function ForceGraph({
   if (loading) {
     return (
       <div
-        className="flex items-center justify-center border border-slate-200 rounded-lg bg-slate-50"
+        className="flex items-center justify-center border border-[#1f1f1f] rounded-lg bg-[#0d0d0d]"
         style={{ width, height }}
       >
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-lexicon-600 mb-4"></div>
-          <p className="text-slate-600 font-medium">Loading graph...</p>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#38bdf8] mb-4"></div>
+          <p className="text-[#888] font-medium">Loading graph...</p>
         </div>
       </div>
     );
@@ -323,12 +343,18 @@ export function ForceGraph({
   if (error) {
     return (
       <div
-        className="flex items-center justify-center border border-red-200 rounded-lg bg-red-50"
+        className="flex items-center justify-center border border-red-900/30 rounded-lg bg-red-900/10"
         style={{ width, height }}
       >
         <div className="text-center px-4">
-          <p className="text-red-600 font-semibold mb-2">Failed to load graph</p>
-          <p className="text-red-500 text-sm">{error}</p>
+          <p className="text-red-400 font-semibold mb-2">Failed to load graph</p>
+          <p className="text-red-400/70 text-sm mb-3">{error}</p>
+          <button
+            onClick={() => fetchGraph()}
+            className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-500 transition-colors"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
@@ -337,12 +363,12 @@ export function ForceGraph({
   if (!graphData || graphData.nodes.length === 0) {
     return (
       <div
-        className="flex items-center justify-center border border-slate-200 rounded-lg bg-slate-50"
+        className="flex items-center justify-center border border-[#1f1f1f] rounded-lg bg-[#0d0d0d]"
         style={{ width, height }}
       >
         <div className="text-center px-4">
-          <p className="text-slate-600 font-medium mb-2">No entities yet</p>
-          <p className="text-slate-500 text-sm">Add entities to see the knowledge graph</p>
+          <p className="text-[#888] font-medium mb-2">No entities yet</p>
+          <p className="text-[#666] text-sm">Add entities to see the knowledge graph</p>
         </div>
       </div>
     );
@@ -353,7 +379,7 @@ export function ForceGraph({
       ref={svgRef}
       width={width}
       height={height}
-      className="border border-slate-200 rounded-lg bg-white"
+      className="border border-[#1f1f1f] rounded-lg bg-[#0d0d0d]"
       style={{ userSelect: 'none' }}
     />
   );

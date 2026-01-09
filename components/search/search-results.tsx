@@ -68,38 +68,82 @@ function CompactRelationshipCard({
   return (
     <div
       onClick={() => onClick(enrichedRelationship)}
-      className="bg-card rounded-lg border p-3 cursor-pointer hover:shadow-md hover:border-lexicon-300 transition-all"
+      className="bg-[#141414] rounded-lg border border-[#1f1f1f] p-3 cursor-pointer hover:bg-[#1a1a1a] hover:border-[#38bdf8]/30 transition-all"
     >
       <div className="flex items-center gap-2 mb-2 flex-wrap text-sm">
         {/* Source Entity */}
         <div className="flex items-center gap-1.5">
           <EntityTypeBadge type={source.type} size="sm" />
-          <span className="font-medium truncate max-w-[120px]">
+          <span className="font-medium truncate max-w-[120px] text-white">
             {source.name}
           </span>
         </div>
 
         {/* Arrow and Type */}
         <div className="flex items-center gap-1.5">
-          <ArrowRight className="h-3 w-3 text-muted-foreground" />
+          <ArrowRight className="h-3 w-3 text-[#666]" />
           <RelationshipTypeBadge type={relationship.type as RelationshipWithEntities['type']} size="sm" />
-          <ArrowRight className="h-3 w-3 text-muted-foreground" />
+          <ArrowRight className="h-3 w-3 text-[#666]" />
         </div>
 
         {/* Target Entity */}
         <div className="flex items-center gap-1.5">
           <EntityTypeBadge type={target.type} size="sm" />
-          <span className="font-medium truncate max-w-[120px]">
+          <span className="font-medium truncate max-w-[120px] text-white">
             {target.name}
           </span>
         </div>
       </div>
 
       {relationship.context && (
-        <p className="text-xs text-muted-foreground line-clamp-1">
+        <p className="text-xs text-[#888] line-clamp-1">
           {relationship.context}
         </p>
       )}
+    </div>
+  );
+}
+
+/**
+ * Loading skeleton for search results
+ */
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      {/* Entities skeleton */}
+      <section>
+        <div className="h-4 w-24 bg-[#1f1f1f] rounded mb-3" />
+        <div className="grid gap-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-[#141414] rounded-lg border border-[#1f1f1f] p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 rounded-full bg-[#1f1f1f]" />
+                <div className="h-5 bg-[#1f1f1f] rounded flex-1" style={{ width: `${50 + i * 10}%` }} />
+              </div>
+              <div className="h-4 bg-[#1f1f1f] rounded w-3/4" />
+            </div>
+          ))}
+        </div>
+      </section>
+      {/* Relationships skeleton */}
+      <section>
+        <div className="h-4 w-32 bg-[#1f1f1f] rounded mb-3" />
+        <div className="grid gap-3">
+          {[1, 2].map((i) => (
+            <div key={i} className="bg-[#141414] rounded-lg border border-[#1f1f1f] p-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-[#1f1f1f]" />
+                <div className="h-4 bg-[#1f1f1f] rounded w-20" />
+                <div className="w-4 h-4 bg-[#1f1f1f] rounded" />
+                <div className="w-16 h-5 bg-[#1f1f1f] rounded-full" />
+                <div className="w-4 h-4 bg-[#1f1f1f] rounded" />
+                <div className="w-6 h-6 rounded-full bg-[#1f1f1f]" />
+                <div className="h-4 bg-[#1f1f1f] rounded w-20" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
@@ -110,19 +154,19 @@ function CompactRelationshipCard({
 function EmptyState({ query }: { query: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-      <SearchIcon className="h-12 w-12 text-muted-foreground/50 mb-4" />
+      <SearchIcon className="h-12 w-12 text-[#444] mb-4" />
       {query ? (
         <>
-          <h3 className="font-semibold text-lg mb-2">No results found</h3>
-          <p className="text-sm text-muted-foreground max-w-sm">
+          <h3 className="font-semibold text-lg mb-2 text-white">No results found</h3>
+          <p className="text-sm text-[#888] max-w-sm">
             No entities or relationships match &quot;{query}&quot;. Try a different search term
             or add more content to your universe.
           </p>
         </>
       ) : (
         <>
-          <h3 className="font-semibold text-lg mb-2">Search your universe</h3>
-          <p className="text-sm text-muted-foreground max-w-sm">
+          <h3 className="font-semibold text-lg mb-2 text-white">Search your universe</h3>
+          <p className="text-sm text-[#888] max-w-sm">
             Type to search for entities by name, alias, or description. Results appear as you type.
           </p>
         </>
@@ -168,17 +212,12 @@ export function SearchResults({
     return map;
   }, [entities]);
 
-  // Loading state (only show full loading spinner if not in AI mode)
+  // Loading state (only show full loading skeleton if not in AI mode)
   // In AI mode, we show the AI loading skeleton separately
   if (loading && !aiMode) {
     return (
-      <div
-        className={cn(
-          'flex items-center justify-center py-12 text-muted-foreground',
-          className
-        )}
-      >
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className={className}>
+        <LoadingSkeleton />
       </div>
     );
   }
@@ -208,15 +247,15 @@ export function SearchResults({
 
       {/* AI Mode Badge (when results are shown below AI answer) */}
       {aiMode && hasResults && !aiLoading && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Sparkles className="h-4 w-4 text-lexicon-500" />
+        <div className="flex items-center gap-2 text-sm text-[#888]">
+          <Sparkles className="h-4 w-4 text-[#38bdf8]" />
           <span>Related entities and relationships from your universe</span>
         </div>
       )}
 
       {/* Loading state for graph results in AI mode */}
       {loading && aiMode && (
-        <div className="flex items-center justify-center py-8 text-muted-foreground">
+        <div className="flex items-center justify-center py-8 text-[#666]">
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
       )}
@@ -224,7 +263,7 @@ export function SearchResults({
       {/* Entities Section */}
       {!loading && entities.length > 0 && (
         <section>
-          <h2 className="text-sm font-semibold text-muted-foreground mb-3">
+          <h2 className="text-sm font-semibold text-[#888] mb-3">
             {entities.length} {entities.length === 1 ? 'Entity' : 'Entities'}
           </h2>
           <div className="grid gap-3">
@@ -242,7 +281,7 @@ export function SearchResults({
       {/* Relationships Section */}
       {!loading && relationships.length > 0 && (
         <section>
-          <h2 className="text-sm font-semibold text-muted-foreground mb-3">
+          <h2 className="text-sm font-semibold text-[#888] mb-3">
             {relationships.length}{' '}
             {relationships.length === 1 ? 'Relationship' : 'Relationships'}
           </h2>

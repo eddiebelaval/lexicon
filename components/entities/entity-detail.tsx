@@ -5,7 +5,7 @@ import { cn, formatDate, capitalize } from '@/lib/utils';
 import { EntityTypeBadge } from './entity-type-badge';
 import { RelationshipTypeBadge } from '@/components/relationships/relationship-type-badge';
 import { Button } from '@/components/ui/button';
-import { Pencil, Trash2, X, ChevronDown, ChevronUp, Link2, Loader2 } from 'lucide-react';
+import { Pencil, Trash2, X, ChevronDown, ChevronUp, Link2, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import type { Entity, RelationshipWithEntities } from '@/types';
 
 interface EntityDetailProps {
@@ -27,27 +27,40 @@ export function EntityDetail({
 }: EntityDetailProps) {
   const [relationships, setRelationships] = useState<RelationshipWithEntities[]>([]);
   const [loadingRelationships, setLoadingRelationships] = useState(false);
+  const [relationshipError, setRelationshipError] = useState<string | null>(null);
   const [showRelationships, setShowRelationships] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Fetch relationships when entity changes
   useEffect(() => {
+    const controller = new AbortController();
+
     async function fetchRelationships() {
       setLoadingRelationships(true);
+      setRelationshipError(null);
       try {
-        const response = await fetch(`/api/relationships?entityId=${entity.id}`);
+        const response = await fetch(`/api/relationships?entityId=${entity.id}`, {
+          signal: controller.signal,
+        });
         const data = await response.json();
         if (data.success) {
           setRelationships(data.data.items || data.data || []);
+        } else {
+          setRelationshipError(data.error?.message || 'Failed to load relationships');
         }
-      } catch (error) {
-        console.error('Failed to fetch relationships:', error);
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return;
+        setRelationshipError('Failed to load relationships');
       } finally {
         setLoadingRelationships(false);
       }
     }
 
     fetchRelationships();
-  }, [entity.id]);
+    return () => controller.abort();
+  }, [entity.id, retryCount]);
+
+  const handleRetryRelationships = () => setRetryCount((c) => c + 1);
 
   // Get the "other" entity in a relationship
   const getConnectedEntity = (rel: RelationshipWithEntities): Entity | null => {
@@ -147,7 +160,18 @@ export function EntityDetail({
 
           {showRelationships && !loadingRelationships && (
             <div className="space-y-2">
-              {relationships.length === 0 ? (
+              {relationshipError ? (
+                <div className="flex items-center gap-2 p-2 text-sm text-destructive bg-destructive/10 rounded-lg">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span className="flex-1">{relationshipError}</span>
+                  <button
+                    onClick={handleRetryRelationships}
+                    className="p-1 hover:bg-destructive/20 rounded"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : relationships.length === 0 ? (
                 <p className="text-sm text-muted-foreground italic">
                   No relationships yet
                 </p>

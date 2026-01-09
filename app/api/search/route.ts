@@ -99,12 +99,21 @@ export async function GET(
     // AI-powered search mode
     if (aiMode) {
       try {
-        const result = await aiSearch(query, {
-          universeId,
-          includeWebSearch: includeWeb,
-          maxEntities: 20,
-          maxRelationships: 50,
+        // Create timeout promise to prevent AI search from hanging
+        const AI_TIMEOUT_MS = 15000; // 15 seconds
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('AI search timed out')), AI_TIMEOUT_MS);
         });
+
+        const result = await Promise.race([
+          aiSearch(query, {
+            universeId,
+            includeWebSearch: includeWeb,
+            maxEntities: 20,
+            maxRelationships: 50,
+          }),
+          timeoutPromise,
+        ]);
 
         return NextResponse.json({
           success: true,
@@ -120,8 +129,9 @@ export async function GET(
           },
         });
       } catch (aiError) {
-        // If AI search fails, log and fall back to basic search
-        console.error('AI search failed, falling back to basic search:', aiError);
+        // If AI search fails or times out, log and fall back to basic search
+        const errorMessage = aiError instanceof Error ? aiError.message : 'Unknown error';
+        console.error(`AI search failed (${errorMessage}), falling back to basic search`);
 
         // Fall through to basic search
       }

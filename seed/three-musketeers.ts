@@ -7,6 +7,10 @@
  * Run with: npm run seed
  */
 
+// Load environment variables from .env.local before importing neo4j
+import { config } from 'dotenv';
+config({ path: '.env.local' });
+
 import { writeQuery, closeDriver } from '../lib/neo4j';
 import { generateId } from '../lib/utils';
 import type {
@@ -16,7 +20,9 @@ import type {
   CreateRelationshipInput,
 } from '../types';
 
-const UNIVERSE_ID = 'three-musketeers';
+// Static UUID for the Three Musketeers demo universe
+// This matches what we'll create in Supabase for the universe metadata
+const UNIVERSE_ID = '11111111-1111-1111-1111-111111111111';
 
 // ============================================
 // Entities

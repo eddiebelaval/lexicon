@@ -198,17 +198,83 @@
 
 ---
 
-### Stage 7: Test Coverage ⏳
+### Stage 7: Test Coverage ✅
 **Checkpoint:** "Are all tests green and is coverage sufficient?"
 
-**Status:** NOT STARTED
+**Test Suite Summary (129 tests):**
+
+| Test Type | File | Tests |
+|-----------|------|-------|
+| Unit | `tests/unit/csv-parser.test.ts` | 18 |
+| Unit | `tests/unit/entities.test.ts` | 36 |
+| Unit | `tests/unit/relationships.test.ts` | 34 |
+| Unit | `tests/unit/search.test.ts` | 25 |
+| Integration | `tests/integration/api-entities.test.ts` | 16 |
+| E2E | `tests/e2e/universe-page.spec.ts` | 17 (Playwright) |
+
+**Unit Tests Cover:**
+- Entity CRUD operations (createEntity, getEntity, listEntities, updateEntity, deleteEntity, searchEntities)
+- Relationship CRUD operations (all 8 exported functions)
+- Search orchestration (search, executeGraphSearch, findEntity, getUniverseEntities)
+- CSV parsing (delimiter detection, field mapping, validation)
+- Date and metadata parsing helpers
+
+**Integration Tests Cover:**
+- POST /api/entities - validation, success, error handling
+- GET /api/entities - list, filter, search, pagination
+- GET /api/entities/[id] - retrieve, 404 handling
+- PUT /api/entities/[id] - update, validation, 404
+- DELETE /api/entities/[id] - delete, 404
+
+**E2E Tests Cover:**
+- Universe page layout and components
+- Search bar functionality
+- AI mode toggle
+- Import dialog
+- Keyboard navigation
+- Responsive design
+
+**Status:** CLEARED
+**Date:** January 8, 2026
 
 ---
 
-### Stage 8: Polish & Harden ⏳
+### Stage 8: Polish & Harden ✅
 **Checkpoint:** "What breaks if I do something stupid?"
 
-**Status:** NOT STARTED
+**Status:** CLEARED
+**Date:** January 8, 2026
+
+**Critical Error Handling Fixes:**
+
+| Issue | Fix | Files Modified |
+|-------|-----|----------------|
+| ForceGraph no retry capability | Added AbortController cleanup + retry button | `components/graph/force-graph.tsx` |
+| UniversePage silent fetch failures | Added error banner with auto-dismiss + showError callback | `app/universe/[id]/page.tsx` |
+| Search API no timeout | Added 15-second timeout with Promise.race | `app/api/search/route.ts` |
+| Import Dialog no parse error UI | Added parseError state + error display in upload step | `components/import/csv-import-dialog.tsx` |
+
+**UI/UX Hardening:**
+
+| Component | Improvement |
+|-----------|-------------|
+| EntityList | Loading skeleton, error state with retry button, AbortController cleanup |
+| EntityDetail | Relationship fetch error state with inline retry |
+| SearchResults | Loading skeleton with entity/relationship placeholders |
+| ForceGraph | 30-second timeout protection, retry capability |
+
+**Hardening Patterns Applied:**
+- AbortController for fetch cleanup on unmount (prevents memory leaks)
+- Auto-dismissing error banners (5 second timeout for UX)
+- Promise.race for API timeout protection (15s for AI, 30s for graph)
+- User-friendly error messages instead of console.error only
+- Retry buttons for all recoverable operations
+- Loading skeletons instead of generic spinners
+
+**Verification:**
+- TypeScript: Compiles without errors
+- Build: Passes successfully
+- Tests: 129/129 passing
 
 ---
 
@@ -255,4 +321,4 @@
 
 ---
 
-*Last Updated: January 8, 2026 - Stage 6 CLEARED (Integration Pass complete)*
+*Last Updated: January 8, 2026 - Stage 8 CLEARED (Polish & Harden complete)*

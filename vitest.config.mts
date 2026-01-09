@@ -13,6 +13,8 @@ export default defineConfig({
     environmentMatchGlobs: [
       // Use node environment for unit tests that don't need DOM
       ['tests/unit/**', 'node'],
+      // Integration tests also use node environment
+      ['tests/integration/**', 'node'],
     ],
     coverage: {
       provider: 'v8',

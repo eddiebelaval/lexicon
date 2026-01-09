@@ -20,30 +20,30 @@ const ENTITY_TYPES: { type: EntityType; label: string; color: string }[] = [
 
 export function GraphLegend() {
   return (
-    <div className="p-4 bg-white border border-slate-200 rounded-lg shadow-sm">
-      <h3 className="text-sm font-semibold text-slate-700 mb-3">Legend</h3>
+    <div className="p-4 bg-[#141414] border border-[#1f1f1f] rounded-lg">
+      <h3 className="text-sm font-semibold text-white mb-3">Legend</h3>
 
       {/* Entity Types */}
       <div className="space-y-2 mb-4">
-        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+        <p className="text-xs font-medium text-[#888] uppercase tracking-wide">
           Entity Types
         </p>
         <div className="grid grid-cols-2 gap-2">
           {ENTITY_TYPES.map(({ type, label, color }) => (
             <div key={type} className="flex items-center gap-2">
               <div
-                className="w-4 h-4 rounded-full border-2 border-white shadow-sm flex-shrink-0"
+                className="w-4 h-4 rounded-full flex-shrink-0"
                 style={{ backgroundColor: color }}
               />
-              <span className="text-sm text-slate-700">{label}</span>
+              <span className="text-sm text-[#ccc]">{label}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* Relationship Indicator */}
-      <div className="space-y-2 pt-3 border-t border-slate-200">
-        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+      <div className="space-y-2 pt-3 border-t border-[#1f1f1f]">
+        <p className="text-xs font-medium text-[#888] uppercase tracking-wide">
           Relationships
         </p>
         <div className="flex items-center gap-3">
@@ -53,38 +53,38 @@ export function GraphLegend() {
               y1="1"
               x2="40"
               y2="1"
-              stroke="#94a3b8"
+              stroke="#666"
               strokeWidth="2"
-              strokeOpacity="0.6"
+              strokeOpacity="0.8"
             />
           </svg>
-          <span className="text-sm text-slate-700">Connection</span>
+          <span className="text-sm text-[#ccc]">Connection</span>
         </div>
-        <p className="text-xs text-slate-500 italic mt-2">
+        <p className="text-xs text-[#666] italic mt-2">
           Line thickness indicates relationship strength
         </p>
       </div>
 
       {/* Interaction Hints */}
-      <div className="space-y-2 pt-3 border-t border-slate-200 mt-3">
-        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+      <div className="space-y-2 pt-3 border-t border-[#1f1f1f] mt-3">
+        <p className="text-xs font-medium text-[#888] uppercase tracking-wide">
           Interactions
         </p>
-        <ul className="space-y-1 text-xs text-slate-600">
+        <ul className="space-y-1 text-xs text-[#888]">
           <li className="flex items-start gap-2">
-            <span className="font-semibold text-slate-700">Click:</span>
+            <span className="font-semibold text-[#ccc]">Click:</span>
             <span>Select entity</span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="font-semibold text-slate-700">Drag:</span>
+            <span className="font-semibold text-[#ccc]">Drag:</span>
             <span>Move entity</span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="font-semibold text-slate-700">Scroll:</span>
+            <span className="font-semibold text-[#ccc]">Scroll:</span>
             <span>Zoom in/out</span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="font-semibold text-slate-700">Pan:</span>
+            <span className="font-semibold text-[#ccc]">Pan:</span>
             <span>Click & drag background</span>
           </li>
         </ul>

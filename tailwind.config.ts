@@ -10,8 +10,15 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Lexicon brand colors - knowledge/wisdom theme
+        // ID8Labs Surface colors
+        surface: {
+          primary: "#0A0A0A",
+          secondary: "#151515",
+          tertiary: "#1F1F1F",
+        },
+        // Lexicon brand colors - defined with DEFAULT for opacity support
         lexicon: {
+          DEFAULT: "#0ea5e9",
           50: "#f0f9ff",
           100: "#e0f2fe",
           200: "#bae6fd",
@@ -25,11 +32,11 @@ const config: Config = {
         },
         // Graph visualization colors
         graph: {
-          character: "#8b5cf6", // violet
-          location: "#10b981", // emerald
-          event: "#f59e0b", // amber
-          object: "#ec4899", // pink
-          faction: "#06b6d4", // cyan
+          character: "#8b5cf6",
+          location: "#10b981",
+          event: "#f59e0b",
+          object: "#ec4899",
+          faction: "#06b6d4",
         },
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
@@ -65,10 +72,19 @@ const config: Config = {
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
       },
+      boxShadow: {
+        "glow-sm": "0 0 15px rgba(56, 189, 248, 0.3)",
+        glow: "0 0 30px rgba(56, 189, 248, 0.4), 0 0 60px rgba(56, 189, 248, 0.2)",
+        "glow-lg": "0 0 50px rgba(56, 189, 248, 0.5), 0 0 100px rgba(56, 189, 248, 0.25)",
+        glass: "0 8px 32px rgba(0, 0, 0, 0.3)",
+      },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        xs: "0.25rem",
+        sm: "0.5rem",
+        md: "0.75rem",
+        lg: "1rem",
+        xl: "1.5rem",
+        "2xl": "2rem",
       },
       fontFamily: {
         sans: ["var(--font-geist-sans)"],
@@ -77,12 +93,40 @@ const config: Config = {
       animation: {
         "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "graph-node": "graph-node 0.3s ease-out",
+        float: "float 6s ease-in-out infinite",
+        "fade-in": "fadeIn 0.5s ease-out forwards",
+        "fade-in-up": "fadeInUp 0.5s ease-out forwards",
+        "pulse-glow": "pulseGlow 2s ease-in-out infinite",
+        "slide-up": "slideUp 0.3s ease-out",
       },
       keyframes: {
         "graph-node": {
           "0%": { transform: "scale(0)", opacity: "0" },
           "100%": { transform: "scale(1)", opacity: "1" },
         },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        fadeInUp: {
+          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        pulseGlow: {
+          "0%, 100%": { boxShadow: "0 0 15px rgba(56, 189, 248, 0.3)" },
+          "50%": { boxShadow: "0 0 30px rgba(56, 189, 248, 0.4), 0 0 60px rgba(56, 189, 248, 0.2)" },
+        },
+        slideUp: {
+          "0%": { transform: "translateY(10px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
+      },
+      backdropBlur: {
+        xs: "2px",
       },
     },
   },

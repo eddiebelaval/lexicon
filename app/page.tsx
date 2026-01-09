@@ -1,96 +1,128 @@
+'use client';
+
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { HeroSearch } from '@/components/search/HeroSearch';
+import { SuggestedQueries } from '@/components/search/SuggestedQueries';
+import { Network, Sparkles, Globe, BookOpen } from 'lucide-react';
 
 export default function HomePage() {
+  const router = useRouter();
+
+  const handleSearch = (query: string) => {
+    router.push(`/dashboard?search=${encodeURIComponent(query)}`);
+  };
+
   return (
-    <main className="min-h-screen flex flex-col">
-      {/* Hero Section */}
-      <section className="flex-1 flex flex-col items-center justify-center px-4 py-20">
-        <div className="max-w-4xl mx-auto text-center space-y-8">
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
-            <span className="text-lexicon-600">Lexicon</span>
+    <main className="min-h-screen flex flex-col bg-[#0a0a0a]">
+      {/* Minimal Header */}
+      <header className="flex items-center justify-between px-6 py-4">
+        <Link href="/" className="flex items-center gap-2 group">
+          <BookOpen className="w-6 h-6 text-[#38bdf8] group-hover:text-[#5ccfff] transition-colors" />
+          <span className="text-xl font-semibold text-white">Lexicon</span>
+        </Link>
+        <Link
+          href="/dashboard"
+          className="
+            px-4 py-2 rounded-xl
+            text-sm font-medium text-[#999]
+            bg-[#141414] hover:bg-[#1a1a1a]
+            border border-[#252525] hover:border-[#333]
+            transition-all duration-200
+          "
+        >
+          Dashboard
+        </Link>
+      </header>
+
+      {/* Hero Section - Search First */}
+      <section className="flex-1 flex flex-col items-center justify-center px-4 pb-32">
+        {/* Headline */}
+        <div className="text-center mb-10">
+          <h1 className="text-4xl md:text-5xl font-semibold text-white mb-4">
+            What are you looking for?
           </h1>
-
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
-            Wikipedia + Perplexity for story universes.
+          <p className="text-lg text-[#888] max-w-md mx-auto">
+            Search your story universe like a wiki. Get AI-powered answers.
           </p>
+        </div>
 
-          <p className="text-lg text-muted-foreground/80 max-w-xl mx-auto">
-            Search your narrative world like a wiki. Get answers synthesized from
-            your knowledge graph + the live web.
-          </p>
+        {/* Hero Search */}
+        <div className="w-full">
+          <HeroSearch onSearch={handleSearch} aiMode={true} />
+        </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center justify-center rounded-lg bg-lexicon-600 px-8 py-3 text-lg font-medium text-white hover:bg-lexicon-700 transition-colors"
-            >
-              Get Started
-            </Link>
-            <Link
-              href="#how-it-works"
-              className="inline-flex items-center justify-center rounded-lg border border-input bg-background px-8 py-3 text-lg font-medium hover:bg-accent transition-colors"
-            >
-              How It Works
-            </Link>
-          </div>
+        {/* Suggested Queries */}
+        <div className="mt-8 w-full">
+          <SuggestedQueries onSelect={handleSearch} />
         </div>
       </section>
 
-      {/* How It Works */}
-      <section id="how-it-works" className="py-20 px-4 bg-muted/50">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            How Lexicon Works
-          </h2>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-card rounded-xl p-6 shadow-sm">
-              <div className="w-12 h-12 rounded-full bg-graph-character/20 flex items-center justify-center mb-4">
-                <span className="text-2xl">🔗</span>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Build Your Graph</h3>
-              <p className="text-muted-foreground">
-                Add characters, locations, events, and objects. Connect them with
-                relationships. Everything links to everything.
-              </p>
-            </div>
-
-            <div className="bg-card rounded-xl p-6 shadow-sm">
-              <div className="w-12 h-12 rounded-full bg-graph-location/20 flex items-center justify-center mb-4">
-                <span className="text-2xl">🔍</span>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Ask Anything</h3>
-              <p className="text-muted-foreground">
-                Natural language search that understands narrative.
-                &ldquo;Who betrayed whom?&rdquo; just works.
-              </p>
-            </div>
-
-            <div className="bg-card rounded-xl p-6 shadow-sm">
-              <div className="w-12 h-12 rounded-full bg-graph-event/20 flex items-center justify-center mb-4">
-                <span className="text-2xl">🌐</span>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Web + Graph</h3>
-              <p className="text-muted-foreground">
-                Blend your knowledge with live web data. Get answers that combine
-                your universe with the latest information.
-              </p>
-            </div>
-          </div>
+      {/* Feature Cards - Compact */}
+      <section className="px-4 pb-20">
+        <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-4">
+          <FeatureCard
+            icon={<Sparkles className="w-5 h-5" />}
+            title="AI Search"
+            description="Natural language queries with Claude-powered synthesis"
+            accentColor="#38bdf8"
+          />
+          <FeatureCard
+            icon={<Network className="w-5 h-5" />}
+            title="Knowledge Graph"
+            description="Entities and relationships visualized as an interactive network"
+            accentColor="#8b5cf6"
+          />
+          <FeatureCard
+            icon={<Globe className="w-5 h-5" />}
+            title="Web Augmentation"
+            description="Blend your universe with live web data for richer answers"
+            accentColor="#10b981"
+          />
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-4 border-t">
+      <footer className="py-6 px-4 border-t border-[#1a1a1a]">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-muted-foreground">
-            Part of the ID8Labs Writer Ecosystem
-          </p>
-          <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} ID8Labs
-          </p>
+          <p className="text-xs text-[#555]">Part of the ID8Labs Writer Ecosystem</p>
+          <p className="text-xs text-[#555]">&copy; {new Date().getFullYear()} ID8Labs</p>
         </div>
       </footer>
     </main>
+  );
+}
+
+interface FeatureCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  accentColor: string;
+}
+
+function FeatureCard({ icon, title, description, accentColor }: FeatureCardProps) {
+  return (
+    <div
+      className="
+        group p-5 rounded-xl
+        bg-[#111111] hover:bg-[#151515]
+        border border-[#1f1f1f] hover:border-[#2a2a2a]
+        transition-all duration-300
+        hover:-translate-y-1
+      "
+    >
+      <div
+        className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 border"
+        style={{
+          color: accentColor,
+          backgroundColor: `${accentColor}15`,
+          borderColor: `${accentColor}30`,
+        }}
+      >
+        {icon}
+      </div>
+      <h3 className="text-base font-medium text-white mb-1">{title}</h3>
+      <p className="text-sm text-[#777] leading-relaxed">{description}</p>
+    </div>
   );
 }
