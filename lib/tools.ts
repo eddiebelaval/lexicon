@@ -43,7 +43,9 @@ import {
   getStorylineWithCast,
   searchStorylines,
   listStorylines,
+  createStoryline,
   updateStoryline,
+  deleteStoryline,
   getStorylinesForEntity,
 } from './storylines';
 import type { Storyline, StorylineWithCast, StorylineStatus } from '@/types';
@@ -253,6 +255,21 @@ export const lexiconTools: Tool[] = [
         },
       },
       required: [],
+    },
+  },
+  {
+    name: 'get_relationship',
+    description:
+      'Get full details of a specific relationship by its ID. Use this when you need complete information about a relationship including context, strength, dates, and connected entities.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        relationshipId: {
+          type: 'string',
+          description: 'The unique ID of the relationship to retrieve',
+        },
+      },
+      required: ['relationshipId'],
     },
   },
   {
@@ -523,6 +540,81 @@ export const lexiconTools: Tool[] = [
     },
   },
   {
+    name: 'list_storylines',
+    description:
+      'List all storylines in the universe with optional filtering. Use this to browse storylines without a specific search query.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        status: {
+          type: 'string',
+          enum: ['active', 'archived', 'developing'],
+          description: 'Optional filter by storyline status',
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of results to return (default: 20, max: 100)',
+        },
+        offset: {
+          type: 'number',
+          description: 'Number of results to skip for pagination (default: 0)',
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'create_storyline',
+    description:
+      'Create a new storyline in the knowledge base. Use this when the user describes a new narrative arc, story thread, or plot line that should be documented. Storylines connect multiple entities through a narrative.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        title: {
+          type: 'string',
+          description: 'The title of the storyline',
+        },
+        synopsis: {
+          type: 'string',
+          description: 'Brief summary of the storyline (~300 words)',
+        },
+        narrative: {
+          type: 'string',
+          description: 'Full narrative content (can be extensive, 5000+ words)',
+        },
+        primaryCast: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Entity IDs of main characters in this storyline',
+        },
+        supportingCast: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Entity IDs of supporting characters',
+        },
+        status: {
+          type: 'string',
+          enum: ['active', 'archived', 'developing'],
+          description: 'Status of the storyline (default: developing)',
+        },
+        season: {
+          type: 'string',
+          description: 'Season identifier (e.g., "Season 4")',
+        },
+        episodeRange: {
+          type: 'string',
+          description: 'Episode range (e.g., "Episodes 1-5")',
+        },
+        tags: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Tags for categorization and search',
+        },
+      },
+      required: ['title', 'synopsis'],
+    },
+  },
+  {
     name: 'update_storyline',
     description:
       'Update an existing storyline with new or corrected information. Use this to modify the narrative, synopsis, cast, or other storyline properties based on user input.',
@@ -577,16 +669,48 @@ export const lexiconTools: Tool[] = [
       required: ['storylineId'],
     },
   },
+  {
+    name: 'delete_storyline',
+    description:
+      'Delete a storyline from the knowledge base. Use with caution - this is permanent. Only delete when explicitly requested by the user.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        storylineId: {
+          type: 'string',
+          description: 'The ID of the storyline to delete',
+        },
+        confirm: {
+          type: 'boolean',
+          description:
+            'Must be true to confirm deletion. This prevents accidental deletions.',
+        },
+      },
+      required: ['storylineId', 'confirm'],
+    },
+  },
 ];
 
 // ============================================
 // Tool Execution Result Type
 // ============================================
 
+/**
+ * Agent-Native Tool Execution Result
+ *
+ * Following Pattern 6 (Agent-Native Design), tools return explicit completion signals:
+ * - success: Whether the operation succeeded
+ * - result: The operation output data
+ * - error: Error message if failed
+ * - shouldContinue: Whether the agent should continue with more actions
+ *   - true: Agent may have more work to do (e.g., after search, may need to get details)
+ *   - false: Agent has completed the goal (e.g., after delete confirmation)
+ */
 export interface ToolExecutionResult {
   success: boolean;
   result: unknown;
   error?: string;
+  shouldContinue: boolean;
 }
 
 // ============================================
@@ -623,6 +747,7 @@ export async function executeToolCall(
             count: entities.length,
             entities: entities.map(formatEntityForResponse),
           },
+          shouldContinue: true, // Agent may want to get details on specific entities
         };
       }
 
@@ -635,6 +760,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: `Entity not found with ID: ${entityId}`,
+            shouldContinue: true,
           };
         }
 
@@ -644,12 +770,14 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: 'Entity belongs to a different universe',
+            shouldContinue: true,
           };
         }
 
         return {
           success: true,
           result: formatEntityForResponse(entity),
+          shouldContinue: true, // Agent may want to update or create relationships
         };
       }
 
@@ -672,6 +800,7 @@ export async function executeToolCall(
             message: `Created new ${entity.type} "${entity.name}"`,
             entity: formatEntityForResponse(entity),
           },
+          shouldContinue: true, // Agent may want to create relationships
         };
       }
 
@@ -685,6 +814,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: `Entity not found with ID: ${entityId}`,
+            shouldContinue: true,
           };
         }
         if (existing.universeId !== universeId) {
@@ -692,6 +822,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: 'Entity belongs to a different universe',
+            shouldContinue: true,
           };
         }
 
@@ -714,6 +845,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: 'Failed to update entity',
+            shouldContinue: true,
           };
         }
 
@@ -723,6 +855,7 @@ export async function executeToolCall(
             message: `Updated entity "${updated.name}"`,
             entity: formatEntityForResponse(updated),
           },
+          shouldContinue: true, // Agent may want to continue editing
         };
       }
 
@@ -736,6 +869,7 @@ export async function executeToolCall(
             result: null,
             error:
               'Deletion not confirmed. Set confirm: true to delete the entity.',
+            shouldContinue: true,
           };
         }
 
@@ -746,6 +880,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: `Entity not found with ID: ${entityId}`,
+            shouldContinue: true,
           };
         }
         if (existing.universeId !== universeId) {
@@ -753,6 +888,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: 'Entity belongs to a different universe',
+            shouldContinue: true,
           };
         }
 
@@ -762,6 +898,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: 'Failed to delete entity',
+            shouldContinue: true,
           };
         }
 
@@ -775,6 +912,7 @@ export async function executeToolCall(
               type: existing.type,
             },
           },
+          shouldContinue: false, // Terminal operation - deletion complete
         };
       }
 
@@ -812,6 +950,37 @@ export async function executeToolCall(
             count: relationships.length,
             relationships: relationships.map(formatRelationshipForResponse),
           },
+          shouldContinue: true, // Agent may want to get details on specific relationships
+        };
+      }
+
+      case 'get_relationship': {
+        const relationshipId = input.relationshipId as string;
+        const relationship = await getRelationship(relationshipId);
+
+        if (!relationship) {
+          return {
+            success: false,
+            result: null,
+            error: `Relationship not found with ID: ${relationshipId}`,
+            shouldContinue: true,
+          };
+        }
+
+        // Verify relationship belongs to the universe (check source entity)
+        if (relationship.source.universeId !== universeId) {
+          return {
+            success: false,
+            result: null,
+            error: 'Relationship belongs to a different universe',
+            shouldContinue: true,
+          };
+        }
+
+        return {
+          success: true,
+          result: formatRelationshipForResponse(relationship),
+          shouldContinue: true, // Agent may want to update or use this relationship
         };
       }
 
@@ -828,6 +997,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: `Source entity not found with ID: ${sourceId}`,
+            shouldContinue: true,
           };
         }
         if (!target) {
@@ -835,6 +1005,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: `Target entity not found with ID: ${targetId}`,
+            shouldContinue: true,
           };
         }
         if (source.universeId !== universeId || target.universeId !== universeId) {
@@ -842,6 +1013,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: 'One or both entities belong to a different universe',
+            shouldContinue: true,
           };
         }
 
@@ -864,6 +1036,7 @@ export async function executeToolCall(
             message: `Created ${relationship.type} relationship: "${source.name}" -> "${target.name}"`,
             relationship: formatRelationshipForResponse(relationship),
           },
+          shouldContinue: true, // Agent may want to create more relationships
         };
       }
 
@@ -877,6 +1050,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: `Relationship not found with ID: ${relationshipId}`,
+            shouldContinue: true,
           };
         }
 
@@ -886,6 +1060,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: 'Relationship belongs to a different universe',
+            shouldContinue: true,
           };
         }
 
@@ -913,6 +1088,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: 'Failed to update relationship',
+            shouldContinue: true,
           };
         }
 
@@ -922,6 +1098,7 @@ export async function executeToolCall(
             message: `Updated relationship: "${updated.source.name}" -> "${updated.target.name}"`,
             relationship: formatRelationshipForResponse(updated),
           },
+          shouldContinue: true, // Agent may want to continue editing
         };
       }
 
@@ -935,6 +1112,7 @@ export async function executeToolCall(
             result: null,
             error:
               'Deletion not confirmed. Set confirm: true to delete the relationship.',
+            shouldContinue: true,
           };
         }
 
@@ -945,6 +1123,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: `Relationship not found with ID: ${relationshipId}`,
+            shouldContinue: true,
           };
         }
 
@@ -954,6 +1133,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: 'Relationship belongs to a different universe',
+            shouldContinue: true,
           };
         }
 
@@ -963,6 +1143,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: 'Failed to delete relationship',
+            shouldContinue: true,
           };
         }
 
@@ -977,6 +1158,7 @@ export async function executeToolCall(
               targetName: existing.target.name,
             },
           },
+          shouldContinue: false, // Terminal operation - deletion complete
         };
       }
 
@@ -995,6 +1177,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: `Entity not found with ID: ${entityId}`,
+            shouldContinue: true,
           };
         }
         if (centralEntity.universeId !== universeId) {
@@ -1002,6 +1185,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: 'Entity belongs to a different universe',
+            shouldContinue: true,
           };
         }
 
@@ -1018,6 +1202,7 @@ export async function executeToolCall(
             centralEntity: formatEntityForResponse(centralEntity),
             neighborhood: graphContext,
           },
+          shouldContinue: true, // Agent may want to explore specific nodes
         };
       }
 
@@ -1038,6 +1223,7 @@ export async function executeToolCall(
             resultCount: webResults.length,
             results: webResults,
           },
+          shouldContinue: true, // Agent may want to use results to update entities
         };
       }
 
@@ -1055,6 +1241,7 @@ export async function executeToolCall(
             count: storylines.length,
             storylines: storylines.map(formatStorylineSearchResultForResponse),
           },
+          shouldContinue: true, // Agent may want to get details on specific storylines
         };
       }
 
@@ -1071,6 +1258,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: `Storyline not found with ID: ${storylineId}`,
+            shouldContinue: true,
           };
         }
 
@@ -1080,12 +1268,14 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: 'Storyline belongs to a different universe',
+            shouldContinue: true,
           };
         }
 
         return {
           success: true,
           result: formatStorylineForResponse(storyline, includeCast),
+          shouldContinue: true, // Agent may want to update or use storyline
         };
       }
 
@@ -1100,6 +1290,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: `Entity not found with ID: ${entityId}`,
+            shouldContinue: true,
           };
         }
         if (entity.universeId !== universeId) {
@@ -1107,6 +1298,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: 'Entity belongs to a different universe',
+            shouldContinue: true,
           };
         }
 
@@ -1118,6 +1310,50 @@ export async function executeToolCall(
             count: storylines.length,
             storylines: storylines.map((s) => formatStorylineForResponse(s, false)),
           },
+          shouldContinue: true, // Agent may want to get details on specific storylines
+        };
+      }
+
+      case 'list_storylines': {
+        const status = input.status as StorylineStatus | undefined;
+        const limit = Math.min((input.limit as number) || 20, 100);
+        const offset = (input.offset as number) || 0;
+
+        const result = await listStorylines(universeId, { status, limit, offset });
+        return {
+          success: true,
+          result: {
+            count: result.items.length,
+            total: result.total,
+            hasMore: result.hasMore,
+            storylines: result.items.map((s) => formatStorylineForResponse(s, false)),
+          },
+          shouldContinue: true, // Agent may want to get details or create new
+        };
+      }
+
+      case 'create_storyline': {
+        const storylineInput = {
+          universeId,
+          title: input.title as string,
+          synopsis: input.synopsis as string,
+          narrative: (input.narrative as string) || '',
+          primaryCast: (input.primaryCast as string[]) || [],
+          supportingCast: (input.supportingCast as string[]) || [],
+          status: (input.status as StorylineStatus) || 'developing',
+          season: input.season as string | undefined,
+          episodeRange: input.episodeRange as string | undefined,
+          tags: (input.tags as string[]) || [],
+        };
+
+        const storyline = await createStoryline(storylineInput);
+        return {
+          success: true,
+          result: {
+            message: `Created new storyline "${storyline.title}"`,
+            storyline: formatStorylineForResponse(storyline, false),
+          },
+          shouldContinue: true, // Agent may want to add cast or update narrative
         };
       }
 
@@ -1131,6 +1367,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: `Storyline not found with ID: ${storylineId}`,
+            shouldContinue: true,
           };
         }
         if (existing.universeId !== universeId) {
@@ -1138,6 +1375,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: 'Storyline belongs to a different universe',
+            shouldContinue: true,
           };
         }
 
@@ -1158,6 +1396,7 @@ export async function executeToolCall(
             success: false,
             result: null,
             error: 'Failed to update storyline',
+            shouldContinue: true,
           };
         }
 
@@ -1167,6 +1406,62 @@ export async function executeToolCall(
             message: `Updated storyline "${updated.title}"`,
             storyline: formatStorylineForResponse(updated, false),
           },
+          shouldContinue: true, // Agent may want to continue editing
+        };
+      }
+
+      case 'delete_storyline': {
+        const storylineId = input.storylineId as string;
+        const confirm = input.confirm as boolean;
+
+        if (!confirm) {
+          return {
+            success: false,
+            result: null,
+            error: 'Deletion not confirmed. Set confirm: true to delete the storyline.',
+            shouldContinue: true,
+          };
+        }
+
+        // Verify storyline exists and belongs to universe
+        const existing = await getStoryline(storylineId);
+        if (!existing) {
+          return {
+            success: false,
+            result: null,
+            error: `Storyline not found with ID: ${storylineId}`,
+            shouldContinue: true,
+          };
+        }
+        if (existing.universeId !== universeId) {
+          return {
+            success: false,
+            result: null,
+            error: 'Storyline belongs to a different universe',
+            shouldContinue: true,
+          };
+        }
+
+        const deleted = await deleteStoryline(storylineId);
+        if (!deleted) {
+          return {
+            success: false,
+            result: null,
+            error: 'Failed to delete storyline',
+            shouldContinue: true,
+          };
+        }
+
+        return {
+          success: true,
+          result: {
+            message: `Deleted storyline "${existing.title}"`,
+            deletedStoryline: {
+              id: existing.id,
+              title: existing.title,
+            },
+          },
+          shouldContinue: false, // Terminal operation - deletion complete
         };
       }
 
@@ -1175,6 +1470,7 @@ export async function executeToolCall(
           success: false,
           result: null,
           error: `Unknown tool: ${toolName}`,
+          shouldContinue: true, // Agent may need to try a different tool
         };
     }
   } catch (error) {
@@ -1185,6 +1481,7 @@ export async function executeToolCall(
       success: false,
       result: null,
       error: errorMessage,
+      shouldContinue: true, // Agent should recover from errors
     };
   }
 }
