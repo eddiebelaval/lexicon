@@ -40,6 +40,18 @@ export function NotificationBell({ userId, className }: NotificationBellProps) {
 
   // Fetch unread count on mount and periodically
   useEffect(() => {
+    async function fetchUnreadCount() {
+      try {
+        const res = await fetch(`/api/notifications/count?userId=${userId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadCount(data.count);
+        }
+      } catch (error) {
+        console.error('Failed to fetch unread count:', error);
+      }
+    }
+
     fetchUnreadCount();
     const interval = setInterval(fetchUnreadCount, 60000); // Every minute
     return () => clearInterval(interval);
@@ -47,37 +59,25 @@ export function NotificationBell({ userId, className }: NotificationBellProps) {
 
   // Fetch notifications when dropdown opens
   useEffect(() => {
+    async function fetchNotifications() {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/notifications?userId=${userId}&limit=10`);
+        if (res.ok) {
+          const data = await res.json();
+          setNotifications(data.notifications);
+        }
+      } catch (error) {
+        console.error('Failed to fetch notifications:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     if (isOpen) {
       fetchNotifications();
     }
-  }, [isOpen]);
-
-  async function fetchUnreadCount() {
-    try {
-      const res = await fetch(`/api/notifications/count?userId=${userId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setUnreadCount(data.count);
-      }
-    } catch (error) {
-      console.error('Failed to fetch unread count:', error);
-    }
-  }
-
-  async function fetchNotifications() {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/notifications?userId=${userId}&limit=10`);
-      if (res.ok) {
-        const data = await res.json();
-        setNotifications(data.notifications);
-      }
-    } catch (error) {
-      console.error('Failed to fetch notifications:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
+  }, [isOpen, userId]);
 
   async function markAsRead(notificationId: string) {
     try {

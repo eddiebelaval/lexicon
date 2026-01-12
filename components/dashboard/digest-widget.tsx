@@ -31,26 +31,26 @@ export function DigestWidget({ userId, className }: DigestWidgetProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    async function fetchLatestDigest() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch(`/api/digests?userId=${userId}&limit=1`);
+        if (!res.ok) throw new Error('Failed to fetch digest');
+
+        const data = await res.json();
+        setDigest(data.digests?.[0] || null);
+      } catch (err) {
+        console.error('Error fetching digest:', err);
+        setError('Failed to load digest');
+      } finally {
+        setLoading(false);
+      }
+    }
+
     fetchLatestDigest();
   }, [userId]);
-
-  async function fetchLatestDigest() {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const res = await fetch(`/api/digests?userId=${userId}&limit=1`);
-      if (!res.ok) throw new Error('Failed to fetch digest');
-
-      const data = await res.json();
-      setDigest(data.digests?.[0] || null);
-    } catch (err) {
-      console.error('Error fetching digest:', err);
-      setError('Failed to load digest');
-    } finally {
-      setLoading(false);
-    }
-  }
 
   if (loading) {
     return (
@@ -78,7 +78,7 @@ export function DigestWidget({ userId, className }: DigestWidgetProps) {
         <div className="text-center py-4">
           <p className="text-[#666] text-sm mb-3">{error}</p>
           <button
-            onClick={fetchLatestDigest}
+            onClick={() => window.location.reload()}
             className="inline-flex items-center gap-2 text-[#38bdf8] hover:text-[#5ccfff] text-sm"
           >
             <RefreshCw className="w-4 h-4" />

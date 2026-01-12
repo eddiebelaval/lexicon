@@ -5,7 +5,7 @@
  * These are separate from the Neo4j graph operations.
  */
 
-import { supabase, createAdminClient } from './supabase';
+import { createAdminClient } from './supabase';
 import type {
   Conversation,
   CreateConversationInput,
@@ -204,19 +204,19 @@ export async function createMessage(
 ): Promise<Message | null> {
   const admin = createAdminClient();
 
-  // Use type assertion for new schema columns
+  // Type assertion needed because Supabase generated types don't include citations column
+  // TODO: Regenerate types with `npx supabase gen types typescript` after schema update
   const insertData = {
     conversation_id: input.conversationId,
     role: input.role,
     content: input.content,
     citations: JSON.stringify(input.citations || []),
     tool_calls: JSON.stringify(input.toolCalls || []),
-  } as Record<string, unknown>;
+  };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await admin
     .from('messages')
-    .insert(insertData as any)
+    .insert(insertData)
     .select()
     .single();
 

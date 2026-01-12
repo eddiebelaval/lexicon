@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BookOpen, Plus, Users, MapPin, Calendar, ArrowRight, MessageSquare, Network } from 'lucide-react';
+import { BookOpen, Plus, Users, MapPin, Calendar, MessageSquare, Network } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/notification-bell';
 import { DigestWidget } from '@/components/dashboard/digest-widget';
 

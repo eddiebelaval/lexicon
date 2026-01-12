@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { X, Loader2, User, MapPin, Calendar, Package, Users, ExternalLink } from 'lucide-react';
 import type { Entity, Relationship, EntityType } from '@/types';
 
@@ -178,10 +179,13 @@ export function EntityPreview({ entityId, onClose }: EntityPreviewProps) {
               {/* Image */}
               {entity.imageUrl && (
                 <div className="rounded-lg overflow-hidden border border-vhs/20">
-                  <img
+                  <Image
                     src={entity.imageUrl}
                     alt={entity.name}
+                    width={384}
+                    height={192}
                     className="w-full h-48 object-cover"
+                    unoptimized
                   />
                 </div>
               )}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { cn, formatDate, capitalize } from '@/lib/utils';
 import { EntityTypeBadge } from './entity-type-badge';
 import { RelationshipTypeBadge } from '@/components/relationships/relationship-type-badge';
@@ -58,7 +59,7 @@ export function EntityDetail({
 
     fetchRelationships();
     return () => controller.abort();
-  }, [entity.id, retryCount]);
+  }, [entity.id, entity.universeId, retryCount]);
 
   const handleRetryRelationships = () => setRetryCount((c) => c + 1);
 
@@ -214,11 +215,13 @@ export function EntityDetail({
             <h3 className="text-sm font-medium text-muted-foreground mb-2">
               Image
             </h3>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={entity.imageUrl}
               alt={entity.name}
+              width={400}
+              height={300}
               className="rounded-lg max-w-full h-auto"
+              unoptimized
             />
           </div>
         )}

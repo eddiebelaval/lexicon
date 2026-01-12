@@ -51,29 +51,29 @@ export function ChatHistory({
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
+    async function fetchConversations() {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetch(`/api/chat/conversations?universeId=${universeId}`);
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch conversations');
+        }
+
+        const data = await response.json();
+        // API returns { success: true, data: [...conversations] }
+        setConversations(data.data || data.conversations || []);
+      } catch (err) {
+        console.error('Error fetching conversations:', err);
+        setError('Failed to load conversations');
+      } finally {
+        setLoading(false);
+      }
+    }
+
     fetchConversations();
   }, [universeId]);
-
-  const fetchConversations = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await fetch(`/api/chat/conversations?universeId=${universeId}`);
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch conversations');
-      }
-
-      const data = await response.json();
-      // API returns { success: true, data: [...conversations] }
-      setConversations(data.data || data.conversations || []);
-    } catch (err) {
-      console.error('Error fetching conversations:', err);
-      setError('Failed to load conversations');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -125,7 +125,7 @@ export function ChatHistory({
       <div className="p-4 text-sm text-red-400">
         {error}
         <button
-          onClick={fetchConversations}
+          onClick={() => window.location.reload()}
           className="ml-2 underline hover:text-red-300"
         >
           Retry

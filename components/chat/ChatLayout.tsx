@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ChatSidebar } from './ChatSidebar';
 import { ChatThread } from './ChatThread';
 import { ChatInput } from './ChatInput';
@@ -45,17 +45,6 @@ export function ChatLayout({ universeId, initialQuery }: ChatLayoutProps) {
     }
   }, [activeConversationId]);
 
-  // Handle initial query from URL
-  useEffect(() => {
-    if (initialQuery && !hasProcessedInitialQuery && !isLoading) {
-      setHasProcessedInitialQuery(true);
-      // Small delay to ensure component is mounted
-      setTimeout(() => {
-        handleSendMessage(initialQuery);
-      }, 100);
-    }
-  }, [initialQuery, hasProcessedInitialQuery, isLoading]);
-
   const loadMessages = async (conversationId: string) => {
     try {
       setIsLoading(true);
@@ -86,7 +75,7 @@ export function ChatLayout({ universeId, initialQuery }: ChatLayoutProps) {
     setActiveConversationId(conversationId);
   };
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isLoading) return;
 
     // Create user message
@@ -198,7 +187,18 @@ export function ChatLayout({ universeId, initialQuery }: ChatLayoutProps) {
       setIsStreaming(false);
       setStreamingContent('');
     }
-  };
+  }, [universeId, activeConversationId, isLoading]);
+
+  // Handle initial query from URL
+  useEffect(() => {
+    if (initialQuery && !hasProcessedInitialQuery && !isLoading) {
+      setHasProcessedInitialQuery(true);
+      // Small delay to ensure component is mounted
+      setTimeout(() => {
+        handleSendMessage(initialQuery);
+      }, 100);
+    }
+  }, [initialQuery, hasProcessedInitialQuery, isLoading, handleSendMessage]);
 
   return (
     <div className="flex h-screen bg-surface-primary">

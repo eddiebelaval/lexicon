@@ -382,7 +382,6 @@ export async function POST(
     const entitiesToEnrich = entities.slice(0, maxEntities);
     const enrichments: Record<string, WebEnrichment> = {};
     let enrichedCount = 0;
-    let skippedCount = 0;
 
     const searchStart = Date.now();
 
@@ -408,8 +407,6 @@ export async function POST(
           if (result.status === 'fulfilled' && result.value.enrichment) {
             enrichments[result.value.id] = result.value.enrichment;
             enrichedCount++;
-          } else {
-            skippedCount++;
           }
         }
       }
@@ -423,7 +420,6 @@ export async function POST(
 
       Object.assign(enrichments, claudeEnrichments);
       enrichedCount = Object.keys(claudeEnrichments).length;
-      skippedCount = entitiesToEnrich.length - enrichedCount;
     }
 
     const searchMs = Date.now() - searchStart;

@@ -20,7 +20,7 @@ interface CitationDetailProps {
  *   onClose={() => setSelectedCitation(null)}
  * />
  */
-export function CitationDetail({ citation, onClose }: CitationDetailProps) {
+export function CitationDetail({ citation, onClose: _onClose }: CitationDetailProps) {
   const renderIcon = () => {
     if (citation.type === 'entity') {
       switch (citation.entityType) {
