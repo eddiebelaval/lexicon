@@ -98,8 +98,10 @@ CREATE INDEX idx_scenes_production ON scenes(production_id);
 CREATE INDEX idx_scenes_date ON scenes(scheduled_date);
 CREATE INDEX idx_scenes_status ON scenes(status);
 CREATE INDEX idx_scenes_cast ON scenes USING gin(cast_entity_ids);
-CREATE INDEX idx_scenes_upcoming ON scenes(scheduled_date)
-    WHERE status = 'scheduled' AND scheduled_date >= CURRENT_DATE;
+-- Note: partial index with CURRENT_DATE not possible (not immutable)
+-- Using a simple index on status + date instead
+CREATE INDEX idx_scenes_scheduled_date_status ON scenes(scheduled_date, status)
+    WHERE status = 'scheduled';
 
 -- =============================================================================
 -- SCENE_ASSIGNMENTS TABLE
