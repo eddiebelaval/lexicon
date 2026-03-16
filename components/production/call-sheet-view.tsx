@@ -7,7 +7,7 @@
  * renders as a clean printable document with scenes, cast, and crew.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Printer, Loader2, AlertCircle, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProduction } from '@/components/production/production-context';
@@ -45,31 +45,36 @@ export function CallSheetView({ productionId }: CallSheetViewProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCallSheet = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const res = await fetch(
-        `/api/call-sheet?productionId=${productionId}&date=${date}`
-      );
-      const data = await res.json();
-
-      if (data.success) {
-        setCallSheet(data.data);
-      } else {
-        setError(data.error?.message || 'Failed to load call sheet');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load call sheet');
-    } finally {
-      setLoading(false);
-    }
-  }, [productionId, date]);
-
   useEffect(() => {
+    const controller = new AbortController();
+
+    async function fetchCallSheet() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch(
+          `/api/call-sheet?productionId=${productionId}&date=${date}`,
+          { signal: controller.signal }
+        );
+        const data = await res.json();
+
+        if (data.success) {
+          setCallSheet(data.data);
+        } else {
+          setError(data.error?.message || 'Failed to load call sheet');
+        }
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        setError(err instanceof Error ? err.message : 'Failed to load call sheet');
+      } finally {
+        setLoading(false);
+      }
+    }
+
     fetchCallSheet();
-  }, [fetchCallSheet]);
+    return () => controller.abort();
+  }, [productionId, date]);
 
   return (
     <div className="space-y-6">
@@ -153,7 +158,7 @@ export function CallSheetView({ productionId }: CallSheetViewProps) {
               <div
                 key={entry.scene.id}
                 className={cn(
-                  'space-y-4',
+                  'space-y-4 print-scene-entry',
                   idx > 0 && 'border-t border-panel-border pt-8 print:border-gray-300'
                 )}
               >

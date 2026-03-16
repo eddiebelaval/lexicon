@@ -7,7 +7,7 @@
  * severity with colored left borders and Lucide icons.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   AlertTriangle,
   AlertCircle,
@@ -57,29 +57,33 @@ export function ProductionAlerts() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
 
-  const fetchAlerts = useCallback(async () => {
-    if (!production) return;
-    setLoading(true);
-
-    try {
-      const res = await fetch(
-        `/api/production-alerts?productionId=${production.id}`
-      );
-      const data = await res.json();
-
-      if (data.success) {
-        setAlerts(data.data ?? []);
-      }
-    } catch (err) {
-      console.error('Failed to fetch production alerts:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [production]);
-
   useEffect(() => {
+    if (!production) return;
+    const prodId = production.id;
+    const controller = new AbortController();
+
+    async function fetchAlerts() {
+      setLoading(true);
+      try {
+        const res = await fetch(
+          `/api/production-alerts?productionId=${prodId}`,
+          { signal: controller.signal }
+        );
+        const data = await res.json();
+        if (data.success) {
+          setAlerts(data.data ?? []);
+        }
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        console.error('Failed to fetch production alerts:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     fetchAlerts();
-  }, [fetchAlerts]);
+    return () => controller.abort();
+  }, [production]);
 
   // Don't render anything while loading or if no production
   if (loading || !production) return null;
