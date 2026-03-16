@@ -56,6 +56,23 @@ import {
   getIncompleteContracts,
   getScenesByStatus,
 } from './production-queries';
+import { createScene, updateScene } from './scenes';
+import { updateCastContract } from './cast-contracts';
+import {
+  createCrewAvailability,
+  updateCrewAvailability,
+  listCrewAvailability,
+} from './crew-availability';
+import { advanceStage } from './lifecycle';
+import type {
+  CreateProdSceneInput,
+  UpdateProdSceneInput,
+  ProdSceneStatus,
+  ContractStatus,
+  PaymentType,
+  AvailabilityStatus,
+  AssignmentRole,
+} from '@/types';
 import type { Storyline, StorylineWithCast, StorylineStatus } from '@/types';
 import { readQuery } from './neo4j';
 
@@ -807,6 +824,199 @@ export const lexiconTools: Tool[] = [
         },
       },
       required: ['productionId'],
+    },
+  },
+
+  // ----------------------------------------
+  // Production Write Operations (Lexi)
+  // ----------------------------------------
+  {
+    name: 'schedule_scene',
+    description:
+      'Schedule a new scene or update an existing one. Use to add shoots to the calendar.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID for the scene',
+        },
+        title: {
+          type: 'string',
+          description: 'Scene title or description',
+        },
+        scheduledDate: {
+          type: 'string',
+          description: 'Scheduled shoot date (YYYY-MM-DD)',
+        },
+        scheduledTime: {
+          type: 'string',
+          description: 'Scheduled shoot time (HH:MM)',
+        },
+        location: {
+          type: 'string',
+          description: 'Shoot location name',
+        },
+        locationDetails: {
+          type: 'string',
+          description: 'Additional location details (address, room, etc.)',
+        },
+        castEntityIds: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Array of cast member entity IDs appearing in this scene',
+        },
+        sceneNumber: {
+          type: 'string',
+          description: 'Scene number identifier',
+        },
+        status: {
+          type: 'string',
+          enum: ['scheduled', 'shot', 'cancelled', 'postponed', 'self_shot'],
+          description: 'Scene status (default: scheduled)',
+        },
+        equipmentNotes: {
+          type: 'string',
+          description: 'Notes about equipment needed',
+        },
+        isSelfShot: {
+          type: 'boolean',
+          description: 'Whether this is a self-shot scene (no crew needed)',
+        },
+        sceneId: {
+          type: 'string',
+          description: 'If provided, updates an existing scene instead of creating a new one',
+        },
+      },
+      required: ['productionId', 'title'],
+    },
+  },
+  {
+    name: 'assign_crew',
+    description:
+      'Assign a crew member to a scene with a specific role.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        sceneId: {
+          type: 'string',
+          description: 'The scene ID to assign crew to',
+        },
+        crewMemberId: {
+          type: 'string',
+          description: 'The crew member ID to assign',
+        },
+        role: {
+          type: 'string',
+          enum: ['ac', 'producer', 'fixer', 'coordinator', 'backup'],
+          description: 'Role for this assignment (default: ac)',
+        },
+        notes: {
+          type: 'string',
+          description: 'Additional notes for the assignment',
+        },
+      },
+      required: ['sceneId', 'crewMemberId'],
+    },
+  },
+  {
+    name: 'mark_contract',
+    description:
+      "Update a cast contract's status or completion fields. Use to mark contracts as signed, mark shoot/interview/pickup/payment as done.",
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        contractId: {
+          type: 'string',
+          description: 'The contract ID to update',
+        },
+        contractStatus: {
+          type: 'string',
+          enum: ['signed', 'pending', 'offer_sent', 'dnc', 'email_sent', 'declined'],
+          description: 'New contract status',
+        },
+        paymentType: {
+          type: 'string',
+          enum: ['daily', 'flat'],
+          description: 'Payment type for the contract',
+        },
+        shootDone: {
+          type: 'boolean',
+          description: 'Mark shoot as completed',
+        },
+        interviewDone: {
+          type: 'boolean',
+          description: 'Mark interview as completed',
+        },
+        pickupDone: {
+          type: 'boolean',
+          description: 'Mark pickup as completed',
+        },
+        paymentDone: {
+          type: 'boolean',
+          description: 'Mark payment as completed',
+        },
+        notes: {
+          type: 'string',
+          description: 'Additional notes for the contract',
+        },
+      },
+      required: ['contractId'],
+    },
+  },
+  {
+    name: 'advance_asset_stage',
+    description:
+      'Advance an asset to its next lifecycle stage. Use when a contract moves from Sent to Signed, a shoot moves from Scheduled to Shot, etc.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        assetInstanceId: {
+          type: 'string',
+          description: 'The asset instance ID to advance',
+        },
+        toStageId: {
+          type: 'string',
+          description: 'The target stage ID to advance to',
+        },
+        reason: {
+          type: 'string',
+          description: 'Reason for the stage transition',
+        },
+        transitionedByName: {
+          type: 'string',
+          description: 'Name of who triggered the transition (default: Lexi)',
+        },
+      },
+      required: ['assetInstanceId', 'toStageId'],
+    },
+  },
+  {
+    name: 'update_crew_availability',
+    description:
+      "Set a crew member's availability for a specific date.",
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        crewMemberId: {
+          type: 'string',
+          description: 'The crew member ID',
+        },
+        date: {
+          type: 'string',
+          description: 'Date to set availability for (YYYY-MM-DD)',
+        },
+        status: {
+          type: 'string',
+          enum: ['available', 'ooo', 'dark', 'holding', 'booked'],
+          description: 'Availability status',
+        },
+        notes: {
+          type: 'string',
+          description: 'Additional notes about availability',
+        },
+      },
+      required: ['crewMemberId', 'date'],
     },
   },
 ];
@@ -1679,6 +1889,215 @@ export async function executeToolCall(
           result: {
             scenes: filtered,
             count: filtered.length,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      // ----------------------------------------
+      // Production Write Operations (Lexi)
+      // ----------------------------------------
+      case 'schedule_scene': {
+        const sceneId = input.sceneId as string | undefined;
+
+        if (sceneId) {
+          // Update existing scene
+          const updateInput: UpdateProdSceneInput = {};
+          if (input.title !== undefined) updateInput.title = input.title as string;
+          if (input.scheduledDate !== undefined) updateInput.scheduledDate = input.scheduledDate as string;
+          if (input.scheduledTime !== undefined) updateInput.scheduledTime = input.scheduledTime as string;
+          if (input.location !== undefined) updateInput.location = input.location as string;
+          if (input.locationDetails !== undefined) updateInput.locationDetails = input.locationDetails as string;
+          if (input.castEntityIds !== undefined) updateInput.castEntityIds = input.castEntityIds as string[];
+          if (input.sceneNumber !== undefined) updateInput.sceneNumber = input.sceneNumber as string;
+          if (input.status !== undefined) updateInput.status = input.status as ProdSceneStatus;
+          if (input.equipmentNotes !== undefined) updateInput.equipmentNotes = input.equipmentNotes as string;
+          if (input.isSelfShot !== undefined) updateInput.isSelfShot = input.isSelfShot as boolean;
+
+          const scene = await updateScene(sceneId, updateInput);
+          if (!scene) {
+            return {
+              success: false,
+              result: null,
+              error: `Scene not found with ID: ${sceneId}`,
+              shouldContinue: true,
+            };
+          }
+
+          return {
+            success: true,
+            result: {
+              scene,
+              action: 'updated' as const,
+            },
+            shouldContinue: true,
+          };
+        } else {
+          // Create new scene
+          const createInput: CreateProdSceneInput = {
+            productionId: input.productionId as string,
+            title: input.title as string,
+            scheduledDate: input.scheduledDate as string | undefined,
+            scheduledTime: input.scheduledTime as string | undefined,
+            location: input.location as string | undefined,
+            locationDetails: input.locationDetails as string | undefined,
+            castEntityIds: input.castEntityIds as string[] | undefined,
+            sceneNumber: input.sceneNumber as string | undefined,
+            status: input.status as ProdSceneStatus | undefined,
+            equipmentNotes: input.equipmentNotes as string | undefined,
+            isSelfShot: input.isSelfShot as boolean | undefined,
+          };
+
+          const scene = await createScene(createInput);
+          return {
+            success: true,
+            result: {
+              scene,
+              action: 'created' as const,
+            },
+            shouldContinue: true,
+          };
+        }
+      }
+
+      case 'assign_crew': {
+        const sceneId = input.sceneId as string;
+        const crewMemberId = input.crewMemberId as string;
+        const role = (input.role as AssignmentRole) || 'ac';
+        const notes = (input.notes as string) || null;
+
+        // Use dynamic import to get Supabase client (same pattern as lexi.ts)
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+        if (!supabaseUrl || !supabaseServiceKey) {
+          throw new Error('Missing Supabase environment variables');
+        }
+
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        const { data: assignment, error: assignError } = await supabase
+          .from('scene_assignments')
+          .insert({
+            scene_id: sceneId,
+            crew_member_id: crewMemberId,
+            role,
+            notes,
+            status: 'assigned',
+          })
+          .select()
+          .single();
+
+        if (assignError) {
+          throw new Error(`Failed to assign crew: ${assignError.message}`);
+        }
+
+        return {
+          success: true,
+          result: {
+            assignment,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'mark_contract': {
+        const contractId = input.contractId as string;
+
+        const contractUpdate: import('@/types').UpdateCastContractInput = {};
+        if (input.contractStatus !== undefined)
+          contractUpdate.contractStatus = input.contractStatus as ContractStatus;
+        if (input.paymentType !== undefined)
+          contractUpdate.paymentType = input.paymentType as PaymentType;
+        if (input.shootDone !== undefined)
+          contractUpdate.shootDone = input.shootDone as boolean;
+        if (input.interviewDone !== undefined)
+          contractUpdate.interviewDone = input.interviewDone as boolean;
+        if (input.pickupDone !== undefined)
+          contractUpdate.pickupDone = input.pickupDone as boolean;
+        if (input.paymentDone !== undefined)
+          contractUpdate.paymentDone = input.paymentDone as boolean;
+        if (input.notes !== undefined)
+          contractUpdate.notes = input.notes as string;
+
+        const contract = await updateCastContract(contractId, contractUpdate);
+        if (!contract) {
+          return {
+            success: false,
+            result: null,
+            error: `Contract not found with ID: ${contractId}`,
+            shouldContinue: true,
+          };
+        }
+
+        return {
+          success: true,
+          result: {
+            contract,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'advance_asset_stage': {
+        const assetInstanceId = input.assetInstanceId as string;
+        const toStageId = input.toStageId as string;
+        const reason = input.reason as string | undefined;
+        const transitionedByName = (input.transitionedByName as string) || 'Lexi';
+
+        const asset = await advanceStage(assetInstanceId, {
+          toStageId,
+          reason,
+          transitionedByName,
+        });
+
+        return {
+          success: true,
+          result: {
+            asset,
+            transition: {
+              toStageId,
+              reason,
+              transitionedByName,
+            },
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'update_crew_availability': {
+        const crewMemberId = input.crewMemberId as string;
+        const date = input.date as string;
+        const status = (input.status as AvailabilityStatus) || 'available';
+        const notes = input.notes as string | undefined;
+
+        // Check if availability already exists for this crew+date
+        const existing = await listCrewAvailability({
+          crewMemberId,
+          date,
+        });
+
+        let availability;
+        if (existing.length > 0) {
+          // Update existing
+          availability = await updateCrewAvailability(existing[0].id, {
+            status,
+            notes: notes ?? null,
+          });
+        } else {
+          // Create new
+          availability = await createCrewAvailability({
+            crewMemberId,
+            date,
+            status,
+            notes,
+          });
+        }
+
+        return {
+          success: true,
+          result: {
+            availability,
           },
           shouldContinue: true,
         };
