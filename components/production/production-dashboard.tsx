@@ -135,17 +135,20 @@ export function ProductionDashboard() {
     if (production) fetchData();
   }, [production, fetchData]);
 
-  // Auto-refresh when any production data changes
+  // Auto-refresh when production data changes (filtered to this production)
   useRealtimeSubscription('scenes', {
-    onChange: () => { if (production) fetchData(); },
+    filter: production ? `production_id=eq.${production.id}` : undefined,
+    onChange: fetchData,
     enabled: !!production,
   });
   useRealtimeSubscription('cast_contracts', {
-    onChange: () => { if (production) fetchData(); },
+    filter: production ? `production_id=eq.${production.id}` : undefined,
+    onChange: fetchData,
     enabled: !!production,
   });
   useRealtimeSubscription('crew_members', {
-    onChange: () => { if (production) fetchData(); },
+    filter: production ? `production_id=eq.${production.id}` : undefined,
+    onChange: fetchData,
     enabled: !!production,
   });
 

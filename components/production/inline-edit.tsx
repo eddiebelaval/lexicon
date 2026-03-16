@@ -47,12 +47,16 @@ export function InlineEditText({
     }
   }, [editing, type]);
 
+  const savingRef = useRef(false);
+
   async function handleSave() {
+    if (savingRef.current) return; // Prevent double-save (Enter + blur race)
     if (draft === value) {
       setEditing(false);
       return;
     }
 
+    savingRef.current = true;
     setSaving(true);
     try {
       await onSave(draft);
@@ -62,6 +66,7 @@ export function InlineEditText({
       setEditing(false);
     } finally {
       setSaving(false);
+      savingRef.current = false;
     }
   }
 
@@ -73,7 +78,7 @@ export function InlineEditText({
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleSave();
+      inputRef.current?.blur(); // Single save path via onBlur
     }
     if (e.key === 'Escape') {
       handleCancel();

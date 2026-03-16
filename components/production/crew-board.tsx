@@ -129,8 +129,10 @@ export function CrewBoard() {
     if (production) fetchData();
   }, [production, fetchData]);
 
+  // crew_availability has crew_member_id not production_id, so we can't filter directly.
+  // Debounce in the hook (300ms default) prevents fetch storms.
   useRealtimeSubscription('crew_availability', {
-    onChange: () => fetchData(),
+    onChange: fetchData,
     enabled: !!production,
   });
 

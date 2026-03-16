@@ -6,6 +6,10 @@
  * Generic hook that subscribes to postgres_changes on a table,
  * fires callbacks on INSERT/UPDATE/DELETE, and cleans up on unmount.
  *
+ * Callbacks are stored in refs to avoid stale closures — the subscription
+ * is created once per (table, filter, enabled) combination, but always
+ * calls the latest callback versions.
+ *
  * Usage:
  *   useRealtimeSubscription('cast_contracts', {
  *     filter: `production_id=eq.${productionId}`,
@@ -30,8 +34,10 @@ interface RealtimeOptions {
   onUpdate?: (row: Row) => void;
   /** Called when a row is deleted (receives the old row) */
   onDelete?: (row: Row) => void;
-  /** Called on any change — convenience for simple refetch patterns */
+  /** Called on any change — convenience for simple refetch patterns (debounced 300ms) */
   onChange?: () => void;
+  /** Debounce interval in ms for onChange (default: 300) */
+  debounceMs?: number;
   /** Disable the subscription (e.g., when productionId is not yet loaded) */
   enabled?: boolean;
 }
@@ -41,6 +47,21 @@ export function useRealtimeSubscription(
   options: RealtimeOptions
 ) {
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Store callbacks in refs so the subscription closure always calls the latest version
+  const onInsertRef = useRef(options.onInsert);
+  const onUpdateRef = useRef(options.onUpdate);
+  const onDeleteRef = useRef(options.onDelete);
+  const onChangeRef = useRef(options.onChange);
+  const debounceMsRef = useRef(options.debounceMs ?? 300);
+
+  // Update refs on every render (cheap, no effect re-run)
+  onInsertRef.current = options.onInsert;
+  onUpdateRef.current = options.onUpdate;
+  onDeleteRef.current = options.onDelete;
+  onChangeRef.current = options.onChange;
+  debounceMsRef.current = options.debounceMs ?? 300;
 
   useEffect(() => {
     if (options.enabled === false) return;
@@ -72,18 +93,22 @@ export function useRealtimeSubscription(
           const newRow = payload.new as Row;
           const oldRow = payload.old as Row;
 
-          if (eventType === 'INSERT' && options.onInsert) {
-            options.onInsert(newRow);
+          if (eventType === 'INSERT' && onInsertRef.current) {
+            onInsertRef.current(newRow);
           }
-          if (eventType === 'UPDATE' && options.onUpdate) {
-            options.onUpdate(newRow);
+          if (eventType === 'UPDATE' && onUpdateRef.current) {
+            onUpdateRef.current(newRow);
           }
-          if (eventType === 'DELETE' && options.onDelete) {
-            options.onDelete(oldRow);
+          if (eventType === 'DELETE' && onDeleteRef.current) {
+            onDeleteRef.current(oldRow);
           }
 
-          if (options.onChange) {
-            options.onChange();
+          if (onChangeRef.current) {
+            // Debounce onChange to prevent fetch storms on batch operations
+            if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+            debounceTimerRef.current = setTimeout(() => {
+              onChangeRef.current?.();
+            }, debounceMsRef.current);
           }
         }
       )
@@ -92,6 +117,7 @@ export function useRealtimeSubscription(
     channelRef.current = channel;
 
     return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
