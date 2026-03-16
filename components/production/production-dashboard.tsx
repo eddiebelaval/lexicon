@@ -294,13 +294,15 @@ export function ProductionDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Upcoming Scenes */}
         <section>
-          <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wide mb-4">
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
             Upcoming Scenes
           </h2>
 
           {upcomingScenes.length === 0 ? (
-            <div className="text-sm text-gray-600 py-8 text-center border border-panel-border rounded-lg bg-surface-secondary">
-              No upcoming scenes scheduled.
+            <div className="flex flex-col items-center py-10 text-center border border-panel-border rounded-lg bg-surface-secondary">
+              <CalendarDays className="h-8 w-8 text-gray-600 mb-2" />
+              <p className="text-sm text-gray-400">No upcoming scenes</p>
+              <p className="text-xs text-gray-600 mt-0.5">Schedule scenes from the Calendar tab.</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -352,13 +354,15 @@ export function ProductionDashboard() {
 
         {/* Incomplete Contracts */}
         <section>
-          <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wide mb-4">
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
             Incomplete Contracts
           </h2>
 
           {incompleteContracts.length === 0 ? (
-            <div className="text-sm text-gray-600 py-8 text-center border border-panel-border rounded-lg bg-surface-secondary">
-              All contracts are complete.
+            <div className="flex flex-col items-center py-10 text-center border border-panel-border rounded-lg bg-surface-secondary">
+              <FileCheck className="h-8 w-8 text-emerald-500/50 mb-2" />
+              <p className="text-sm text-emerald-400">All contracts complete</p>
+              <p className="text-xs text-gray-600 mt-0.5">Nothing needs attention right now.</p>
             </div>
           ) : (
             <div className="space-y-2">

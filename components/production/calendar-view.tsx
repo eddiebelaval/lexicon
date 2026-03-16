@@ -15,6 +15,7 @@ import {
   CalendarDays,
   LayoutGrid,
   X,
+  RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CalendarDayCell } from '@/components/production/calendar-day-cell';
@@ -250,8 +251,16 @@ export function CalendarView() {
 
       {/* Error state */}
       {error && (
-        <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-          {error}
+        <div className="flex items-center justify-between rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3">
+          <span className="text-sm text-red-400">{error}</span>
+          <button
+            type="button"
+            onClick={fetchScenes}
+            className="flex items-center gap-1.5 text-xs font-medium text-red-400 hover:text-red-300 transition-colors"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Retry
+          </button>
         </div>
       )}
 

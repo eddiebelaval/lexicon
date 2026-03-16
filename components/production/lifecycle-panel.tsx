@@ -180,7 +180,7 @@ export function LifecyclePanel({
       {/* History */}
       {showHistory && (
         <div className="border-t border-panel-border pt-3">
-          <h4 className="text-[10px] font-medium uppercase tracking-wider text-gray-600 mb-2">
+          <h4 className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-2">
             History
           </h4>
           <LifecycleHistory

@@ -31,10 +31,10 @@ function ProductionHeader({ universeId }: { universeId: string }) {
             Universe
           </Link>
           <span className="text-gray-600">/</span>
-          <h1 className="text-sm font-medium text-gray-200">
+          <h1 className="text-base font-semibold text-gray-100">
             {production?.name || 'Production'}
             {production?.season && (
-              <span className="ml-2 text-gray-500">
+              <span className="ml-2 text-sm font-normal text-gray-500">
                 {production.season}
               </span>
             )}

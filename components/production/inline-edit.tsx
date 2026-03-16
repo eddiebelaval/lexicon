@@ -117,7 +117,7 @@ export function InlineEditText({
       title="Click to edit"
     >
       {value || placeholder}
-      <Pencil className="h-3 w-3 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <Pencil className="h-3 w-3 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" />
     </span>
   );
 }
@@ -197,7 +197,7 @@ export function InlineEditSelect({
       title="Click to edit"
     >
       {currentLabel}
-      <Pencil className="h-3 w-3 text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <Pencil className="h-3 w-3 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" />
     </span>
   );
 }

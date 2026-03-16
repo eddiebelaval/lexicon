@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, AlertCircle, RefreshCw, UserCog } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CrewAvailabilityCell } from '@/components/production/crew-availability-cell';
 import { useProduction } from '@/components/production/production-context';
@@ -239,9 +239,17 @@ export function CrewBoard() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-500">
-        <AlertCircle className="h-6 w-6 text-red-400" />
-        <p className="text-sm">{error}</p>
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <AlertCircle className="h-8 w-8 text-red-400 mb-3" />
+        <p className="text-sm text-gray-400 mb-4">{error}</p>
+        <button
+          type="button"
+          onClick={fetchData}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-vhs-400 border border-vhs-400/30 rounded-md hover:bg-vhs-400/10 transition-colors"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          Retry
+        </button>
       </div>
     );
   }
@@ -297,9 +305,11 @@ export function CrewBoard() {
               <tr>
                 <td
                   colSpan={6}
-                  className="px-4 py-10 text-center text-sm text-gray-600"
+                  className="px-4 py-12 text-center"
                 >
-                  No crew members found. Add crew members first.
+                  <UserCog className="h-8 w-8 text-gray-600 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-gray-400 mb-1">No crew members yet</p>
+                  <p className="text-xs text-gray-600">Add crew members to start tracking availability.</p>
                 </td>
               </tr>
             ) : (
