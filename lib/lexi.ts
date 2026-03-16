@@ -154,7 +154,7 @@ export async function buildProductionContext(
     const [productionRes, scenesRes, contractsRes, crewRes] = await Promise.all([
       db.from('productions').select('*').eq('id', productionId).single(),
       db
-        .from('prod_scenes')
+        .from('scenes')
         .select('*')
         .eq('production_id', productionId)
         .in('status', ['scheduled', 'postponed'])
@@ -245,7 +245,7 @@ export async function buildProductionSummary(
 
     const [productionRes, scenesRes, contractsRes, crewRes] = await Promise.all([
       db.from('productions').select('*').eq('id', productionId).single(),
-      db.from('prod_scenes').select('*').eq('production_id', productionId),
+      db.from('scenes').select('*').eq('production_id', productionId),
       db.from('cast_contracts').select('*').eq('production_id', productionId),
       db
         .from('crew_members')

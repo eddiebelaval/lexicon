@@ -1,0 +1,196 @@
+'use client';
+
+/**
+ * Cast Board — Full table view of cast contracts for a production
+ *
+ * Fetches contracts via API, supports optimistic checkbox toggling,
+ * and displays a summary bar.
+ */
+
+import { useCallback, useEffect, useState } from 'react';
+import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { CastRow } from '@/components/production/cast-row';
+import type { CastContract, Production } from '@/types/production';
+
+interface CastBoardProps {
+  universeId: string;
+}
+
+export function CastBoard({ universeId }: CastBoardProps) {
+  const [production, setProduction] = useState<Production | null>(null);
+  const [contracts, setContracts] = useState<CastContract[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Fetch production for this universe
+      const prodRes = await fetch(`/api/productions?universeId=${universeId}`);
+      if (!prodRes.ok) throw new Error('Failed to fetch production');
+      const prodData = await prodRes.json();
+      const prod: Production = Array.isArray(prodData) ? prodData[0] : prodData;
+      if (!prod) throw new Error('No production found for this universe');
+      setProduction(prod);
+
+      // Fetch cast contracts
+      const castRes = await fetch(`/api/cast-contracts?productionId=${prod.id}`);
+      if (!castRes.ok) throw new Error('Failed to fetch cast contracts');
+      const castData = await castRes.json();
+      setContracts(Array.isArray(castData) ? castData : []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  }, [universeId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleToggle = useCallback(
+    async (id: string, field: string, value: boolean) => {
+      // Optimistic update
+      setContracts((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, [field]: value } : c))
+      );
+
+      try {
+        const res = await fetch(`/api/cast-contracts/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [field]: value }),
+        });
+
+        if (!res.ok) {
+          // Revert on failure
+          setContracts((prev) =>
+            prev.map((c) => (c.id === id ? { ...c, [field]: !value } : c))
+          );
+        }
+      } catch {
+        // Revert on network error
+        setContracts((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, [field]: !value } : c))
+        );
+      }
+    },
+    []
+  );
+
+  // Summary stats
+  const signedCount = contracts.filter((c) => c.contractStatus === 'signed').length;
+  const totalCount = contracts.length;
+  const completionFields = ['shootDone', 'interviewDone', 'pickupDone', 'paymentDone'] as const;
+  const totalChecks = totalCount * completionFields.length;
+  const doneChecks = contracts.reduce(
+    (sum, c) => sum + completionFields.filter((f) => c[f]).length,
+    0
+  );
+  const completionPct = totalChecks > 0 ? Math.round((doneChecks / totalChecks) * 100) : 0;
+
+  // Loading skeleton
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-gray-500">
+        <Loader2 className="h-8 w-8 animate-spin text-vhs-400" />
+        <p className="mt-3 text-sm">Loading cast board...</p>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-gray-500">
+        <AlertCircle className="h-8 w-8 text-red-400" />
+        <p className="mt-3 text-sm text-red-400">{error}</p>
+        <button
+          type="button"
+          onClick={fetchData}
+          className="mt-4 flex items-center gap-2 rounded-md bg-surface-secondary px-4 py-2 text-sm text-gray-300 hover:bg-surface-tertiary transition-colors"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6">
+      {/* Summary bar */}
+      <div className="mb-6 flex items-center gap-4 rounded-lg border border-panel-border bg-panel-bg px-5 py-3">
+        <span className="text-sm text-gray-400">
+          <span className="font-medium text-gray-200">{signedCount}</span> of{' '}
+          <span className="font-medium text-gray-200">{totalCount}</span> contracts signed
+        </span>
+        <span className="text-panel-border">|</span>
+        <span className="text-sm text-gray-400">
+          <span
+            className={cn(
+              'font-medium',
+              completionPct === 100 ? 'text-emerald-400' : 'text-vhs-400'
+            )}
+          >
+            {completionPct}%
+          </span>{' '}
+          complete
+        </span>
+      </div>
+
+      {/* Table */}
+      {contracts.length === 0 ? (
+        <p className="py-12 text-center text-sm text-gray-500">
+          No cast contracts yet. Add contracts from the production dashboard.
+        </p>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-panel-border">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-panel-border bg-panel-header">
+                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Cast Entity
+                </th>
+                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Payment
+                </th>
+                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Shoot
+                </th>
+                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
+                  INTV
+                </th>
+                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
+                  PU
+                </th>
+                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
+                  $
+                </th>
+                <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Notes
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {contracts.map((contract) => (
+                <CastRow
+                  key={contract.id}
+                  contract={contract}
+                  onToggle={handleToggle}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}

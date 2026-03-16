@@ -128,6 +128,53 @@ Blueprint: 8 phases, 27 tasks. Executed Phase 1 + Phase 2 overnight.
 **Seed:** 15 cast, 10 crew, 20 scenes, 15 contracts, 50 availability entries.
 **PR:** https://github.com/eddiebelaval/lexicon/pull/4
 
+### March 16, 2026 — Phase 2: Production UI (Spreadsheet Replacement)
+
+The Excel spreadsheet for Diaries production had 7 columns for the weekly calendar, plus cast tracking columns (Signed, Daily/Flat, Shoot Done, INTV Done, PU Done, $ Done). Phase 2 replaces all of this with a dedicated production management UI.
+
+**Bug Fix:** `prod_scenes` table references in `lexi.ts` and `production-queries.ts` were wrong — migration creates `scenes`. Fixed before building UI.
+
+**Supabase Seed Script:** `seed/seed-supabase-production.ts` — seeds all production tables (productions, scenes, crew, contracts, availability) from the Diaries S7 data. Complements the Neo4j-only seed for cast entities.
+
+**Production Layout + Navigation:**
+- Shared layout with breadcrumb header (Universe / Production / Season)
+- Tab navigation: Dashboard | Calendar | Cast | Crew
+- "Ask Lexi" shortcut button linking to chat in production mode
+
+**Production Dashboard (`/universe/[id]/production`):**
+- Stat cards: total cast, signed contracts, scenes progress, active crew
+- Upcoming scenes list with status badges
+- Incomplete contracts with missing deliverables highlighted
+
+**Cast Board (`/universe/[id]/production/cast`):**
+- Contract table with interactive completion checkboxes
+- Status badges: Signed (green), Pending (yellow), Offer Sent (blue), DNC (red)
+- Optimistic toggle updates on Shoot/INTV/PU/$ Done checkboxes
+- Summary line: "X of Y contracts signed | Z% complete"
+
+**Crew Availability Board (`/universe/[id]/production/crew`):**
+- Grid layout: crew members x weekday dates (Mon-Fri)
+- Color-coded status cells: available (green), booked (blue), OOO (red), dark (gray), holding (yellow)
+- Week navigation with prev/next
+- Click to cycle status
+
+**Calendar View (`/universe/[id]/production/calendar`):**
+- Week and month view modes with navigation
+- Scene chips in day cells, color-coded by status
+- Click-to-expand scene detail panel
+- Today highlighting
+
+**Scene Edit Dialog:**
+- Full form: scene number, title, description, date/time, location, status, equipment notes, self-shot toggle
+- Cast assignment via entity search dropdown
+- Works for both create and edit flows
+
+**Universe Page Integration:**
+- Added "Production" button to the Graph/Wiki view toggle (Clapperboard icon)
+- Links to `/universe/[id]/production/`
+
+**Build:** 4 parallel agents built Dashboard, Cast Board, Crew Board, and Calendar simultaneously. Scene Edit Dialog and Universe integration built directly. Zero type errors, build passes.
+
 ---
 
 ## Key Decisions (and Why)
@@ -169,15 +216,17 @@ Full control over rendering, interaction, styling. Libraries like vis.js or cyto
 
 | Metric | Value |
 |--------|-------|
-| Total LOC | ~37,300 (+6,400 overnight) |
-| Components | 55+ |
+| Total LOC | ~42,000 (+4,700 Phase 2 UI) |
+| Components | 68+ (55 original + 13 production) |
+| Production UI Pages | 4 (dashboard, calendar, cast, crew) |
 | API Endpoints | 49 (28 original + 10 production + 11 other) |
 | Agent Tools | 24 (19 original + 5 production) |
 | Tests | 129 (production tests pending) |
 | Supabase Tables | 7 production + existing |
 | Supabase Migrations | 12 |
-| Seeded Data | 15 cast, 10 crew, 20 scenes, 15 contracts |
+| Seeded Data | 15 cast, 10 crew, 20 scenes, 15 contracts, 50 availability |
 | Build time (original) | 3 days (Jan 5-8) |
 | Dormancy | 66 days (Jan 9 — Mar 15) |
-| Build time (Lexi) | 1 overnight session (Mar 15-16) |
+| Build time (Lexi backend) | 1 overnight session (Mar 15-16) |
+| Build time (Production UI) | 1 session (Mar 16) |
 | PR | #4 — feature/lexi-production |

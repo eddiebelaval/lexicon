@@ -109,7 +109,7 @@ export async function getUpcomingScenes(
   const futureStr = futureDate.toISOString().split('T')[0];
 
   const { data, error } = await getSupabase()
-    .from('prod_scenes')
+    .from('scenes')
     .select('*')
     .eq('production_id', productionId)
     .gte('scheduled_date', todayStr)
@@ -231,7 +231,7 @@ export async function getScenesForCastMember(
   castEntityId: string
 ): Promise<ProdScene[]> {
   const { data, error } = await getSupabase()
-    .from('prod_scenes')
+    .from('scenes')
     .select('*')
     .contains('cast_entity_ids', [castEntityId])
     .order('scheduled_date', { ascending: true });
@@ -263,7 +263,7 @@ export async function getScenesByStatus(
   status: string
 ): Promise<ProdScene[]> {
   const { data, error } = await getSupabase()
-    .from('prod_scenes')
+    .from('scenes')
     .select('*')
     .eq('production_id', productionId)
     .eq('status', status)
