@@ -23,6 +23,7 @@ import {
 import { cn } from '@/lib/utils';
 import { ProductionStats } from './production-stats';
 import { useProduction } from './production-context';
+import { useRealtimeSubscription } from '@/lib/hooks/use-realtime';
 import { SCENE_STATUS_CONFIG, CONTRACT_STATUS_CONFIG } from '@/lib/production-config';
 import type {
   ProdScene,
@@ -133,6 +134,20 @@ export function ProductionDashboard() {
   useEffect(() => {
     if (production) fetchData();
   }, [production, fetchData]);
+
+  // Auto-refresh when any production data changes
+  useRealtimeSubscription('scenes', {
+    onChange: () => { if (production) fetchData(); },
+    enabled: !!production,
+  });
+  useRealtimeSubscription('cast_contracts', {
+    onChange: () => { if (production) fetchData(); },
+    enabled: !!production,
+  });
+  useRealtimeSubscription('crew_members', {
+    onChange: () => { if (production) fetchData(); },
+    enabled: !!production,
+  });
 
   // -----------------------------------------------------------------------
   // Derived data

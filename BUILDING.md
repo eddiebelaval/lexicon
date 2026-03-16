@@ -238,6 +238,33 @@ The guided onboarding that lets any show set up in Lexicon. A 5-step wizard that
 
 **Missing endpoint:** Created `POST /api/lifecycle-stages` for the launch step (was missing from Phase 3 — stages were only creatable via the seed script).
 
+### March 16, 2026 — Phase 5: Real-Time Collaboration
+
+The sync layer that makes Lexicon a team tool instead of a single-user dashboard.
+
+**useRealtimeSubscription hook** (`lib/hooks/use-realtime.ts`):
+- Generic hook that subscribes to Supabase Realtime postgres_changes on any table
+- Supports filter, onInsert/onUpdate/onDelete callbacks, and a simple onChange refetch pattern
+- Auto-subscribes on mount, cleans up on unmount, gated by `enabled` flag
+
+**Inline editing** (`components/production/inline-edit.tsx`):
+- InlineEditText: click text to edit, save on blur/Enter, cancel on Escape
+- InlineEditSelect: click to show dropdown, save on change
+- Both handle async saves with loading states and error revert
+
+**Cast board — realtime + inline editing:**
+- Subscribes to `cast_contracts` table changes — board auto-refreshes when another user makes changes
+- Contract status: click to change via InlineEditSelect (Signed/Pending/DNC/etc.)
+- Payment type: click to change (Daily/Flat)
+- Notes: click to edit in place
+- Completion checkboxes remain as before (already interactive)
+
+**Crew board — realtime:**
+- Subscribes to `crew_availability` changes — grid auto-refreshes on remote updates
+
+**Dashboard — realtime:**
+- Subscribes to `scenes`, `cast_contracts`, and `crew_members` — stats auto-refresh when production data changes anywhere
+
 ---
 
 ## Key Decisions (and Why)
@@ -279,8 +306,8 @@ Full control over rendering, interaction, styling. Libraries like vis.js or cyto
 
 | Metric | Value |
 |--------|-------|
-| Total LOC | ~49,000 (+3,000 intake wizard) |
-| Components | 80+ (55 original + 13 production + 4 lifecycle + 8 intake) |
+| Total LOC | ~50,000 (+1,000 realtime + inline edit) |
+| Components | 82+ (55 original + 13 production + 4 lifecycle + 8 intake + 2 realtime) |
 | Production UI Pages | 4 (dashboard, calendar, cast, crew) |
 | API Endpoints | 57 (28 original + 10 production + 8 lifecycle + 11 other) |
 | Agent Tools | 24 (19 original + 5 production) |
@@ -295,4 +322,5 @@ Full control over rendering, interaction, styling. Libraries like vis.js or cyto
 | Build time (Production UI) | 1 session (Mar 16) |
 | Build time (Lifecycle Engine) | 1 session (Mar 16) |
 | Build time (Intake Wizard) | 1 session (Mar 16) |
+| Build time (Realtime + Inline Edit) | 1 session (Mar 16) |
 | PR | #4 — feature/lexi-production |

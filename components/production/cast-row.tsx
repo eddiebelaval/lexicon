@@ -2,11 +2,15 @@
 
 /**
  * Cast Row — Single row in the cast board table
+ *
+ * Completion checkboxes use optimistic toggle via onToggle prop.
+ * Text/select fields use InlineEdit components that save directly via API.
  */
 
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ContractStatusBadge } from '@/components/production/contract-status-badge';
+import { InlineEditText, InlineEditSelect } from '@/components/production/inline-edit';
+import { CONTRACT_STATUS_CONFIG } from '@/lib/production-config';
 import type { CompletionField } from '@/lib/production-config';
 import type { CastContract } from '@/types/production';
 
@@ -38,6 +42,24 @@ function CompletionCheckbox({
   );
 }
 
+const contractStatusOptions = Object.entries(CONTRACT_STATUS_CONFIG).map(
+  ([value, config]) => ({ value, label: config.label })
+);
+
+const paymentTypeOptions = [
+  { value: 'daily', label: 'Daily' },
+  { value: 'flat', label: 'Flat' },
+];
+
+async function saveField(contractId: string, field: string, value: string) {
+  const res = await fetch(`/api/cast-contracts/${contractId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ [field]: value }),
+  });
+  if (!res.ok) throw new Error('Failed to save');
+}
+
 export function CastRow({ contract, onToggle }: CastRowProps) {
   return (
     <tr className="border-b border-panel-border hover:bg-surface-secondary/50 transition-colors">
@@ -45,10 +67,18 @@ export function CastRow({ contract, onToggle }: CastRowProps) {
         {contract.castEntityId}
       </td>
       <td className="px-4 py-3">
-        <ContractStatusBadge status={contract.contractStatus} />
+        <InlineEditSelect
+          value={contract.contractStatus}
+          options={contractStatusOptions}
+          onSave={(value) => saveField(contract.id, 'contractStatus', value)}
+        />
       </td>
-      <td className="px-4 py-3 text-sm text-gray-400 capitalize">
-        {contract.paymentType ?? '--'}
+      <td className="px-4 py-3 text-sm text-gray-400">
+        <InlineEditSelect
+          value={contract.paymentType ?? ''}
+          options={paymentTypeOptions}
+          onSave={(value) => saveField(contract.id, 'paymentType', value)}
+        />
       </td>
       <td className="px-4 py-3">
         <CompletionCheckbox
@@ -74,8 +104,12 @@ export function CastRow({ contract, onToggle }: CastRowProps) {
           onChange={() => onToggle(contract.id, 'paymentDone', !contract.paymentDone)}
         />
       </td>
-      <td className="px-4 py-3 text-sm text-gray-500 max-w-[200px] truncate">
-        {contract.notes ?? ''}
+      <td className="px-4 py-3 text-sm text-gray-500 max-w-[200px]">
+        <InlineEditText
+          value={contract.notes ?? ''}
+          onSave={(value) => saveField(contract.id, 'notes', value)}
+          placeholder="--"
+        />
       </td>
     </tr>
   );

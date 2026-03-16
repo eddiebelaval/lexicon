@@ -12,6 +12,7 @@ import { ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CrewAvailabilityCell } from '@/components/production/crew-availability-cell';
 import { useProduction } from '@/components/production/production-context';
+import { useRealtimeSubscription } from '@/lib/hooks/use-realtime';
 import type {
   CrewMember,
   CrewAvailability,
@@ -127,6 +128,11 @@ export function CrewBoard() {
   useEffect(() => {
     if (production) fetchData();
   }, [production, fetchData]);
+
+  useRealtimeSubscription('crew_availability', {
+    onChange: () => fetchData(),
+    enabled: !!production,
+  });
 
   // ---- Handlers ----
 

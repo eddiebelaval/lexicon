@@ -12,6 +12,7 @@ import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CastRow } from '@/components/production/cast-row';
 import { useProduction } from '@/components/production/production-context';
+import { useRealtimeSubscription } from '@/lib/hooks/use-realtime';
 import type { CastContract } from '@/types/production';
 
 export function CastBoard() {
@@ -41,6 +42,12 @@ export function CastBoard() {
   useEffect(() => {
     if (production) fetchData();
   }, [production, fetchData]);
+
+  useRealtimeSubscription('cast_contracts', {
+    filter: production ? `production_id=eq.${production.id}` : undefined,
+    onChange: () => fetchData(),
+    enabled: !!production,
+  });
 
   const handleToggle = useCallback(
     async (id: string, field: string, value: boolean) => {
