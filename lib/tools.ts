@@ -48,6 +48,14 @@ import {
   deleteStoryline,
   getStorylinesForEntity,
 } from './storylines';
+import {
+  getUpcomingScenes,
+  getCastCompletionStatus,
+  getCrewAvailabilityForDate,
+  getScenesForCastMember,
+  getIncompleteContracts,
+  getScenesByStatus,
+} from './production-queries';
 import type { Storyline, StorylineWithCast, StorylineStatus } from '@/types';
 import { readQuery } from './neo4j';
 
@@ -687,6 +695,118 @@ export const lexiconTools: Tool[] = [
         },
       },
       required: ['storylineId', 'confirm'],
+    },
+  },
+
+  // ----------------------------------------
+  // Production Operations (Lexi)
+  // ----------------------------------------
+  {
+    name: 'query_scenes',
+    description:
+      'Query production scenes with filters. Use to find upcoming shoots, scenes by status, or scenes for a specific cast member. Returns scheduled dates, locations, cast, and crew assignments.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID to query scenes for',
+        },
+        status: {
+          type: 'string',
+          enum: ['scheduled', 'shot', 'cancelled', 'postponed', 'self_shot'],
+          description: 'Filter by scene status',
+        },
+        castEntityId: {
+          type: 'string',
+          description: 'Filter scenes by a specific cast member entity ID',
+        },
+        days: {
+          type: 'number',
+          description: 'Show scenes in the next N days (default: 7)',
+        },
+      },
+      required: ['productionId'],
+    },
+  },
+  {
+    name: 'query_cast_status',
+    description:
+      'Get the contract and completion status for all cast members in a production. Shows signed status, payment type, and whether shoot/interview/pickup/payment are done.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID to query cast status for',
+        },
+        incompleteOnly: {
+          type: 'boolean',
+          description: 'If true, only return cast members with incomplete items',
+        },
+      },
+      required: ['productionId'],
+    },
+  },
+  {
+    name: 'query_crew_availability',
+    description:
+      'Check crew availability for a specific date. Shows which crew members are available, OOO, dark, holding, or booked.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID to query crew for',
+        },
+        date: {
+          type: 'string',
+          description: 'Date to check availability for (YYYY-MM-DD format)',
+        },
+      },
+      required: ['productionId', 'date'],
+    },
+  },
+  {
+    name: 'get_production_summary',
+    description:
+      'Get a high-level summary of a production: total cast, signed percentage, total scenes, scenes shot, crew count, upcoming scenes, and incomplete contracts.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID to summarize',
+        },
+      },
+      required: ['productionId'],
+    },
+  },
+  {
+    name: 'search_schedule',
+    description:
+      'Search the production schedule by date range, cast member, or location. Use when someone asks "what\'s happening this week" or "when is Chantel shooting next".',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID to search',
+        },
+        startDate: {
+          type: 'string',
+          description: 'Start of date range (YYYY-MM-DD)',
+        },
+        endDate: {
+          type: 'string',
+          description: 'End of date range (YYYY-MM-DD)',
+        },
+        castEntityId: {
+          type: 'string',
+          description: 'Filter by cast member entity ID',
+        },
+      },
+      required: ['productionId'],
     },
   },
 ];
@@ -1462,6 +1582,105 @@ export async function executeToolCall(
             },
           },
           shouldContinue: false, // Terminal operation - deletion complete
+        };
+      }
+
+      // ----------------------------------------
+      // Production Operations (Lexi)
+      // ----------------------------------------
+      case 'query_scenes': {
+        const productionId = input.productionId as string;
+        const castEntityId = input.castEntityId as string | undefined;
+        const status = input.status as string | undefined;
+        const days = (input.days as number) || 7;
+
+        let scenes;
+        if (castEntityId) {
+          scenes = await getScenesForCastMember(castEntityId);
+        } else if (status) {
+          scenes = await getScenesByStatus(productionId, status);
+        } else {
+          scenes = await getUpcomingScenes(productionId, days);
+        }
+
+        return {
+          success: true,
+          result: {
+            scenes,
+            count: scenes.length,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'query_cast_status': {
+        const productionId = input.productionId as string;
+        const incompleteOnly = input.incompleteOnly as boolean;
+
+        const contracts = incompleteOnly
+          ? await getIncompleteContracts(productionId)
+          : await getCastCompletionStatus(productionId);
+
+        return {
+          success: true,
+          result: {
+            contracts,
+            count: contracts.length,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'query_crew_availability': {
+        const productionId = input.productionId as string;
+        const date = input.date as string;
+
+        const availability = await getCrewAvailabilityForDate(productionId, date);
+
+        return {
+          success: true,
+          result: {
+            date,
+            crew: availability,
+            count: availability.length,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'get_production_summary': {
+        const productionId = input.productionId as string;
+        const { buildProductionSummary } = await import('./lexi');
+        const summary = await buildProductionSummary(productionId);
+
+        return {
+          success: true,
+          result: summary,
+          shouldContinue: true,
+        };
+      }
+
+      case 'search_schedule': {
+        const productionId = input.productionId as string;
+        const days = 30; // default to 30 days for schedule search
+        const scenes = await getUpcomingScenes(productionId, days);
+
+        // Filter by cast if specified
+        const castEntityId = input.castEntityId as string | undefined;
+        const filtered = castEntityId
+          ? scenes.filter((s) => {
+              const castIds = (s as unknown as { castEntityIds?: string[] }).castEntityIds;
+              return Array.isArray(castIds) && castIds.includes(castEntityId);
+            })
+          : scenes;
+
+        return {
+          success: true,
+          result: {
+            scenes: filtered,
+            count: filtered.length,
+          },
+          shouldContinue: true,
         };
       }
 

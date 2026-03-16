@@ -130,10 +130,14 @@ export interface ToolCallResult {
 /**
  * ChatRequest - Request to send a message
  */
+export type ChatMode = 'universe' | 'production';
+
 export interface ChatRequest {
   conversationId?: string; // If null, creates new conversation
   universeId: string;
   message: string;
+  mode?: ChatMode;         // 'universe' (default) or 'production' (Lexi mode)
+  productionId?: string;   // Required when mode is 'production'
 }
 
 /**
