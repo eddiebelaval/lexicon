@@ -29,18 +29,20 @@ export function CastBoard({ universeId }: CastBoardProps) {
 
     try {
       // Fetch production for this universe
-      const prodRes = await fetch(`/api/productions?universeId=${universeId}`);
+      const prodRes = await fetch(`/api/productions?universeId=${universeId}&limit=1`);
       if (!prodRes.ok) throw new Error('Failed to fetch production');
       const prodData = await prodRes.json();
-      const prod: Production = Array.isArray(prodData) ? prodData[0] : prodData;
-      if (!prod) throw new Error('No production found for this universe');
+      const prod: Production | undefined =
+        prodData?.data?.items?.[0] ?? (Array.isArray(prodData) ? prodData[0] : undefined);
+      if (!prod?.id) throw new Error('No production found for this universe');
       setProduction(prod);
 
       // Fetch cast contracts
       const castRes = await fetch(`/api/cast-contracts?productionId=${prod.id}`);
       if (!castRes.ok) throw new Error('Failed to fetch cast contracts');
       const castData = await castRes.json();
-      setContracts(Array.isArray(castData) ? castData : []);
+      const items = castData?.data?.items ?? castData?.data ?? (Array.isArray(castData) ? castData : []);
+      setContracts(Array.isArray(items) ? items : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
