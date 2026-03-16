@@ -110,17 +110,22 @@ Lexicon is NOT:
 - Scene edit dialog: full create/edit with cast assignment
 - Shared layout with tab navigation + "Ask Lexi" shortcut
 
-### Next — Asset Lifecycle Engine
-- **Lifecycle state machine** — typed stages, transitions, timestamps, owners per asset type
-- **Show intake flow** — guided onboarding that defines a show's assets and lifecycles
-- **Full inline editing** — edit any data point in place, changes propagate via Realtime
-- **Real-time sync** — Supabase Realtime subscriptions on all production tables
+### Already Built (continued — Phase 3-6, Mar 16)
+- Asset lifecycle engine: 5 tables, typed state machines, show-defined stages
+- Show intake wizard: 5-step guided onboarding, any show in 10 minutes
+- Real-time collaboration: Supabase Realtime subscriptions, inline editing, debounced
+- Lexi write tools: schedule scenes, assign crew, mark contracts, advance stages, update availability (27 total tools)
+- Production alerts: unsigned contracts, double-booked crew, overdue deliverables, stuck stages, unassigned scenes
+- Call sheet generator: auto-generate from schedule + crew, printable output
+- Design polish: visual hierarchy, empty states, color consistency
 
-### Then — Lexi Autonomy
-- Agent SDK write operations (schedule scene, assign AC, mark done, advance lifecycle stage)
-- Production alerts (unsigned contracts before shoots, double-booked crew, overdue deliverables)
-- Telegram surface for field crew
-- Call sheet generation from schedule + crew assignments
+### Next — Launch Readiness
+- **Neo4j re-provisioning** — restore cast knowledge graph for relationship queries
+- **Auth verification** — test Supabase Email OTP post-dormancy
+- **Deploy to Vercel** — verify production deployment, env vars
+- **Landing page** — first impression for new users
+- **Domain selection** — custom domain for the tool
+- **Telegram surface** — field crew can ask Lexi questions via bot
 
 ### Future
 - **Custom asset types** — shows define their own asset categories beyond the defaults
@@ -150,3 +155,4 @@ Lexicon is NOT:
 | 2026-03-16 | Phase 1: Lexi backend | 7 tables, 10 API routes, Lexi entity, 5 agent tools, seeded with Diaries S7 |
 | 2026-03-16 | Phase 2: Production UI | Dashboard, calendar, cast board, crew board, scene editor. Spreadsheet replacement functional. |
 | 2026-03-16 | Phase 3: Course correction — spreadsheet replacement to production OS | Realized the true north star is lifecycle management, intake-first onboarding, real-time collaboration, and multi-show architecture. Lexicon is not replacing a spreadsheet. It's replacing the entire operational layer of TV production. |
+| 2026-03-16 | Phases 3-6 shipped in one session | Lifecycle engine, intake wizard, realtime collab, Lexi autonomy (write tools + alerts + call sheets). All 6 VISION pillars now have code. |

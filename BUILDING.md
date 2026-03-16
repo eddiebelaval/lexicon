@@ -265,6 +265,39 @@ The sync layer that makes Lexicon a team tool instead of a single-user dashboard
 **Dashboard — realtime:**
 - Subscribes to `scenes`, `cast_contracts`, and `crew_members` — stats auto-refresh when production data changes anywhere
 
+### March 16, 2026 — Phase 6: Lexi Autonomy
+
+Lexi goes from answering questions to doing things.
+
+**5 Write Tools added to lib/tools.ts:**
+- `schedule_scene` — create or update scenes on the calendar
+- `assign_crew` — assign crew members to scenes with roles
+- `mark_contract` — update contract status + completion fields
+- `advance_asset_stage` — move assets through lifecycle stages (defaults transitionedByName to "Lexi")
+- `update_crew_availability` — set crew availability for specific dates (upsert pattern)
+
+**Production Alerts Engine:**
+- `lib/production-alerts.ts` — 5 detectors: unsigned contracts with upcoming shoots, double-booked crew, overdue deliverables, stuck lifecycle stages, unassigned scenes
+- `GET /api/production-alerts?productionId=X` — returns all alerts sorted by severity
+- `components/production/production-alerts.tsx` — collapsible dashboard banner with severity-colored borders (red=critical, amber=warning, blue=info), collapsed count summary, green "all clear" empty state
+- Wired into production dashboard above stat cards
+
+**Call Sheet Generator:**
+- `lib/call-sheet.ts` — generates structured call sheet from schedule + crew assignments + cast
+- `GET /api/call-sheet?productionId=X&date=YYYY-MM-DD` — returns CallSheet with entries
+- `components/production/call-sheet-view.tsx` — printable document with date picker, print button, `print:` media queries for high-contrast output
+- New nav tab: "Call Sheet" added to production navigation
+- New route: `/universe/[id]/production/call-sheet`
+
+**Lexi System Prompt Rewrite:**
+- Split capabilities into Read (query) and Write (action) sections
+- Added confirmation-before-action pattern: "I'll schedule a new scene for Thursday..."
+- Added proactive alert pattern: "Heads up: Chantel's contract is still unsigned..."
+- 9 example interactions covering read, write, and alert scenarios
+- Tone updated: "Done. Here's what I did." — no fanfare, just execution
+
+**Stats:** Lexi now has 27 tools (22 original + 5 new write tools). Total API endpoints: 59.
+
 ---
 
 ## Key Decisions (and Why)

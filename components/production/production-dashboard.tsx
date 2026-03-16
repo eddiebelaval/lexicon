@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ProductionStats } from './production-stats';
+import { ProductionAlerts } from './production-alerts';
 import { useProduction } from './production-context';
 import { useRealtimeSubscription } from '@/lib/hooks/use-realtime';
 import { SCENE_STATUS_CONFIG, CONTRACT_STATUS_CONFIG } from '@/lib/production-config';
@@ -288,6 +289,9 @@ export function ProductionDashboard() {
 
   return (
     <div className="space-y-8">
+      {/* Alerts banner */}
+      <ProductionAlerts />
+
       {/* Stat cards */}
       <ProductionStats stats={stats} />
 
