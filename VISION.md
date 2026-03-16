@@ -67,13 +67,15 @@ Lexicon is NOT:
 - CSV import (auto-detect, type inference)
 - Notifications system
 
-### Next — Production UI (Blueprint Phases 3-4)
-- Dashboard: stats, mini calendar, alerts, cast quick-access
-- Calendar: week/month view, scene scheduling, crew assignments
-- Cast board: contract status, completion tracking (mirrors CSV columns)
-- Crew view: availability grid, AC assignments
+### Already Built (continued — Phase 2, Mar 16)
+- Production dashboard: stat cards, upcoming scenes, incomplete contracts
+- Calendar view: week/month with scene chips, status color coding
+- Cast board: contract table with interactive completion checkboxes (Shoot/INTV/PU/$)
+- Crew availability board: weekly grid with color-coded status cells
+- Scene edit dialog: full create/edit with cast assignment
+- Universe page integration: Production entry point in view toggle
 
-### Then — Lexi Autonomy (Blueprint Phase 6)
+### Next — Lexi Autonomy (Blueprint Phase 6)
 - Agent SDK write operations (schedule scene, assign AC, mark done)
 - Production alerts (unassigned crew, overdue pickups, unsigned cast)
 - Telegram surface for field crew
@@ -102,4 +104,5 @@ Lexicon is NOT:
 | 2026-01-Mar | Dormant — Parallax, Homer, Research Lab took priority | Revenue focus on Parallax as primary product |
 | 2026-03-15 | Reactivation + pivot to production management | Eddie's team runs on Excel. Lexicon + Composer + Prodigy consolidated into one |
 | 2026-03-15 | Entity: Lexi named | Same pattern as Ava/Dae. Production intelligence entity. |
-| 2026-03-16 | Overnight build: Phase 1-2 complete | 7 tables, 10 API routes, Lexi entity, 6,400 lines. Seeded with Diaries S7 data. |
+| 2026-03-16 | Overnight build: Phase 1 complete | 7 tables, 10 API routes, Lexi entity, 6,400 lines. Seeded with Diaries S7 data. |
+| 2026-03-16 | Phase 2: Production UI built | Dashboard, calendar, cast board, crew board, scene editor. 13 components, 4 pages. Spreadsheet replacement is functional. |

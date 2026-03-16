@@ -14,8 +14,6 @@ import type {
   Production,
   ProdScene,
   CastContract,
-  CrewMember,
-  CrewAvailability,
   ProductionSummary,
 } from '@/types';
 
@@ -186,7 +184,6 @@ export async function buildProductionContext(
     );
 
     const signedCount = allContracts.filter((c) => c.contractStatus === 'signed').length;
-    const shotScenes = upcomingScenes.length; // Upcoming only - total shot count not fetched here
 
     const lines: string[] = [
       '## Current Production Context',

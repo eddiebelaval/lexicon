@@ -7,11 +7,12 @@
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ContractStatusBadge } from '@/components/production/contract-status-badge';
+import type { CompletionField } from '@/lib/production-config';
 import type { CastContract } from '@/types/production';
 
 interface CastRowProps {
   contract: CastContract;
-  onToggle: (id: string, field: string, value: boolean) => void;
+  onToggle: (id: string, field: CompletionField, value: boolean) => void;
 }
 
 function CompletionCheckbox({

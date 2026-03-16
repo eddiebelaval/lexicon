@@ -11,48 +11,36 @@ import { useCallback, useEffect, useState } from 'react';
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CastRow } from '@/components/production/cast-row';
-import type { CastContract, Production } from '@/types/production';
+import { useProduction } from '@/components/production/production-context';
+import type { CastContract } from '@/types/production';
 
-interface CastBoardProps {
-  universeId: string;
-}
-
-export function CastBoard({ universeId }: CastBoardProps) {
-  const [production, setProduction] = useState<Production | null>(null);
+export function CastBoard() {
+  const { production, loading: prodLoading } = useProduction();
   const [contracts, setContracts] = useState<CastContract[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
+    if (!production) return;
     setLoading(true);
     setError(null);
 
     try {
-      // Fetch production for this universe
-      const prodRes = await fetch(`/api/productions?universeId=${universeId}&limit=1`);
-      if (!prodRes.ok) throw new Error('Failed to fetch production');
-      const prodData = await prodRes.json();
-      const prod: Production | undefined =
-        prodData?.data?.items?.[0] ?? (Array.isArray(prodData) ? prodData[0] : undefined);
-      if (!prod?.id) throw new Error('No production found for this universe');
-      setProduction(prod);
-
-      // Fetch cast contracts
-      const castRes = await fetch(`/api/cast-contracts?productionId=${prod.id}`);
+      const castRes = await fetch(`/api/cast-contracts?productionId=${production.id}`);
       if (!castRes.ok) throw new Error('Failed to fetch cast contracts');
       const castData = await castRes.json();
-      const items = castData?.data?.items ?? castData?.data ?? (Array.isArray(castData) ? castData : []);
+      const items = castData?.data?.items ?? castData?.data ?? [];
       setContracts(Array.isArray(items) ? items : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
-  }, [universeId]);
+  }, [production]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (production) fetchData();
+  }, [production, fetchData]);
 
   const handleToggle = useCallback(
     async (id: string, field: string, value: boolean) => {
@@ -96,7 +84,7 @@ export function CastBoard({ universeId }: CastBoardProps) {
   const completionPct = totalChecks > 0 ? Math.round((doneChecks / totalChecks) * 100) : 0;
 
   // Loading skeleton
-  if (loading) {
+  if (prodLoading || loading) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-gray-500">
         <Loader2 className="h-8 w-8 animate-spin text-vhs-400" />

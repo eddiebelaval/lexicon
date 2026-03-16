@@ -11,6 +11,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type {
   ProdScene,
+  ProdSceneStatus,
   CastContract,
   CrewAvailability,
   AvailabilityStatus,
@@ -260,7 +261,7 @@ export async function getIncompleteContracts(
  */
 export async function getScenesByStatus(
   productionId: string,
-  status: string
+  status: ProdSceneStatus
 ): Promise<ProdScene[]> {
   const { data, error } = await getSupabase()
     .from('scenes')

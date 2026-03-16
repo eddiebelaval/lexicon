@@ -7,10 +7,11 @@
 **Repo:** https://github.com/eddiebelaval/lexicon
 **Deploy:** https://lexicon-phi.vercel.app
 **PR:** https://github.com/eddiebelaval/lexicon/pull/4
-**Pipeline Stage:** Stage 5 (Feature Blocks) IN PROGRESS — production management expansion
-**Commits:** 20 (13 original + 7 on feature/lexi-production)
+**Pipeline Stage:** Stage 9 (Launch Prep) IN PROGRESS — production UI built, needs polish + deploy
+**Commits:** 22 (13 original + 9 on feature/lexi-production)
 **Tests:** 129 (unit, integration, E2E) — production tests pending
 **API Parity:** 41/42 original + 10 new production routes (51 total endpoints)
+**Production UI:** 4 pages (dashboard, calendar, cast, crew), 13 components, scene editor
 
 ---
 
@@ -112,7 +113,16 @@ Core: Next.js 15 + Supabase (production data) + Neo4j (cast knowledge graph, cur
 - 6 production query functions for answering questions
 - 5 agent tools with Pattern 6 completion signals
 
-### 13. Infrastructure
+### 13. Production UI (NEW — Phase 2)
+- **Dashboard** (`/universe/[id]/production`): stat cards (total cast, signed contracts, scenes progress, active crew), upcoming scenes list, incomplete contracts list
+- **Calendar** (`/universe/[id]/production/calendar`): week/month toggle, scene chips with status color coding (scheduled=blue, shot=green, cancelled=red, postponed=yellow, self_shot=purple), click-to-expand detail, today highlighting, prev/next navigation
+- **Cast Board** (`/universe/[id]/production/cast`): contract table with status badges, payment type, interactive completion checkboxes (Shoot/INTV/PU/$), optimistic toggle updates, summary bar
+- **Crew Board** (`/universe/[id]/production/crew`): weekly availability grid (crew x Mon-Fri), color-coded cells (available=green, booked=blue, OOO=red, dark=gray, holding=yellow), click-to-cycle status, week navigation
+- **Scene Editor**: modal form for create/edit scenes with cast entity search, all scheduling fields, self-shot toggle
+- **Production Layout**: shared header (breadcrumb + "Ask Lexi" button), tab navigation (Dashboard/Calendar/Cast/Crew)
+- **Universe Integration**: Production entry point in Graph/Wiki view toggle (Clapperboard icon)
+
+### 14. Infrastructure
 - Supabase Email OTP auth, universe isolation
 - 28 API routes, consistent response format: `{ success, data?, error? }`
 - 19 agent-native tools with Pattern 6 completion signals
@@ -159,11 +169,15 @@ Full audit: see `PARITY_MAP.md`
 | Storylines | Create with cast, search | Jan 9, 2026 (manual) |
 | Notifications | Trigger, see in UI, dismiss | Jan 9, 2026 (manual) |
 | Auth | Sign up, log in, universe isolation | Jan 6, 2026 (manual) |
-| Build | `npm run build` passes | Jan 8, 2026 |
+| Build | `npm run build` passes | **Mar 16, 2026** |
 | Tests | `npm run test` — 129 passing | Jan 8, 2026 |
 | Deploy | lexicon-phi.vercel.app loads | Jan 8, 2026 |
+| Production Dashboard | Stats, upcoming scenes, incomplete contracts render | **Mar 16, 2026** (visual) |
+| Cast Board | 15 contracts, checkboxes, status badges render | **Mar 16, 2026** (visual) |
+| Crew Board | 10 crew, availability grid, week nav render | **Mar 16, 2026** (visual) |
+| Calendar | Month view, scene chips, today highlight render | **Mar 16, 2026** (visual) |
 
-**Post-dormancy: ALL need re-verification.** Services likely hibernated after 66 days.
+**Post-dormancy: Original features need re-verification.** Neo4j still down. Supabase + production UI verified Mar 16.
 
 ---
 
@@ -209,3 +223,7 @@ NEXT_PUBLIC_APP_URL, CRON_SECRET
 | 2026-03-16 | Strategic pivot: Lexicon expanding to production management with Lexi entity | 7 production tables, 10 API routes, Lexi system prompt, 5 agent tools built overnight |
 | 2026-03-16 | Neo4j Aura instance dead (0078a27e) | Confirmed down. Production features work on Supabase alone. Re-provision later for cast graph. |
 | 2026-03-16 | Supabase migration conflicts on shared project | Repaired migration history, applied production schema successfully |
+| 2026-03-16 | Bug: lexi.ts and production-queries.ts referenced `prod_scenes` instead of `scenes` | Fixed — table name aligned with migration |
+| 2026-03-16 | Phase 2 Production UI built | 13 components, 4 pages, 1 layout. Dashboard, calendar, cast board, crew board, scene editor. All visually verified. |
+| 2026-03-16 | Cast board API parsing bug | Fixed — was treating ApiResponse as raw array, causing productionId=undefined |
+| 2026-03-16 | Pipeline advanced to Stage 9 (Launch Prep) | All feature blocks complete. Remaining: polish, deploy, onboard. |

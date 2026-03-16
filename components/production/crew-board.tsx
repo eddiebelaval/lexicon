@@ -11,16 +11,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CrewAvailabilityCell } from '@/components/production/crew-availability-cell';
+import { useProduction } from '@/components/production/production-context';
 import type {
-  Production,
   CrewMember,
   CrewAvailability,
   AvailabilityStatus,
 } from '@/types/production';
-
-interface CrewBoardProps {
-  universeId: string;
-}
 
 /** Status cycle order for click-through */
 const STATUS_CYCLE: (AvailabilityStatus | null)[] = [
@@ -70,9 +66,9 @@ function availKey(crewMemberId: string, date: string): string {
   return `${crewMemberId}::${date}`;
 }
 
-export function CrewBoard({ universeId }: CrewBoardProps) {
+export function CrewBoard() {
+  const { production } = useProduction();
   const [monday, setMonday] = useState<Date>(() => getMonday(new Date()));
-  const [production, setProduction] = useState<Production | null>(null);
   const [crew, setCrew] = useState<CrewMember[]>([]);
   const [availability, setAvailability] = useState<
     Map<string, CrewAvailability>
@@ -86,28 +82,25 @@ export function CrewBoard({ universeId }: CrewBoardProps) {
   // ---- Data fetching ----
 
   const fetchData = useCallback(async () => {
+    if (!production) return;
     setLoading(true);
     setError(null);
 
     try {
-      // 1. Get production for this universe
-      const prodRes = await fetch(
-        `/api/productions?universeId=${universeId}&limit=1`
-      );
-      const prodData = await prodRes.json();
-      if (!prodData.success || prodData.data.items.length === 0) {
-        setError('No production found for this universe.');
-        setLoading(false);
-        return;
-      }
-      const prod: Production = prodData.data.items[0];
-      setProduction(prod);
+      // Fetch crew + availability in parallel
+      const startDate = toDateString(weekDates[0]);
+      const endDate = toDateString(weekDates[4]);
 
-      // 2. Get crew members for production
-      const crewRes = await fetch(
-        `/api/crew?productionId=${prod.id}`
-      );
-      const crewData = await crewRes.json();
+      const [crewRes, availRes] = await Promise.all([
+        fetch(`/api/crew?productionId=${production.id}`),
+        fetch(`/api/crew-availability?productionId=${production.id}&startDate=${startDate}&endDate=${endDate}`),
+      ]);
+
+      const [crewData, availData] = await Promise.all([
+        crewRes.json(),
+        availRes.json(),
+      ]);
+
       if (!crewData.success) {
         setError('Failed to load crew members.');
         setLoading(false);
@@ -116,13 +109,6 @@ export function CrewBoard({ universeId }: CrewBoardProps) {
       const crewItems: CrewMember[] = crewData.data.items ?? crewData.data;
       setCrew(crewItems);
 
-      // 3. Get availability for this production + date range
-      const startDate = toDateString(weekDates[0]);
-      const endDate = toDateString(weekDates[4]);
-      const availRes = await fetch(
-        `/api/crew-availability?productionId=${prod.id}&startDate=${startDate}&endDate=${endDate}`
-      );
-      const availData = await availRes.json();
       if (availData.success) {
         const items: CrewAvailability[] = availData.data.items ?? availData.data;
         const map = new Map<string, CrewAvailability>();
@@ -136,11 +122,11 @@ export function CrewBoard({ universeId }: CrewBoardProps) {
     } finally {
       setLoading(false);
     }
-  }, [universeId, weekDates[0].getTime()]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [production, weekDates[0].getTime()]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (production) fetchData();
+  }, [production, fetchData]);
 
   // ---- Handlers ----
 

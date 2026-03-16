@@ -1591,7 +1591,7 @@ export async function executeToolCall(
       case 'query_scenes': {
         const productionId = input.productionId as string;
         const castEntityId = input.castEntityId as string | undefined;
-        const status = input.status as string | undefined;
+        const status = input.status as import('@/types').ProdSceneStatus | undefined;
         const days = (input.days as number) || 7;
 
         let scenes;

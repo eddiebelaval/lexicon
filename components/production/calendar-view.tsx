@@ -19,11 +19,8 @@ import {
 import { cn } from '@/lib/utils';
 import { CalendarDayCell } from '@/components/production/calendar-day-cell';
 import { SceneCard } from '@/components/production/scene-card';
-import type { Production, ProdScene } from '@/types/production';
-
-interface CalendarViewProps {
-  universeId: string;
-}
+import { useProduction } from '@/components/production/production-context';
+import type { ProdScene } from '@/types/production';
 
 type ViewMode = 'week' | 'month';
 
@@ -108,16 +105,16 @@ function formatRangeLabel(dates: Date[], mode: ViewMode): string {
 // Component
 // ---------------------------------------------------------------------------
 
-export function CalendarView({ universeId }: CalendarViewProps) {
+export function CalendarView() {
+  const { production } = useProduction();
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [anchorDate, setAnchorDate] = useState<Date>(() => new Date());
-  const [production, setProduction] = useState<Production | null>(null);
   const [scenes, setScenes] = useState<ProdScene[]>([]);
   const [selectedScene, setSelectedScene] = useState<ProdScene | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const today = useMemo(() => new Date(), []);
+  const today = new Date();
 
   // Build date grid
   const dates = useMemo(
@@ -132,28 +129,6 @@ export function CalendarView({ universeId }: CalendarViewProps) {
     () => formatRangeLabel(dates, viewMode),
     [dates, viewMode]
   );
-
-  // ------ Fetch production ------
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchProd() {
-      try {
-        const res = await fetch(
-          `/api/productions?universeId=${universeId}&limit=1`
-        );
-        const data = await res.json();
-        if (!cancelled && data.success && data.data.items.length > 0) {
-          setProduction(data.data.items[0] as Production);
-        }
-      } catch {
-        if (!cancelled) setError('Failed to load production');
-      }
-    }
-    fetchProd();
-    return () => {
-      cancelled = true;
-    };
-  }, [universeId]);
 
   // ------ Fetch scenes for visible range ------
   const fetchScenes = useCallback(async () => {

@@ -19,7 +19,6 @@ import { useState, useCallback, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Upload, X, AlertCircle, BookOpen, Network, FileText, MessageSquare, Home, Clapperboard } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { EntityList, EntityDetail, EntityForm } from '@/components/entities';
 import { GraphViewer } from '@/components/graph';
 import { SearchBar, SearchResults } from '@/components/search';

@@ -20,47 +20,17 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ProductionStats } from './production-stats';
+import { useProduction } from './production-context';
+import { SCENE_STATUS_CONFIG, CONTRACT_STATUS_CONFIG } from '@/lib/production-config';
 import type {
-  Production,
   ProdScene,
   CastContract,
   CrewMember,
-  ProdSceneStatus,
-  ContractStatus,
 } from '@/types';
-
-interface ProductionDashboardProps {
-  universeId: string;
-}
 
 type LoadingState = 'idle' | 'loading' | 'loaded' | 'error';
 
-const sceneStatusColors: Record<ProdSceneStatus, string> = {
-  scheduled: 'bg-blue-500/20 text-blue-400',
-  shot: 'bg-green-500/20 text-green-400',
-  cancelled: 'bg-red-500/20 text-red-400',
-  postponed: 'bg-yellow-500/20 text-yellow-400',
-  self_shot: 'bg-purple-500/20 text-purple-400',
-};
-
-const contractStatusColors: Record<ContractStatus, string> = {
-  signed: 'bg-green-500/20 text-green-400',
-  pending: 'bg-yellow-500/20 text-yellow-400',
-  offer_sent: 'bg-blue-500/20 text-blue-400',
-  dnc: 'bg-red-500/20 text-red-400',
-  email_sent: 'bg-cyan-500/20 text-cyan-400',
-  declined: 'bg-red-500/20 text-red-400',
-};
-
-function formatSceneStatus(status: ProdSceneStatus): string {
-  return status.replace(/_/g, ' ');
-}
-
-function formatContractStatus(status: ContractStatus): string {
-  return status.replace(/_/g, ' ');
-}
-
-function formatDate(dateStr: string): string {
+function formatDateShort(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
@@ -109,8 +79,8 @@ function ListSkeleton({ rows = 3 }: { rows?: number }) {
 // Dashboard component
 // ---------------------------------------------------------------------------
 
-export function ProductionDashboard({ universeId }: ProductionDashboardProps) {
-  const [production, setProduction] = useState<Production | null>(null);
+export function ProductionDashboard() {
+  const { production, loading: prodLoading } = useProduction();
   const [scenes, setScenes] = useState<ProdScene[]>([]);
   const [contracts, setContracts] = useState<CastContract[]>([]);
   const [crew, setCrew] = useState<CrewMember[]>([]);
@@ -118,30 +88,16 @@ export function ProductionDashboard({ universeId }: ProductionDashboardProps) {
   const [errorMsg, setErrorMsg] = useState('');
 
   const fetchData = useCallback(async () => {
+    if (!production) return;
     setState('loading');
     setErrorMsg('');
 
     try {
-      // Step 1: get production
-      const prodRes = await fetch(
-        `/api/productions?universeId=${universeId}&limit=1`
-      );
-      const prodData = await prodRes.json();
-
-      if (!prodData.success || prodData.data.items.length === 0) {
-        setProduction(null);
-        setState('loaded');
-        return;
-      }
-
-      const prod: Production = prodData.data.items[0];
-      setProduction(prod);
-
-      // Step 2: fetch scenes, contracts, crew in parallel
+      // Fetch scenes, contracts, crew in parallel
       const [scenesRes, contractsRes, crewRes] = await Promise.all([
-        fetch(`/api/scenes?productionId=${prod.id}`),
-        fetch(`/api/cast-contracts?productionId=${prod.id}`),
-        fetch(`/api/crew?productionId=${prod.id}`),
+        fetch(`/api/scenes?productionId=${production.id}`),
+        fetch(`/api/cast-contracts?productionId=${production.id}`),
+        fetch(`/api/crew?productionId=${production.id}`),
       ]);
 
       const [scenesData, contractsData, crewData] = await Promise.all([
@@ -168,11 +124,11 @@ export function ProductionDashboard({ universeId }: ProductionDashboardProps) {
       );
       setState('error');
     }
-  }, [universeId]);
+  }, [production]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (production) fetchData();
+  }, [production, fetchData]);
 
   // -----------------------------------------------------------------------
   // Derived data
@@ -249,7 +205,7 @@ export function ProductionDashboard({ universeId }: ProductionDashboardProps) {
   // States
   // -----------------------------------------------------------------------
 
-  if (state === 'loading' || state === 'idle') {
+  if (prodLoading || state === 'loading' || state === 'idle') {
     return (
       <div className="space-y-8">
         <StatsSkeleton />
@@ -336,7 +292,7 @@ export function ProductionDashboard({ universeId }: ProductionDashboardProps) {
                       {scene.scheduledDate && (
                         <span className="flex items-center gap-1">
                           <CalendarDays className="h-3 w-3" />
-                          {formatDate(scene.scheduledDate)}
+                          {formatDateShort(scene.scheduledDate)}
                         </span>
                       )}
                       {scene.location && (
@@ -351,10 +307,10 @@ export function ProductionDashboard({ universeId }: ProductionDashboardProps) {
                   <span
                     className={cn(
                       'ml-3 shrink-0 px-2 py-0.5 text-xs font-medium rounded-full capitalize',
-                      sceneStatusColors[scene.status]
+                      `${SCENE_STATUS_CONFIG[scene.status].bg} ${SCENE_STATUS_CONFIG[scene.status].text}`
                     )}
                   >
-                    {formatSceneStatus(scene.status)}
+                    {SCENE_STATUS_CONFIG[scene.status].label}
                   </span>
                 </div>
               ))}
@@ -389,10 +345,10 @@ export function ProductionDashboard({ universeId }: ProductionDashboardProps) {
                         <span
                           className={cn(
                             'px-2 py-0.5 text-xs font-medium rounded-full capitalize',
-                            contractStatusColors[contract.contractStatus]
+                            `${CONTRACT_STATUS_CONFIG[contract.contractStatus].bg} ${CONTRACT_STATUS_CONFIG[contract.contractStatus].text}`
                           )}
                         >
-                          {formatContractStatus(contract.contractStatus)}
+                          {CONTRACT_STATUS_CONFIG[contract.contractStatus].label}
                         </span>
                         <span className="text-xs text-gray-600">|</span>
                         <span className="text-xs text-red-400/80">
