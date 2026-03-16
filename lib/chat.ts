@@ -38,6 +38,7 @@ import type {
   Conversation,
 } from '@/types/chat';
 import type { EntityType, RelationshipType } from '@/types';
+import { LEXI_SYSTEM_PROMPT, buildProductionContext } from './lexi';
 
 // ============================================
 // Claude Client Singleton
@@ -540,13 +541,20 @@ export async function* streamChatMessage(
     let fullResponseText = '';
     let continueLoop = true;
 
+    // Determine system prompt based on mode
+    let systemPrompt = SYSTEM_PROMPT;
+    if (request.mode === 'production' && request.productionId) {
+      const productionContext = await buildProductionContext(request.productionId);
+      systemPrompt = LEXI_SYSTEM_PROMPT + '\n\n' + productionContext;
+    }
+
     // Tool use loop with streaming
     while (continueLoop) {
       // Use streaming for this request
       const stream = client.messages.stream({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4096,
-        system: SYSTEM_PROMPT,
+        system: systemPrompt,
         tools: lexiconTools,
         messages: currentMessages,
       });

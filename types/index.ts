@@ -7,6 +7,12 @@
 // Re-export chat types
 export * from './chat';
 
+// Re-export production types
+export * from './production';
+
+// Re-export lifecycle types
+export * from './lifecycle';
+
 // ============================================
 // Entity Types
 // ============================================

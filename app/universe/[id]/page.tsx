@@ -18,7 +18,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Upload, X, AlertCircle, BookOpen, Network, FileText, MessageSquare, Home } from 'lucide-react';
+import { Upload, X, AlertCircle, BookOpen, Network, FileText, MessageSquare, Home, Clapperboard } from 'lucide-react';
 import { EntityList, EntityDetail, EntityForm } from '@/components/entities';
 import { GraphViewer } from '@/components/graph';
 import { SearchBar, SearchResults } from '@/components/search';
@@ -328,6 +328,14 @@ export default function UniversePage() {
                   <FileText className="h-4 w-4" />
                   <span className="hidden sm:inline">Wiki</span>
                 </button>
+                <Link
+                  href={`/universe/${universeId}/production`}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 text-muted-foreground hover:text-foreground"
+                  title="Production View"
+                >
+                  <Clapperboard className="h-4 w-4" />
+                  <span className="hidden sm:inline">Production</span>
+                </Link>
               </div>
 
               {/* AI Mode Toggle */}

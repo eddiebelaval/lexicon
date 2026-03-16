@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
   try {
     // Parse and validate request body
     const body = await request.json();
-    const { conversationId, universeId, message } = body as ChatRequest;
+    const { conversationId, universeId, message, mode, productionId } = body as ChatRequest;
 
     // Validate required fields
     if (!universeId) {
@@ -72,6 +72,8 @@ export async function POST(request: NextRequest) {
             conversationId,
             universeId,
             message: message.trim(),
+            mode: mode || 'universe',
+            productionId,
           })) {
             // Format as Server-Sent Event
             const data = `data: ${JSON.stringify(event)}\n\n`;
