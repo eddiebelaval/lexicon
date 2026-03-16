@@ -3,20 +3,23 @@
 > What it is BECOMING. The evolving north star.
 
 **Last reconciled:** March 16, 2026
-**Product:** Lexicon + Lexi (production intelligence entity)
+**Product:** Lexicon — Production Operating System for Unscripted TV
+**Entity:** Lexi (production intelligence)
 **Owner:** Eddie Belaval / ID8Labs
 
 ---
 
 ## Soul
 
-**Lexicon is a production intelligence platform for unscripted TV. Lexi is the entity that runs it.**
+**Lexicon is the operating system for unscripted television production. Lexi is the intelligence that runs it.**
 
-The tool that replaces your production spreadsheet. Cast tracking, crew scheduling, scene management, contract status, logistics — all in one platform with an AI entity (Lexi) that knows your entire production and answers questions from real data. The institutional memory that production teams never had.
+Not a spreadsheet replacement. Not a project management tool. An operating system — the single surface where a production lives, breathes, and moves through its entire lifecycle. From the moment a show is greenlit to the moment the final cut ships, every asset, every person, every decision passes through Lexicon.
 
-**Core belief:** Every production team deserves better than Excel. Cast relationships, scene schedules, crew assignments, contract status — these are interconnected data, not rows in a spreadsheet. When someone asks "What's left for Chantel?" or "Who's available Thursday?", the answer should come from a system that actually knows, not from scrolling through cells.
+**Core belief:** A production is a living organism. Cast, crew, contracts, scripts, schedules, shoots, and deliverables are not rows in a spreadsheet — they are interconnected assets that move through stages, depend on each other, and need to be visible to everyone at the same time. The Excel doc your team passes around is a snapshot of a dead moment. Lexicon is the living state.
 
-**Who it serves:** Production teams, showrunners, producers, coordinators — anyone managing the operational complexity of unscripted TV at scale. Starting with Diaries (90 Day Fiance franchise).
+**The intake document IS the production.** When a showrunner opens Lexicon for the first time and sets up a new show, that setup process defines the entire production — cast, crew, locations, schedule, asset types, completion criteria. Everything downstream flows from that intake. Change the intake, and the whole board updates.
+
+**Who it serves:** Production teams at any scale — coordinators, ACs, producers, showrunners, post supervisors. Anyone who has ever scrolled through a spreadsheet looking for "is this person signed?" or "did we pick up that footage?" Starting with unscripted TV (Diaries franchise). Expanding to any show that runs on chaos and spreadsheets.
 
 **Entity pattern:** Lexi follows the same architecture as Ava (Parallax) and Dae (Homer). Graph/data layer + AI synthesis + entity personality + multiple surfaces. The Chladni plate vibrates at the same frequency — each domain produces a new shape.
 
@@ -26,20 +29,53 @@ The tool that replaces your production spreadsheet. Cast tracking, crew scheduli
 
 ## Pillars
 
-### 1. Lexi Entity — Intelligence First
-Lexi is the product. She knows your cast, crew, schedule, scenes, contracts, and logistics. Ask her anything about your production and get an answer from real data, not a search bar. "What's left for Chantel?" "Who's available Thursday?" "Which cast haven't done interviews?" She answers, she acts, she alerts.
+### 1. Asset Lifecycle Management
+Every production asset has a life. Contracts start as drafts and end as signed documents. Scripts start as outlines and end as locked finals. Shoots start as scheduled dates and end as uploaded footage. Every asset type moves through **typed stages** with transitions, timestamps, owners, and blockers.
 
-### 2. Production-Native Data Model
-Cast members, scenes, crew, contracts, availability, uploads — first-class entities with typed relationships. The data model mirrors how productions actually work, not how spreadsheets force you to think. Graph for cast relationships. Tables for schedules and status.
+The lifecycle model is the core differentiator. Spreadsheets are static. Lexicon is temporal. When someone asks "where are we?", the answer isn't a cell value — it's a map of everything in motion, what's blocked, what's next, what's overdue.
 
-### 3. Dashboard-First Interface
-The primary view is a production dashboard — what's happening this week, who's shooting, what's done, what needs attention. Calendar, cast board, and crew views are secondary. The interface serves the production workflow, not the other way around.
+**Asset types and their lifecycles:**
 
-### 4. Multi-Production Isolation
-Each production is its own world. A showrunner can manage multiple shows. Clean boundaries, shared infrastructure. Crew can be shared across productions.
+| Asset | Stages |
+|-------|--------|
+| Contracts | Draft > Sent > Negotiating > Signed > Active > Complete |
+| Scripts | Outline > Draft > Review > Locked > Revisions > Final |
+| Scenes/Shoots | Proposed > Scheduled > Crew Assigned > Shot > Footage Uploaded > Logged |
+| Post-Production | Ingested > Editing > Review > Corrections > Final > Delivered |
+| Deliverables | Defined > In Progress > Review > Approved > Shipped |
 
-### 5. Import-First Onboarding
-Nobody starts from zero. CSV import from existing production calendars. Meet production teams where their data already lives (Excel). Reduce the cold-start problem to minutes, not weeks.
+The stages are not hardcoded. Each show defines its own asset types and lifecycles during intake. Diaries has "Shoot Done / INTV Done / PU Done / $ Done." Another show might have completely different completion criteria. The platform adapts.
+
+### 2. Intake-First Onboarding
+The intake process IS the product. When you set up a new show, Lexicon walks you through:
+- Show metadata (name, season, network, production company, date range)
+- Cast roster (names, locations, pairings, storyline arcs)
+- Crew roster (names, roles, availability patterns)
+- Asset definitions (what types of assets does this show track? what stages do they move through?)
+- Schedule skeleton (key dates, shoot blocks, post windows)
+- Import from existing docs (CSV, Excel) — meet teams where their data already lives
+
+The intake is not a form. It's a conversation with Lexi. "Tell me about your show." The intake document informs the entire app — dashboard layout, completion tracking columns, calendar structure, notification triggers. Different shows get different boards because different shows have different workflows.
+
+### 3. Lexi Entity — Intelligence That Acts
+Lexi is not a chatbot. She is the production's institutional memory and operational intelligence. She knows every asset, every person, every stage, every dependency.
+
+**She answers:** "What's left for Chantel?" "Who's available Thursday?" "Which cast haven't done interviews?" "What's blocking the Miami shoot?"
+
+**She acts:** Schedule a scene. Assign an AC. Mark footage uploaded. Send a contract reminder. Generate a call sheet. Flag an overdue pickup.
+
+**She alerts:** "3 contracts unsigned with shoots next week." "Ryan is double-booked on Thursday." "Post deliverables for episode 4 are 2 days overdue."
+
+### 4. Real-Time Collaboration
+Every team member sees the same board. When a coordinator marks a contract signed, the producer's dashboard updates. When an AC uploads footage, the post supervisor sees it. No refresh. No "did you update the spreadsheet?"
+
+Supabase Realtime powers the sync layer. Every data mutation broadcasts to all connected clients. The board is always current.
+
+### 5. Multi-Show Architecture
+Each show is its own world with its own cast, crew, assets, and lifecycles. A showrunner managing three shows sees three separate productions with clean boundaries. Crew can be shared across shows (a coordinator who works on Diaries and Pillow Talk). Cross-show views surface scheduling conflicts and resource contention.
+
+### 6. Production-Native Data Model
+The data model mirrors how productions actually work, not how databases or spreadsheets force you to think. Cast relationships live in a graph (Neo4j). Schedules, contracts, and logistics live in structured tables (Supabase). The AI layer connects them. Every query speaks the language of production — "Who's shooting this week?" not "SELECT * FROM scenes WHERE..."
 
 ---
 
@@ -47,47 +83,54 @@ Nobody starts from zero. CSV import from existing production calendars. Meet pro
 
 Lexicon is NOT:
 
-- **A general-purpose note app.** Not Notion. Not Obsidian. Purpose-built for narrative universes.
-- **A writing tool.** That's ID8Composer. Lexicon manages the world. Composer writes the story.
-- **A static wiki.** Static wikis decay. Lexicon has AI-powered retrieval that synthesizes, not just stores.
-- **A tool that requires technical users.** If a writer can't use it without reading docs, the UX failed.
-- **A replacement for the creative process.** It remembers so you can think. It connects so you can discover.
+- **A generic project management tool.** Not Asana. Not Monday.com. Purpose-built for the specific chaos of unscripted TV production.
+- **A writing tool.** Lexicon manages the production. It doesn't write the story.
+- **A static tracker.** Static trackers decay the moment you close the tab. Lexicon is real-time, lifecycle-aware, and actively managed by Lexi.
+- **A tool that requires training.** If a coordinator can't figure it out in 10 minutes, the UX failed. The intake process teaches the app, not the other way around.
+- **A replacement for the humans.** Lexi amplifies the team. She doesn't replace the judgment of a showrunner or the instincts of a producer. She just makes sure nothing falls through the cracks.
 
 ---
 
 ## North Star Capabilities
 
-### Already Built
+### Already Built (Foundation)
 - Cast knowledge graph: entity management (5 types), relationships (9 types), AI search, D3.js graph viz, wiki view, storylines
-- Chat with Lexi: SSE streaming, citations, production mode toggle, 6 query functions
+- Chat with Lexi: SSE streaming, citations, production mode toggle, 6 query functions, 5 production agent tools
 - Production schema: 7 Supabase tables, 10 API routes, Zod validation
 - Production data: scenes, crew, cast contracts, crew availability, upload tasks
-- 24 agent tools (19 original + 5 production) with Pattern 6
-- Diaries S7 seeded: 15 cast, 10 crew, 20 scenes, 15 contracts
 - CSV import (auto-detect, type inference)
 - Notifications system
+- ProductionProvider shared context, centralized status configs
 
-### Already Built (continued — Phase 2, Mar 16)
+### Already Built (Production UI)
 - Production dashboard: stat cards, upcoming scenes, incomplete contracts
 - Calendar view: week/month with scene chips, status color coding
-- Cast board: contract table with interactive completion checkboxes (Shoot/INTV/PU/$)
+- Cast board: contract table with interactive completion checkboxes
 - Crew availability board: weekly grid with color-coded status cells
 - Scene edit dialog: full create/edit with cast assignment
-- Universe page integration: Production entry point in view toggle
+- Shared layout with tab navigation + "Ask Lexi" shortcut
 
-### Next — Lexi Autonomy (Blueprint Phase 6)
-- Agent SDK write operations (schedule scene, assign AC, mark done)
-- Production alerts (unassigned crew, overdue pickups, unsigned cast)
+### Next — Asset Lifecycle Engine
+- **Lifecycle state machine** — typed stages, transitions, timestamps, owners per asset type
+- **Show intake flow** — guided onboarding that defines a show's assets and lifecycles
+- **Full inline editing** — edit any data point in place, changes propagate via Realtime
+- **Real-time sync** — Supabase Realtime subscriptions on all production tables
+
+### Then — Lexi Autonomy
+- Agent SDK write operations (schedule scene, assign AC, mark done, advance lifecycle stage)
+- Production alerts (unsigned contracts before shoots, double-booked crew, overdue deliverables)
 - Telegram surface for field crew
+- Call sheet generation from schedule + crew assignments
 
 ### Future
-- **Production calendar CSV import** — parse the real multi-section format
-- **Timeline visualization** — temporal view of scenes across production
-- **Call sheet generation** — auto-generate daily call sheets from schedule
-- **Real-time collaboration** — multiple producers in the same production
-- **Cross-season continuity** — track cast across seasons
+- **Custom asset types** — shows define their own asset categories beyond the defaults
+- **Cross-show views** — resource contention, shared crew scheduling, portfolio dashboard
+- **Post-production pipeline** — editing, review, corrections, delivery tracking
+- **Script tracking** — outline through locked final with revision management
+- **Timeline visualization** — temporal view of all assets across production lifecycle
 - **API access** — external tools query production data
-- **Neo4j re-provisioning** — restore cast knowledge graph for relationship queries
+- **Mobile companion** — field-optimized view for ACs and coordinators on set
+- **Cross-season continuity** — track cast and storylines across seasons
 
 ---
 
@@ -104,5 +147,6 @@ Lexicon is NOT:
 | 2026-01-Mar | Dormant — Parallax, Homer, Research Lab took priority | Revenue focus on Parallax as primary product |
 | 2026-03-15 | Reactivation + pivot to production management | Eddie's team runs on Excel. Lexicon + Composer + Prodigy consolidated into one |
 | 2026-03-15 | Entity: Lexi named | Same pattern as Ava/Dae. Production intelligence entity. |
-| 2026-03-16 | Overnight build: Phase 1 complete | 7 tables, 10 API routes, Lexi entity, 6,400 lines. Seeded with Diaries S7 data. |
-| 2026-03-16 | Phase 2: Production UI built | Dashboard, calendar, cast board, crew board, scene editor. 13 components, 4 pages. Spreadsheet replacement is functional. |
+| 2026-03-16 | Phase 1: Lexi backend | 7 tables, 10 API routes, Lexi entity, 5 agent tools, seeded with Diaries S7 |
+| 2026-03-16 | Phase 2: Production UI | Dashboard, calendar, cast board, crew board, scene editor. Spreadsheet replacement functional. |
+| 2026-03-16 | Phase 3: Course correction — spreadsheet replacement to production OS | Realized the true north star is lifecycle management, intake-first onboarding, real-time collaboration, and multi-show architecture. Lexicon is not replacing a spreadsheet. It's replacing the entire operational layer of TV production. |
