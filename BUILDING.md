@@ -2,7 +2,7 @@
 
 > How we got here. The build journal.
 
-**Last updated:** March 15, 2026
+**Last updated:** March 16, 2026
 **Product:** Lexicon
 **Builder:** Eddie Belaval / ID8Labs
 
@@ -99,10 +99,34 @@ Beyond the 6 scoped slices, shipped during the sprint:
 ### January–March 2026 — Dormant (66 days)
 Focus shifted to Parallax launch (Anna signed up Mar 10), Homer, Research Lab, consciousness framework, open-source tools. No commits. Services likely hibernated.
 
-### March 15, 2026 — Reactivation
+### March 15, 2026 — Reactivation + Strategic Pivot
+
+**Reactivation:**
 - Triad documentation created and reconciled with actual codebase
 - Full audit: 30,905 LOC, 55+ components, 28 API endpoints, 129 tests
-- SPEC.md updated from surface-level to full reality
+
+**Strategic pivot:** Eddie's production team runs on Excel for Diaries (90 Day Fiance). The CSV tries to be 6 systems at once. Decision: consolidate into ONE product. Entity pattern (Ava, Dae) applied to production management.
+
+**Entity: Lexi** — production intelligence. Same Chladni plate architecture. Supabase-only for production data. Entity-first build order (Lexi before UI). Must-have: Lexi chat.
+
+### March 15-16, 2026 — Overnight Build (Ralph Auto Mode)
+
+Blueprint: 8 phases, 27 tasks. Executed Phase 1 + Phase 2 overnight.
+
+**Phase 1 — Production Schema:**
+- 7 Supabase tables with RLS, indexes, triggers
+- TypeScript types (ProdScene prefix to avoid chat collision)
+- Zod validation, 5 CRUD lib modules, 10 API routes
+
+**Phase 2 — Lexi Entity:**
+- System prompt + buildProductionContext() (lib/lexi.ts)
+- 6 production query functions
+- Chat mode toggle (universe | production)
+- 5 production agent tools (Pattern 6)
+
+**Services:** Supabase LIVE (migration applied, seeded). Neo4j DOWN (hibernated).
+**Seed:** 15 cast, 10 crew, 20 scenes, 15 contracts, 50 availability entries.
+**PR:** https://github.com/eddiebelaval/lexicon/pull/4
 
 ---
 
@@ -145,13 +169,15 @@ Full control over rendering, interaction, styling. Libraries like vis.js or cyto
 
 | Metric | Value |
 |--------|-------|
-| Total LOC | 30,905 |
+| Total LOC | ~37,300 (+6,400 overnight) |
 | Components | 55+ |
-| API Endpoints | 28 |
-| Agent Tools | 19 (Pattern 6) |
-| Tests | 129 (all passing) |
-| API Parity | 97% (41/42) |
-| Pipeline Stage | 8/11 |
-| Supabase Migrations | 11 |
-| Build time (Stage 1-8) | 3 days (Jan 5-8) |
+| API Endpoints | 49 (28 original + 10 production + 11 other) |
+| Agent Tools | 24 (19 original + 5 production) |
+| Tests | 129 (production tests pending) |
+| Supabase Tables | 7 production + existing |
+| Supabase Migrations | 12 |
+| Seeded Data | 15 cast, 10 crew, 20 scenes, 15 contracts |
+| Build time (original) | 3 days (Jan 5-8) |
 | Dormancy | 66 days (Jan 9 — Mar 15) |
+| Build time (Lexi) | 1 overnight session (Mar 15-16) |
+| PR | #4 — feature/lexi-production |

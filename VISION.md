@@ -2,42 +2,44 @@
 
 > What it is BECOMING. The evolving north star.
 
-**Last reconciled:** March 15, 2026
-**Product:** Lexicon
+**Last reconciled:** March 16, 2026
+**Product:** Lexicon + Lexi (production intelligence entity)
 **Owner:** Eddie Belaval / ID8Labs
 
 ---
 
 ## Soul
 
-**Lexicon is a graph-powered knowledge platform for narrative universes.**
+**Lexicon is a production intelligence platform for unscripted TV. Lexi is the entity that runs it.**
 
-Wikipedia + Perplexity for story worlds. Search your universe like a wiki. Get answers synthesized from your knowledge graph + the live web. The institutional memory that creative teams never had.
+The tool that replaces your production spreadsheet. Cast tracking, crew scheduling, scene management, contract status, logistics — all in one platform with an AI entity (Lexi) that knows your entire production and answers questions from real data. The institutional memory that production teams never had.
 
-**Core belief:** Every story universe deserves searchable, interconnected, living documentation — not dead wikis and scattered Google Docs. The bigger the world, the more you need a brain that remembers everything and surfaces what matters.
+**Core belief:** Every production team deserves better than Excel. Cast relationships, scene schedules, crew assignments, contract status — these are interconnected data, not rows in a spreadsheet. When someone asks "What's left for Chantel?" or "Who's available Thursday?", the answer should come from a system that actually knows, not from scrolling through cells.
 
-**Who it serves:** Writers, showrunners, franchise teams, game designers, worldbuilders — anyone managing narrative complexity at scale.
+**Who it serves:** Production teams, showrunners, producers, coordinators — anyone managing the operational complexity of unscripted TV at scale. Starting with Diaries (90 Day Fiance franchise).
 
-**Where it lives in the ecosystem:** Lexicon is the connective tissue of the ID8Labs suite. ID8Composer creates stories. DeepStack researches. Lexicon remembers everything and makes the other tools smarter by feeding them contextual knowledge.
+**Entity pattern:** Lexi follows the same architecture as Ava (Parallax) and Dae (Homer). Graph/data layer + AI synthesis + entity personality + multiple surfaces. The Chladni plate vibrates at the same frequency — each domain produces a new shape.
+
+**Where it lives in the ecosystem:** Lexicon is the unified production tool that replaces the separate Lexicon (knowledge), ID8Composer (writing), and Prodigy (scheduling) vision. One product, one entity, one place for everything.
 
 ---
 
 ## Pillars
 
-### 1. Entity-First Architecture
-Everything is a node. Characters, locations, events, objects, factions — first-class entities with typed relationships. The graph IS the product. Not folders. Not tags. Connections.
+### 1. Lexi Entity — Intelligence First
+Lexi is the product. She knows your cast, crew, schedule, scenes, contracts, and logistics. Ask her anything about your production and get an answer from real data, not a search bar. "What's left for Chantel?" "Who's available Thursday?" "Which cast haven't done interviews?" She answers, she acts, she alerts.
 
-### 2. Conversational Intelligence
-Search isn't keyword matching — it's Claude synthesizing answers across your entire knowledge graph + live web context. Ask your universe a question, get a cited answer. "Who has motive to betray the king?" should work.
+### 2. Production-Native Data Model
+Cast members, scenes, crew, contracts, availability, uploads — first-class entities with typed relationships. The data model mirrors how productions actually work, not how spreadsheets force you to think. Graph for cast relationships. Tables for schedules and status.
 
-### 3. Visual Graph Navigation
-D3.js-powered interactive visualization. See your universe. Zoom into clusters. Discover connections you didn't know existed. The graph view isn't a feature — it's the primary interface for understanding narrative complexity.
+### 3. Dashboard-First Interface
+The primary view is a production dashboard — what's happening this week, who's shooting, what's done, what needs attention. Calendar, cast board, and crew views are secondary. The interface serves the production workflow, not the other way around.
 
-### 4. Universe Isolation + Multi-Tenancy
-Each universe is its own world. A showrunner can manage multiple franchises. A writer's room can share one universe while keeping others private. Clean boundaries, shared infrastructure.
+### 4. Multi-Production Isolation
+Each production is its own world. A showrunner can manage multiple shows. Clean boundaries, shared infrastructure. Crew can be shared across productions.
 
 ### 5. Import-First Onboarding
-Nobody starts from zero. CSV import, future Notion import, future Google Docs ingestion. Meet creators where their data already lives. Reduce the cold-start problem to minutes, not weeks.
+Nobody starts from zero. CSV import from existing production calendars. Meet production teams where their data already lives (Excel). Reduce the cold-start problem to minutes, not weeks.
 
 ---
 
@@ -55,38 +57,35 @@ Lexicon is NOT:
 
 ## North Star Capabilities
 
-### Already Built (Stage 8 complete)
-- Entity management (5 types, full CRUD, search, counts)
-- Relationship mapping (9 types, strength, path finding, subgraph)
-- AI-powered search (Claude synthesis + citations + web augmentation)
-- D3.js graph visualization (interactive, filterable, 688 LOC)
-- CSV import (auto-detect, type inference, multi-step wizard)
-- Chat interface (SSE streaming, citations, conversations)
-- Wiki view (entity articles, relationship matrices, infoboxes)
-- Storylines with cast linking
+### Already Built
+- Cast knowledge graph: entity management (5 types), relationships (9 types), AI search, D3.js graph viz, wiki view, storylines
+- Chat with Lexi: SSE streaming, citations, production mode toggle, 6 query functions
+- Production schema: 7 Supabase tables, 10 API routes, Zod validation
+- Production data: scenes, crew, cast contracts, crew availability, upload tasks
+- 24 agent tools (19 original + 5 production) with Pattern 6
+- Diaries S7 seeded: 15 cast, 10 crew, 20 scenes, 15 contracts
+- CSV import (auto-detect, type inference)
 - Notifications system
-- Agent-native tools (19 tools, Pattern 6)
 
-### Stage 9 — Launch Prep (next)
-- Service health restoration (Neo4j, Supabase, Vercel)
-- Landing page + onboarding flow
-- Domain + production deploy
-- Conversation title editing (1 parity gap)
+### Next — Production UI (Blueprint Phases 3-4)
+- Dashboard: stats, mini calendar, alerts, cast quick-access
+- Calendar: week/month view, scene scheduling, crew assignments
+- Cast board: contract status, completion tracking (mirrors CSV columns)
+- Crew view: availability grid, AC assignments
 
-### Stage 10 — Ship
-- Domain live, users onboarding
-- Seed universe as demo
+### Then — Lexi Autonomy (Blueprint Phase 6)
+- Agent SDK write operations (schedule scene, assign AC, mark done)
+- Production alerts (unassigned crew, overdue pickups, unsigned cast)
+- Telegram surface for field crew
 
-### Future (Post-Launch)
-- **Timeline visualization** — temporal view of events, not just spatial graph
-- **Contradiction detection** — AI flags when new entries conflict with existing canon
-- **Canon locking** — canonical vs. speculative/draft entries
-- **Real-time collaboration** — multiple writers in the same universe
-- **ID8Composer integration** — universe context in the writing environment
-- **API access** — external tools query the knowledge graph
-- **Version history** — track entity evolution across story development
-- **Bulk narrative import** — ingest scripts/treatments, auto-extract entities + relationships
-- **Notion / Google Docs import** — beyond CSV
+### Future
+- **Production calendar CSV import** — parse the real multi-section format
+- **Timeline visualization** — temporal view of scenes across production
+- **Call sheet generation** — auto-generate daily call sheets from schedule
+- **Real-time collaboration** — multiple producers in the same production
+- **Cross-season continuity** — track cast across seasons
+- **API access** — external tools query production data
+- **Neo4j re-provisioning** — restore cast knowledge graph for relationship queries
 
 ---
 
@@ -101,4 +100,6 @@ Lexicon is NOT:
 | 2026-01 | Tech pivot: Next.js + Neo4j + Supabase + D3.js | Web-first, graph-native, multi-tenant |
 | 2026-01 | Sprint: Stage 1-8 in 3 days (parallel agent orchestration) | 4 agents, 6 features + bonus features |
 | 2026-01-Mar | Dormant — Parallax, Homer, Research Lab took priority | Revenue focus on Parallax as primary product |
-| 2026-03-15 | Reactivation — Triad reconciled with actual codebase | Decision to bring Lexicon back online |
+| 2026-03-15 | Reactivation + pivot to production management | Eddie's team runs on Excel. Lexicon + Composer + Prodigy consolidated into one |
+| 2026-03-15 | Entity: Lexi named | Same pattern as Ava/Dae. Production intelligence entity. |
+| 2026-03-16 | Overnight build: Phase 1-2 complete | 7 tables, 10 API routes, Lexi entity, 6,400 lines. Seeded with Diaries S7 data. |

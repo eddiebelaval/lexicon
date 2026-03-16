@@ -2,22 +2,25 @@
 
 > What it IS right now. The testable contract.
 
-**Last reconciled:** March 15, 2026
-**Product:** Lexicon
+**Last reconciled:** March 16, 2026
+**Product:** Lexicon + Lexi (production intelligence entity)
 **Repo:** https://github.com/eddiebelaval/lexicon
 **Deploy:** https://lexicon-phi.vercel.app
-**Pipeline Stage:** 8 (Polish & Harden) COMPLETE — Stage 9 (Launch Prep) NOT STARTED
-**Commits:** 13
-**Tests:** 129 (unit, integration, E2E)
-**API Parity:** 41/42 user actions (97%)
+**PR:** https://github.com/eddiebelaval/lexicon/pull/4
+**Pipeline Stage:** Stage 5 (Feature Blocks) IN PROGRESS — production management expansion
+**Commits:** 20 (13 original + 7 on feature/lexi-production)
+**Tests:** 129 (unit, integration, E2E) — production tests pending
+**API Parity:** 41/42 original + 10 new production routes (51 total endpoints)
 
 ---
 
 ## Identity
 
-**Lexicon v0.1** — Graph-powered knowledge platform for narrative worlds.
+**Lexicon v0.2** — Production intelligence platform for unscripted TV. Entity: **Lexi**.
 
-A Next.js 15 web application with entity management (5 types), relationship mapping (9 types), AI-powered search (Claude synthesis + citations), D3.js graph visualization, Perplexity-style chat with streaming, wiki view, storylines with cast linking, CSV import, and a notification system. Multi-universe, multi-user via Supabase auth.
+Expanding from a narrative universe knowledge platform into a unified production management tool. Lexi is the production intelligence entity (same pattern as Ava/Parallax, Dae/Homer). Strategic anchor: Season 8 of Diaries (90 Day Fiance franchise).
+
+Core: Next.js 15 + Supabase (production data) + Neo4j (cast knowledge graph, currently down) + Claude (Lexi intelligence). Entity management, relationship mapping, AI-powered search, D3.js graph viz, Perplexity-style chat with Lexi production mode, wiki view, storylines, CSV import, notifications. NEW: production scheduling, crew management, cast contract tracking, scene management.
 
 ---
 
@@ -26,7 +29,8 @@ A Next.js 15 web application with entity management (5 types), relationship mapp
 | Layer | Technology | Status |
 |-------|-----------|--------|
 | Frontend | Next.js 15, React 19, TypeScript 5.7, Tailwind CSS 3.4, shadcn/ui | Implemented |
-| Graph DB | Neo4j Aura (managed, free tier, ID: 0078a27e) | Implemented (likely hibernated) |
+| Graph DB | Neo4j Aura (managed, free tier, ID: 0078a27e) | DOWN — instance hibernated after 66 days |
+| Production DB | Supabase (PostgreSQL) — 7 production tables, seeded with Diaries S7 | LIVE — migration applied, data seeded |
 | User DB | Supabase (PostgreSQL) — auth, universes, storylines, chat, notifications | Implemented |
 | AI | Claude API (@anthropic-ai/sdk 0.39.0) — search synthesis, query parsing | Implemented |
 | Graph Viz | D3.js 7.9 — force-directed graph (688 LOC, 5 files) | Implemented |
@@ -92,7 +96,23 @@ A Next.js 15 web application with entity management (5 types), relationship mapp
 - Create, list, mark read, dismiss, mark all read, unread count
 - User notification preferences
 
-### 10. Infrastructure
+### 11. Production Management (NEW — Lexi)
+- **Productions:** CRUD for production seasons linked to universes
+- **Scenes:** 20 scenes seeded. CRUD with cast linking, date/time/location, status tracking (scheduled/shot/cancelled/postponed/self_shot), equipment notes
+- **Crew:** 10 crew members seeded. Roles: staff, ac, producer, fixer, editor, coordinator
+- **Scene Assignments:** Link crew to scenes with role and status
+- **Cast Contracts:** 15 contracts seeded. Status tracking (signed/pending/offer_sent/dnc/email_sent/declined), payment type (daily/flat), completion tracking (shoot/interview/pickup/payment done)
+- **Crew Availability:** 50 entries seeded. Daily status: available, ooo, dark, holding, booked
+- **Upload Tasks:** Track footage pickup and upload logistics
+
+### 12. Lexi Entity (NEW)
+- Production-aware system prompt (lib/lexi.ts)
+- buildProductionContext() injects live production state into Claude
+- Chat mode toggle: 'universe' (original Lexicon) vs 'production' (Lexi)
+- 6 production query functions for answering questions
+- 5 agent tools with Pattern 6 completion signals
+
+### 13. Infrastructure
 - Supabase Email OTP auth, universe isolation
 - 28 API routes, consistent response format: `{ success, data?, error? }`
 - 19 agent-native tools with Pattern 6 completion signals
@@ -113,7 +133,13 @@ A Next.js 15 web application with entity management (5 types), relationship mapp
 | Notifications | 6 | 4/4 |
 | Search & AI | 5 | Complete |
 | Preferences | 2 | 2/2 |
+| **Productions** | **2** | **4/4** |
+| **Scenes** | **2** | **4/4** |
+| **Crew** | **2** | **4/4** |
+| **Cast Contracts** | **2** | **4/4** |
+| **Crew Availability** | **2** | **4/4** |
 | Infrastructure | 3 | Complete |
+| **Total** | **49** | |
 
 Full audit: see `PARITY_MAP.md`
 
@@ -179,4 +205,7 @@ NEXT_PUBLIC_APP_URL, CRON_SECRET
 | Date | Drift | Resolution |
 |------|-------|------------|
 | 2026-03-15 | Original Triad understated build (missing 6+ features, 129 tests, 97% parity) | SPEC updated from PIPELINE_STATUS.md + PARITY_MAP.md + codebase audit |
-| 2026-03-15 | All services potentially down after 66-day dormancy | Health check required before development |
+| 2026-03-15 | All services potentially down after 66-day dormancy | Supabase: LIVE. Neo4j: DOWN (hibernated). Vercel: pending |
+| 2026-03-16 | Strategic pivot: Lexicon expanding to production management with Lexi entity | 7 production tables, 10 API routes, Lexi system prompt, 5 agent tools built overnight |
+| 2026-03-16 | Neo4j Aura instance dead (0078a27e) | Confirmed down. Production features work on Supabase alone. Re-provision later for cast graph. |
+| 2026-03-16 | Supabase migration conflicts on shared project | Repaired migration history, applied production schema successfully |
