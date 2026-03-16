@@ -6,7 +6,7 @@
  * Each detector returns an array of typed alert objects.
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { getServiceSupabase } from './supabase';
 
 // ============================================
 // Types
@@ -28,27 +28,8 @@ export interface ProductionAlert {
   actionUrl?: string;
 }
 
-// ============================================
-// Supabase client (same pattern as lib/lifecycle.ts)
-// ============================================
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _supabase: SupabaseClient<any> | null = null;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getSupabase(): SupabaseClient<any> {
-  if (!_supabase) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Missing Supabase environment variables');
-    }
-
-    _supabase = createClient(supabaseUrl, supabaseServiceKey);
-  }
-  return _supabase;
-}
+// Uses shared service-role client from lib/supabase.ts
+const getSupabase = getServiceSupabase;
 
 // ============================================
 // Helpers

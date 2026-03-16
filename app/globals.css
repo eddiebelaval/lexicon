@@ -364,3 +364,32 @@
     animation: pulse-glow 2s ease-in-out infinite;
   }
 }
+
+/* Print styles — call sheets and production documents */
+@media print {
+  @page {
+    margin: 0.75in;
+    size: letter;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Hide non-printable UI elements */
+  .no-print,
+  nav,
+  header,
+  footer {
+    display: none !important;
+  }
+
+  /* Prevent page breaks inside scene entries */
+  .print-scene-entry {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

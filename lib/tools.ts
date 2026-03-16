@@ -1016,7 +1016,7 @@ export const lexiconTools: Tool[] = [
           description: 'Additional notes about availability',
         },
       },
-      required: ['crewMemberId', 'date'],
+      required: ['crewMemberId', 'date', 'status'],
     },
   },
 ];
@@ -2019,6 +2019,15 @@ export async function executeToolCall(
           contractUpdate.paymentDone = input.paymentDone as boolean;
         if (input.notes !== undefined)
           contractUpdate.notes = input.notes as string;
+
+        if (Object.keys(contractUpdate).length === 0) {
+          return {
+            success: false,
+            result: null,
+            error: 'No fields provided to update. Specify at least one of: contractStatus, paymentType, shootDone, interviewDone, pickupDone, paymentDone, notes.',
+            shouldContinue: true,
+          };
+        }
 
         const contract = await updateCastContract(contractId, contractUpdate);
         if (!contract) {
