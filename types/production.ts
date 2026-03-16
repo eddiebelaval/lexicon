@@ -39,11 +39,11 @@ export interface CreateProductionInput {
 
 export interface UpdateProductionInput {
   name?: string;
-  season?: string;
+  season?: string | null;
   status?: ProductionStatus;
-  startDate?: string;
-  endDate?: string;
-  notes?: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  notes?: string | null;
 }
 
 // ============================================
@@ -75,8 +75,8 @@ export interface CreateCrewMemberInput {
 export interface UpdateCrewMemberInput {
   name?: string;
   role?: CrewRole;
-  contactEmail?: string;
-  contactPhone?: string;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
   isActive?: boolean;
 }
 
@@ -120,16 +120,16 @@ export interface CreateProdSceneInput {
 }
 
 export interface UpdateProdSceneInput {
-  sceneNumber?: string;
+  sceneNumber?: string | null;
   title?: string;
-  description?: string;
+  description?: string | null;
   castEntityIds?: string[];
-  scheduledDate?: string;
-  scheduledTime?: string;
-  location?: string;
-  locationDetails?: string;
+  scheduledDate?: string | null;
+  scheduledTime?: string | null;
+  location?: string | null;
+  locationDetails?: string | null;
   status?: ProdSceneStatus;
-  equipmentNotes?: string;
+  equipmentNotes?: string | null;
   isSelfShot?: boolean;
 }
 
@@ -195,12 +195,12 @@ export interface CreateCastContractInput {
 
 export interface UpdateCastContractInput {
   contractStatus?: ContractStatus;
-  paymentType?: PaymentType;
+  paymentType?: PaymentType | null;
   shootDone?: boolean;
   interviewDone?: boolean;
   pickupDone?: boolean;
   paymentDone?: boolean;
-  notes?: string;
+  notes?: string | null;
 }
 
 // ============================================
@@ -226,7 +226,7 @@ export interface CreateCrewAvailabilityInput {
 
 export interface UpdateCrewAvailabilityInput {
   status?: AvailabilityStatus;
-  notes?: string;
+  notes?: string | null;
 }
 
 // ============================================
