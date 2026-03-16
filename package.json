@@ -16,6 +16,7 @@
     "seed": "tsx seed/three-musketeers.ts",
     "seed:diaries": "tsx seed/diaries-s7.ts",
     "seed:supabase-production": "tsx seed/seed-supabase-production.ts",
+    "seed:lifecycle": "tsx seed/seed-lifecycle.ts",
     "db:push": "npx prisma db push",
     "db:studio": "npx prisma studio"
   },

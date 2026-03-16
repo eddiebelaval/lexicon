@@ -175,6 +175,45 @@ The Excel spreadsheet for Diaries production had 7 columns for the weekly calend
 
 **Build:** 4 parallel agents built Dashboard, Cast Board, Crew Board, and Calendar simultaneously. Scene Edit Dialog and Universe integration built directly. Zero type errors, build passes.
 
+**Simplify pass:** Three-agent code review (reuse, quality, efficiency) identified 10 HIGH/MEDIUM issues. Fixed: ProductionProvider context (eliminated 4 duplicate API fetches), centralized status configs (`lib/production-config.ts`), parallelized crew fetches, typed CompletionField union, typed ProdSceneStatus parameter. All lint warnings resolved.
+
+**VISION course correction (Mar 16):** Lexicon is not replacing a spreadsheet. It's replacing the entire operational layer of TV production. New pillars: Asset Lifecycle Management, Intake-First Onboarding, Real-Time Collaboration, Multi-Show Architecture. The lifecycle engine is the core differentiator.
+
+### March 16, 2026 — Phase 3: Asset Lifecycle Engine
+
+The foundational architecture that makes Lexicon a production OS instead of a dashboard. Every asset (contract, shoot, deliverable) moves through typed stages with transitions, timestamps, owners, and blockers.
+
+**Schema (5 tables):**
+- `asset_types` — per-production categories (Contract, Shoot, Deliverable). Each show defines its own.
+- `lifecycle_stages` — ordered stages within an asset type (e.g., Draft > Sent > Negotiating > Signed > Active > Complete)
+- `asset_instances` — actual assets with current stage, owner, metadata, blockers, priority, due date. Polymorphic source link connects to existing tables (cast_contracts, scenes, upload_tasks).
+- `stage_transitions` — immutable audit log of every stage change (who, when, why, automated?)
+- `allowed_transitions` — optional constraint table enforcing valid stage paths
+
+**TypeScript Layer:**
+- `types/lifecycle.ts` — 11 interfaces (AssetType, LifecycleStage, AssetInstance, StageTransition, etc.) + composite types (AssetInstanceWithStage, AssetTypeWithStages, LifecycleSummary)
+- `lib/validation/lifecycle.ts` — Zod schemas for all create/update/advance operations
+- `lib/lifecycle.ts` — 14 CRUD functions including advanceStage (validates transitions, creates audit record, sets completed_at on terminal stages) and getLifecycleSummary (counts per stage with blocked/overdue breakdowns)
+
+**API Routes (7 endpoints):**
+- `GET/POST /api/asset-types` — list + create
+- `GET/PUT /api/asset-types/[id]` — get with stages + update
+- `GET/POST /api/assets` — list (filterable by type/stage/blocked/source) + create
+- `GET/PUT/DELETE /api/assets/[id]` — get with stage+type populated + update + delete
+- `POST /api/assets/[id]/advance` — advance to next stage (validates, creates transition, handles terminal)
+- `GET /api/assets/[id]/history` — transition history with stage names
+- `GET /api/lifecycle-summary` — dashboard summary counts
+
+**UI Components (4):**
+- `lifecycle-stage-pill.tsx` — colored badge with dot for current stage
+- `lifecycle-advance-button.tsx` — click to advance, handles API call
+- `lifecycle-history.tsx` — vertical timeline of transitions
+- `lifecycle-panel.tsx` — full lifecycle view: stage pipeline dots, current pill, advance button, blocked/complete indicators, history
+
+**Seed Script:** `seed/seed-lifecycle.ts` — creates 3 default asset types (Contract/Shoot/Deliverable) with 17 stages, maps existing Diaries S7 data (15 contracts + 20 scenes) to 35 asset instances with initial transitions.
+
+**Architectural decision: show-defined lifecycles.** Asset types and stages are per-production, not hardcoded. Diaries defines "Contract" with [Draft > Sent > Negotiating > Signed > Active > Complete]. Another show can define "Deal Memo" with completely different stages. The platform adapts to the show, not the other way around.
+
 ---
 
 ## Key Decisions (and Why)
@@ -216,17 +255,19 @@ Full control over rendering, interaction, styling. Libraries like vis.js or cyto
 
 | Metric | Value |
 |--------|-------|
-| Total LOC | ~42,000 (+4,700 Phase 2 UI) |
-| Components | 68+ (55 original + 13 production) |
+| Total LOC | ~46,000 (+4,000 lifecycle engine) |
+| Components | 72+ (55 original + 13 production + 4 lifecycle) |
 | Production UI Pages | 4 (dashboard, calendar, cast, crew) |
-| API Endpoints | 49 (28 original + 10 production + 11 other) |
+| API Endpoints | 56 (28 original + 10 production + 7 lifecycle + 11 other) |
 | Agent Tools | 24 (19 original + 5 production) |
-| Tests | 129 (production tests pending) |
-| Supabase Tables | 7 production + existing |
-| Supabase Migrations | 12 |
-| Seeded Data | 15 cast, 10 crew, 20 scenes, 15 contracts, 50 availability |
+| Lifecycle Tables | 5 (asset_types, lifecycle_stages, asset_instances, stage_transitions, allowed_transitions) |
+| Tests | 129 (production + lifecycle tests pending) |
+| Supabase Tables | 12 production + lifecycle + existing |
+| Supabase Migrations | 13 |
+| Seeded Data | 15 cast, 10 crew, 20 scenes, 15 contracts, 50 availability, 3 asset types, 17 stages, 35 instances |
 | Build time (original) | 3 days (Jan 5-8) |
 | Dormancy | 66 days (Jan 9 — Mar 15) |
 | Build time (Lexi backend) | 1 overnight session (Mar 15-16) |
 | Build time (Production UI) | 1 session (Mar 16) |
+| Build time (Lifecycle Engine) | 1 session (Mar 16) |
 | PR | #4 — feature/lexi-production |
