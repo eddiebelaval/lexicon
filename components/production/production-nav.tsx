@@ -28,7 +28,7 @@ export function ProductionNav({ universeId }: ProductionNavProps) {
   const basePath = `/universe/${universeId}/production`;
 
   return (
-    <nav className="flex items-center gap-1 border-b border-panel-border px-4">
+    <nav className="flex items-center gap-1 px-4">
       {tabs.map((tab) => {
         const href = `${basePath}${tab.href}`;
         const isActive =

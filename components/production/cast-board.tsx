@@ -8,7 +8,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
+import { AlertCircle, Loader2, RefreshCw, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CastRow } from '@/components/production/cast-row';
 import { useProduction } from '@/components/production/production-context';
@@ -119,7 +119,7 @@ export function CastBoard() {
   }
 
   return (
-    <div className="p-6">
+    <div>
       {/* Summary bar */}
       <div className="mb-6 flex items-center gap-4 rounded-lg border border-panel-border bg-panel-bg px-5 py-3">
         <span className="text-sm text-gray-400">
@@ -142,9 +142,13 @@ export function CastBoard() {
 
       {/* Table */}
       {contracts.length === 0 ? (
-        <p className="py-12 text-center text-sm text-gray-500">
-          No cast contracts yet. Add contracts from the production dashboard.
-        </p>
+        <div className="flex flex-col items-center justify-center py-16 text-center border border-panel-border rounded-lg bg-surface-secondary">
+          <Users className="h-10 w-10 text-gray-600 mb-3" />
+          <h3 className="text-sm font-medium text-gray-300 mb-1">No cast contracts yet</h3>
+          <p className="text-xs text-gray-500 max-w-xs">
+            Add cast members and their contracts from the production dashboard to start tracking.
+          </p>
+        </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-panel-border">
           <table className="w-full text-left">

@@ -5,11 +5,13 @@
  *
  * Compact mode: scene number + title with colored left border (for calendar cells)
  * Expanded mode: full scene info — description, cast, location, time, equipment, status
+ * Uses centralized SCENE_STATUS_CONFIG for color consistency.
  */
 
 import { Video, MapPin, Clock, Users, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { ProdScene, ProdSceneStatus } from '@/types/production';
+import { SCENE_STATUS_CONFIG } from '@/lib/production-config';
+import type { ProdScene } from '@/types/production';
 
 interface SceneCardProps {
   scene: ProdScene;
@@ -17,44 +19,8 @@ interface SceneCardProps {
   onClick?: () => void;
 }
 
-const statusConfig: Record<
-  ProdSceneStatus,
-  { border: string; bg: string; text: string; label: string }
-> = {
-  scheduled: {
-    border: 'border-l-sky-500',
-    bg: 'bg-sky-500/10',
-    text: 'text-sky-400',
-    label: 'Scheduled',
-  },
-  shot: {
-    border: 'border-l-emerald-500',
-    bg: 'bg-emerald-500/10',
-    text: 'text-emerald-400',
-    label: 'Shot',
-  },
-  cancelled: {
-    border: 'border-l-red-500',
-    bg: 'bg-red-500/10',
-    text: 'text-red-400',
-    label: 'Cancelled',
-  },
-  postponed: {
-    border: 'border-l-amber-500',
-    bg: 'bg-amber-500/10',
-    text: 'text-amber-400',
-    label: 'Postponed',
-  },
-  self_shot: {
-    border: 'border-l-violet-500',
-    bg: 'bg-violet-500/10',
-    text: 'text-violet-400',
-    label: 'Self Shot',
-  },
-};
-
 export function SceneCard({ scene, compact = false, onClick }: SceneCardProps) {
-  const config = statusConfig[scene.status];
+  const config = SCENE_STATUS_CONFIG[scene.status];
 
   if (compact) {
     return (
