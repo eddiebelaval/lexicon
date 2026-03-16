@@ -8,6 +8,8 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import {
   Users,
   FileCheck,
@@ -80,6 +82,8 @@ function ListSkeleton({ rows = 3 }: { rows?: number }) {
 // ---------------------------------------------------------------------------
 
 export function ProductionDashboard() {
+  const params = useParams();
+  const universeId = params.id as string;
   const { production, loading: prodLoading } = useProduction();
   const [scenes, setScenes] = useState<ProdScene[]>([]);
   const [contracts, setContracts] = useState<CastContract[]>([]);
@@ -241,11 +245,21 @@ export function ProductionDashboard() {
 
   if (!production) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <Clapperboard className="h-8 w-8 text-gray-600 mb-3" />
-        <p className="text-sm text-gray-500">
-          No production found for this universe.
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <Clapperboard className="h-12 w-12 text-gray-600 mb-4" />
+        <h2 className="text-lg font-medium text-gray-300 mb-2">
+          No production set up yet
+        </h2>
+        <p className="text-sm text-gray-500 mb-6 max-w-md">
+          Set up your production to start tracking cast, crew, scenes, contracts, and deliverables — all in one place.
         </p>
+        <Link
+          href={`/universe/${universeId}/production/intake`}
+          className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium bg-vhs-400 text-white rounded-md hover:bg-vhs-500 transition-colors"
+        >
+          <Clapperboard className="h-4 w-4" />
+          Set Up Your Production
+        </Link>
       </div>
     );
   }

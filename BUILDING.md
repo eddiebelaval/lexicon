@@ -214,6 +214,30 @@ The foundational architecture that makes Lexicon a production OS instead of a da
 
 **Architectural decision: show-defined lifecycles.** Asset types and stages are per-production, not hardcoded. Diaries defines "Contract" with [Draft > Sent > Negotiating > Signed > Active > Complete]. Another show can define "Deal Memo" with completely different stages. The platform adapts to the show, not the other way around.
 
+### March 16, 2026 — Phase 4: Show Intake Flow
+
+The guided onboarding that lets any show set up in Lexicon. A 5-step wizard that collects all production data in local state, then creates everything in one batch on "Launch."
+
+**Intake Wizard Framework:**
+- Step indicator with completion state, prev/next navigation
+- All data held in local state (`IntakeState`) — no partial records in DB
+- Validation gates per step (show name required, at least one asset type enabled)
+- Redirects to production dashboard on successful launch
+
+**Step 1 — Show Setup:** Name, season, start/end dates, notes. Clean form with Lexi-flavored copy.
+
+**Step 2 — Cast Roster:** Inline list editor. Add cast members with name, aliases, description, location. Add/remove dynamically. Empty state with CTA.
+
+**Step 3 — Crew Roster:** Same pattern as cast. Name, role (select from CrewRole), email, phone. Role labels formatted nicely (AC, Producer, Fixer, etc.).
+
+**Step 4 — Asset Types:** The power step. Shows 3 default types (Contract, Shoot, Deliverable) as expandable cards with lifecycle stages. Users can: toggle types on/off, rename stages, add/remove stages, reorder, pick stage colors from presets, add entirely custom asset types. Most users just review defaults and continue.
+
+**Step 5 — Review & Launch:** Summary cards (show info, cast count, crew count, asset types with stage counts). "Launch Production" button with phased progress indicator. Creates: production record, cast entities + contracts, crew members, asset types + lifecycle stages. Neo4j failures caught as warnings (production continues without graph).
+
+**Integration:** Dashboard empty state shows "Set Up Your Production" CTA linking to intake wizard when no production exists.
+
+**Missing endpoint:** Created `POST /api/lifecycle-stages` for the launch step (was missing from Phase 3 — stages were only creatable via the seed script).
+
 ---
 
 ## Key Decisions (and Why)
@@ -255,10 +279,10 @@ Full control over rendering, interaction, styling. Libraries like vis.js or cyto
 
 | Metric | Value |
 |--------|-------|
-| Total LOC | ~46,000 (+4,000 lifecycle engine) |
-| Components | 72+ (55 original + 13 production + 4 lifecycle) |
+| Total LOC | ~49,000 (+3,000 intake wizard) |
+| Components | 80+ (55 original + 13 production + 4 lifecycle + 8 intake) |
 | Production UI Pages | 4 (dashboard, calendar, cast, crew) |
-| API Endpoints | 56 (28 original + 10 production + 7 lifecycle + 11 other) |
+| API Endpoints | 57 (28 original + 10 production + 8 lifecycle + 11 other) |
 | Agent Tools | 24 (19 original + 5 production) |
 | Lifecycle Tables | 5 (asset_types, lifecycle_stages, asset_instances, stage_transitions, allowed_transitions) |
 | Tests | 129 (production + lifecycle tests pending) |
@@ -270,4 +294,5 @@ Full control over rendering, interaction, styling. Libraries like vis.js or cyto
 | Build time (Lexi backend) | 1 overnight session (Mar 15-16) |
 | Build time (Production UI) | 1 session (Mar 16) |
 | Build time (Lifecycle Engine) | 1 session (Mar 16) |
+| Build time (Intake Wizard) | 1 session (Mar 16) |
 | PR | #4 — feature/lexi-production |
