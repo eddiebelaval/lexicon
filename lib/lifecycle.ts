@@ -6,6 +6,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { slugify } from './utils';
 import type {
   AssetType,
   AssetTypeWithStages,
@@ -185,7 +186,7 @@ export async function getAssetType(id: string): Promise<AssetType | null> {
  * Create a new asset type
  */
 export async function createAssetType(input: CreateAssetTypeInput): Promise<AssetType> {
-  const slug = input.slug || input.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const slug = input.slug || slugify(input.name);
 
   const { data, error } = await getSupabase()
     .from('asset_types')
@@ -288,7 +289,7 @@ export async function listLifecycleStages(
 export async function createLifecycleStage(
   input: CreateLifecycleStageInput
 ): Promise<LifecycleStage> {
-  const slug = input.slug || input.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const slug = input.slug || slugify(input.name);
 
   const { data, error } = await getSupabase()
     .from('lifecycle_stages')
@@ -716,46 +717,59 @@ export async function getLifecycleSummary(
 
   if (!assetTypes || assetTypes.length === 0) return [];
 
+  const parsedTypes = assetTypes.map(parseAssetTypeFromDb);
+  const typeIds = parsedTypes.map((t) => t.id);
+
+  // Bulk fetch stages + instances for all types in 2 queries (not 2N)
+  const [{ data: allStageRows, error: stageError }, { data: allInstanceRows, error: instError }] =
+    await Promise.all([
+      getSupabase()
+        .from('lifecycle_stages')
+        .select('*')
+        .in('asset_type_id', typeIds)
+        .order('stage_order', { ascending: true }),
+      getSupabase()
+        .from('asset_instances')
+        .select('current_stage_id, is_blocked, completed_at, due_date, asset_type_id')
+        .eq('production_id', productionId)
+        .in('asset_type_id', typeIds),
+    ]);
+
+  if (stageError) throw new Error(`Failed to get stages: ${stageError.message}`);
+  if (instError) throw new Error(`Failed to get instances: ${instError.message}`);
+
+  // Group by asset_type_id in memory
+  const stagesByType = new Map<string, ReturnType<typeof parseLifecycleStageFromDb>[]>();
+  for (const row of allStageRows || []) {
+    const stage = parseLifecycleStageFromDb(row);
+    const list = stagesByType.get(stage.assetTypeId) || [];
+    list.push(stage);
+    stagesByType.set(stage.assetTypeId, list);
+  }
+
+  const instancesByType = new Map<string, Array<Record<string, unknown>>>();
+  for (const row of allInstanceRows || []) {
+    const typeId = row.asset_type_id as string;
+    const list = instancesByType.get(typeId) || [];
+    list.push(row);
+    instancesByType.set(typeId, list);
+  }
+
+  const now = new Date();
   const summaries: LifecycleSummary[] = [];
 
-  for (const atRow of assetTypes) {
-    const assetType = parseAssetTypeFromDb(atRow);
-
-    // Get stages for this asset type
-    const { data: stageRows, error: stageError } = await getSupabase()
-      .from('lifecycle_stages')
-      .select('*')
-      .eq('asset_type_id', assetType.id)
-      .order('stage_order', { ascending: true });
-
-    if (stageError) {
-      throw new Error(`Failed to get stages: ${stageError.message}`);
-    }
-
-    const stages = (stageRows || []).map(parseLifecycleStageFromDb);
-
-    // Get all instances for this asset type
-    const { data: instances, error: instError } = await getSupabase()
-      .from('asset_instances')
-      .select('current_stage_id, is_blocked, completed_at, due_date')
-      .eq('production_id', productionId)
-      .eq('asset_type_id', assetType.id);
-
-    if (instError) {
-      throw new Error(`Failed to get instances: ${instError.message}`);
-    }
-
-    const instanceList = instances || [];
-    const now = new Date();
+  for (const assetType of parsedTypes) {
+    const stages = stagesByType.get(assetType.id) || [];
+    const instanceList = instancesByType.get(assetType.id) || [];
 
     const stageSummaries = stages.map((stage) => {
       const stageInstances = instanceList.filter(
-        (i: Record<string, unknown>) => i.current_stage_id === stage.id
+        (i) => i.current_stage_id === stage.id
       );
       const blocked = stageInstances.filter(
-        (i: Record<string, unknown>) => i.is_blocked === true
+        (i) => i.is_blocked === true
       ).length;
-      const overdue = stageInstances.filter((i: Record<string, unknown>) => {
+      const overdue = stageInstances.filter((i) => {
         if (!i.due_date) return false;
         return new Date(i.due_date as string) < now && !i.completed_at;
       }).length;
@@ -769,7 +783,7 @@ export async function getLifecycleSummary(
     });
 
     const completed = instanceList.filter(
-      (i: Record<string, unknown>) => i.completed_at !== null
+      (i) => i.completed_at !== null
     ).length;
 
     summaries.push({

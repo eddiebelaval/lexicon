@@ -94,7 +94,9 @@ export function LifecyclePanel({
   }
 
   const currentOrder = instance.currentStage.stageOrder;
-  const nextStage = stages.find((s) => s.stageOrder === currentOrder + 1);
+  const nextStage = stages
+    .filter((s) => s.stageOrder > currentOrder)
+    .sort((a, b) => a.stageOrder - b.stageOrder)[0] ?? null;
   const isComplete = instance.currentStage.isTerminal;
 
   return (

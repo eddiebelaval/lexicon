@@ -19,7 +19,7 @@ import {
   GripVertical,
   type LucideIcon,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, slugify } from '@/lib/utils';
 import type { AssetTypeDraft, LifecycleStageDraft } from './intake-types';
 
 interface AssetTypesStepProps {
@@ -169,7 +169,7 @@ export function AssetTypesStep({ assetTypes, onChange }: AssetTypesStepProps) {
     onChange(
       assetTypes.map((t) =>
         t.tempId === tempId
-          ? { ...t, name, slug: name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') }
+          ? { ...t, name, slug: slugify(name) }
           : t
       )
     );

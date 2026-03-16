@@ -61,6 +61,22 @@ export function ReviewLaunchStep({
   const enabledAssetTypes = state.assetTypes.filter((t) => t.enabled);
   const isLaunching = phase !== 'idle' && phase !== 'done' && phase !== 'error';
 
+  // Track created production ID for retry idempotency
+  const [createdProductionId, setCreatedProductionId] = useState<string | null>(null);
+
+  async function postApi(url: string, body: Record<string, unknown>): Promise<{ ok: boolean; data?: { id: string }; error?: string }> {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { ok: false, error: (json as { error?: { message?: string } })?.error?.message || `${res.status} error` };
+    }
+    return { ok: true, data: (json as { data: { id: string } }).data };
+  }
+
   const handleLaunch = useCallback(async () => {
     setPhase('creating-production');
     setError(null);
@@ -68,168 +84,140 @@ export function ReviewLaunchStep({
     const launchWarnings: string[] = [];
 
     try {
-      // 1. Create production
-      const prodRes = await fetch('/api/productions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      // 1. Create production (skip if already created on a previous attempt)
+      let productionId = createdProductionId;
+      if (!productionId) {
+        const prodResult = await postApi('/api/productions', {
           universeId,
           name: state.show.name,
           season: state.show.season || undefined,
           startDate: state.show.startDate || undefined,
           endDate: state.show.endDate || undefined,
           notes: state.show.notes || undefined,
-        }),
-      });
+        });
 
-      if (!prodRes.ok) {
-        const err = await prodRes.json().catch(() => ({}));
-        throw new Error(
-          (err as { error?: { message?: string } })?.error?.message ||
-            'Failed to create production'
-        );
+        if (!prodResult.ok) {
+          throw new Error(prodResult.error || 'Failed to create production');
+        }
+
+        productionId = prodResult.data!.id;
+        setCreatedProductionId(productionId);
       }
 
-      const prodData = (await prodRes.json()) as {
-        data: { id: string };
-      };
-      const productionId = prodData.data.id;
-
-      // 2. Add cast members
+      // 2. Add cast members (parallel — entity + contract per member)
       if (state.cast.length > 0) {
         setPhase('adding-cast');
 
-        for (const member of state.cast) {
-          // Try to create Neo4j entity (may fail if Neo4j is down -- that's OK)
-          try {
-            await fetch('/api/entities', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
+        const castResults = await Promise.allSettled(
+          state.cast.map(async (member) => {
+            // Try Neo4j entity — capture real ID for contract linking
+            let entityId = `cast-${member.name.toLowerCase().replace(/\s+/g, '-')}`;
+            try {
+              const entityResult = await postApi('/api/entities', {
                 universeId,
                 type: 'character',
                 name: member.name,
                 aliases: member.aliases
-                  ? member.aliases.split(',').map((a) => a.trim()).filter(Boolean)
+                  ? member.aliases.split(',').map((a: string) => a.trim()).filter(Boolean)
                   : [],
                 description: member.description || `Cast member for ${state.show.name}`,
                 metadata: { location: member.location || undefined },
-              }),
-            });
-          } catch {
-            launchWarnings.push(
-              `Could not create graph entity for ${member.name} (Neo4j may be unavailable)`
-            );
-          }
+              });
+              if (entityResult.ok && entityResult.data?.id) {
+                entityId = entityResult.data.id;
+              }
+            } catch {
+              launchWarnings.push(`Could not create graph entity for ${member.name} (Neo4j may be unavailable)`);
+            }
 
-          // Create cast contract (Supabase -- should always work)
-          try {
-            await fetch('/api/cast-contracts', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
+            // Create contract with real entity ID (or fallback slug)
+            try {
+              await postApi('/api/cast-contracts', {
                 productionId,
-                castEntityId: member.tempId,
+                castEntityId: entityId,
                 contractStatus: 'pending',
-              }),
-            });
-          } catch {
-            launchWarnings.push(
-              `Could not create cast contract for ${member.name}`
-            );
+              });
+            } catch {
+              launchWarnings.push(`Could not create cast contract for ${member.name}`);
+            }
+          })
+        );
+
+        // Collect any rejection errors
+        castResults.forEach((r, i) => {
+          if (r.status === 'rejected') {
+            launchWarnings.push(`Error adding cast member ${state.cast[i]?.name || i}`);
           }
-        }
+        });
       }
 
-      // 3. Add crew members
+      // 3. Add crew members (parallel)
       if (state.crew.length > 0) {
         setPhase('adding-crew');
 
-        for (const member of state.crew) {
-          try {
-            await fetch('/api/crew', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                productionId,
-                name: member.name,
-                role: member.role,
-                contactEmail: member.contactEmail || undefined,
-                contactPhone: member.contactPhone || undefined,
-              }),
-            });
-          } catch {
-            launchWarnings.push(
-              `Could not create crew member ${member.name}`
-            );
+        const crewResults = await Promise.allSettled(
+          state.crew.map((member) =>
+            postApi('/api/crew', {
+              productionId,
+              name: member.name,
+              role: member.role,
+              contactEmail: member.contactEmail || undefined,
+              contactPhone: member.contactPhone || undefined,
+            })
+          )
+        );
+
+        crewResults.forEach((r, i) => {
+          if (r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok)) {
+            launchWarnings.push(`Could not create crew member ${state.crew[i]?.name || i}`);
           }
-        }
+        });
       }
 
       // 4. Set up asset types and lifecycle stages
+      // Asset types are created in parallel, stages sequentially per type (order matters)
       if (enabledAssetTypes.length > 0) {
         setPhase('setting-up-tracking');
 
-        for (let i = 0; i < enabledAssetTypes.length; i++) {
-          const assetType = enabledAssetTypes[i];
-
-          // Create asset type
-          let assetTypeId: string | null = null;
-          try {
-            const atRes = await fetch('/api/asset-types', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                productionId,
-                name: assetType.name,
-                slug: assetType.slug,
-                icon: assetType.icon,
-                color: assetType.color,
-                sortOrder: i,
-              }),
+        const typeResults = await Promise.allSettled(
+          enabledAssetTypes.map(async (assetType, i) => {
+            const atResult = await postApi('/api/asset-types', {
+              productionId,
+              name: assetType.name,
+              slug: assetType.slug,
+              icon: assetType.icon,
+              color: assetType.color,
+              sortOrder: i,
             });
 
-            if (atRes.ok) {
-              const atData = (await atRes.json()) as {
-                data: { id: string };
-              };
-              assetTypeId = atData.data.id;
-            } else {
-              launchWarnings.push(
-                `Could not create asset type "${assetType.name}"`
-              );
+            if (!atResult.ok || !atResult.data?.id) {
+              launchWarnings.push(`Could not create asset type "${assetType.name}"`);
+              return;
             }
-          } catch {
-            launchWarnings.push(
-              `Could not create asset type "${assetType.name}"`
-            );
-          }
 
-          // Create lifecycle stages for this asset type
-          if (assetTypeId) {
+            // Stages must be created in order (stage_order constraint)
             for (let j = 0; j < assetType.stages.length; j++) {
               const stage = assetType.stages[j];
-              try {
-                await fetch('/api/lifecycle-stages', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    assetTypeId,
-                    name: stage.name,
-                    stageOrder: j,
-                    isInitial: stage.isInitial,
-                    isTerminal: stage.isTerminal,
-                    color: stage.color,
-                  }),
-                });
-              } catch {
-                launchWarnings.push(
-                  `Could not create stage "${stage.name}" for ${assetType.name}`
-                );
+              const stageResult = await postApi('/api/lifecycle-stages', {
+                assetTypeId: atResult.data.id,
+                name: stage.name,
+                stageOrder: j,
+                isInitial: stage.isInitial,
+                isTerminal: stage.isTerminal,
+                color: stage.color,
+              });
+              if (!stageResult.ok) {
+                launchWarnings.push(`Could not create stage "${stage.name}" for ${assetType.name}`);
               }
             }
+          })
+        );
+
+        typeResults.forEach((r, i) => {
+          if (r.status === 'rejected') {
+            launchWarnings.push(`Error setting up asset type ${enabledAssetTypes[i]?.name || i}`);
           }
-        }
+        });
       }
 
       setWarnings(launchWarnings);
@@ -243,7 +231,7 @@ export function ReviewLaunchStep({
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
       setPhase('error');
     }
-  }, [state, universeId, enabledAssetTypes, onLaunch]);
+  }, [state, universeId, enabledAssetTypes, onLaunch, createdProductionId]);
 
   return (
     <div className="space-y-8">
