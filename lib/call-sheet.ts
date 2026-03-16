@@ -5,7 +5,7 @@
  * Fetches scenes, crew assignments, and resolves cast entity names from Neo4j.
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { getServiceSupabase } from './supabase';
 import { getEntitiesByIds } from './entities';
 import type {
   ProdScene,
@@ -31,27 +31,8 @@ export interface CallSheet {
   generalNotes: string | null;
 }
 
-// ============================================
-// Supabase Client (same lazy pattern as other lib files)
-// ============================================
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _supabase: SupabaseClient<any> | null = null;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getSupabase(): SupabaseClient<any> {
-  if (!_supabase) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Missing Supabase environment variables');
-    }
-
-    _supabase = createClient(supabaseUrl, supabaseServiceKey);
-  }
-  return _supabase;
-}
+// Uses shared service-role client from lib/supabase.ts
+const getSupabase = getServiceSupabase;
 
 // ============================================
 // Row Mappers
@@ -190,7 +171,7 @@ export async function generateCallSheet(
 
   // Fetch all referenced crew members in one query
   const crewMemberIds = [...new Set(assignments.map((a) => a.crewMemberId))];
-  let crewMap = new Map<string, CrewMember>();
+  const crewMap = new Map<string, CrewMember>();
 
   if (crewMemberIds.length > 0) {
     const { data: crewRows, error: crewError } = await supabase

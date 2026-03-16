@@ -75,6 +75,28 @@ export function createAdminClient() {
   });
 }
 
+/**
+ * Cached server-side Supabase client singleton (service role)
+ * Use this instead of creating your own singleton in every lib file.
+ * Returns untyped client since production tables aren't in the Database type yet.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _serviceClient: ReturnType<typeof createClient<any>> | null = null;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function getServiceSupabase(): ReturnType<typeof createClient<any>> {
+  if (!_serviceClient) {
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceRoleKey) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY not configured');
+    }
+    _serviceClient = createClient(getSupabaseUrl(), serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+  }
+  return _serviceClient;
+}
+
 // ============================================
 // Database Row Type & Mapper
 // ============================================
