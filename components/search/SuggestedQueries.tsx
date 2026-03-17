@@ -11,6 +11,7 @@ interface SuggestedQuery {
 interface SuggestedQueriesProps {
   onSelect: (query: string) => void;
   suggestions?: SuggestedQuery[];
+  disabled?: boolean;
 }
 
 const DEFAULT_SUGGESTIONS: SuggestedQuery[] = [
@@ -49,6 +50,7 @@ const DEFAULT_SUGGESTIONS: SuggestedQuery[] = [
 export function SuggestedQueries({
   onSelect,
   suggestions = DEFAULT_SUGGESTIONS,
+  disabled = false,
 }: SuggestedQueriesProps) {
   return (
     <div className="w-full max-w-3xl mx-auto">
@@ -59,10 +61,11 @@ export function SuggestedQueries({
           <button
             key={suggestion.id}
             onClick={() => onSelect(suggestion.text)}
+            disabled={disabled}
             style={{
               animationDelay: `${index * 50}ms`,
             }}
-            className="group flex items-center gap-2 px-4 py-2 bg-[#141414] hover:bg-[#1a1a1a] border border-[#252525] hover:border-[#38bdf8]/30 rounded-xl text-sm text-[#999] hover:text-white transition-all duration-200 hover:-translate-y-0.5 animate-fade-in-up"
+            className="group flex items-center gap-2 px-4 py-2 bg-[#141414] hover:bg-[#1a1a1a] border border-[#252525] hover:border-[#38bdf8]/30 rounded-xl text-sm text-[#999] hover:text-white transition-all duration-200 hover:-translate-y-0.5 animate-fade-in-up disabled:cursor-not-allowed disabled:hover:bg-[#141414] disabled:hover:border-[#252525] disabled:hover:text-[#999] disabled:opacity-50 disabled:hover:translate-y-0"
           >
             <span className="text-[#555] group-hover:text-[#38bdf8] transition-colors duration-200">
               {suggestion.icon}

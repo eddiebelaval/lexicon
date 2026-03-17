@@ -5,19 +5,16 @@ import { useRouter } from 'next/navigation';
 import { HeroSearch } from '@/components/search/HeroSearch';
 import { SuggestedQueries } from '@/components/search/SuggestedQueries';
 import { NotificationBell } from '@/components/notifications/notification-bell';
-import { Network, Sparkles, Globe, BookOpen } from 'lucide-react';
-
-// Demo user ID - replace with auth context in production
-const DEMO_USER_ID = '11111111-1111-1111-1111-111111111111';
+import { Network, Sparkles, BookOpen, ScrollText } from 'lucide-react';
+import { useViewerContext } from '@/lib/hooks/use-viewer-context';
 
 export default function HomePage() {
   const router = useRouter();
-
-  // Default to Three Musketeers universe for demo
-  const DEFAULT_UNIVERSE_ID = '11111111-1111-1111-1111-111111111111';
+  const { userId, primaryUniverse, loading, source } = useViewerContext();
 
   const handleSearch = (query: string) => {
-    router.push(`/universe/${DEFAULT_UNIVERSE_ID}/chat?q=${encodeURIComponent(query)}`);
+    if (!primaryUniverse) return;
+    router.push(`/universe/${primaryUniverse.id}/chat?q=${encodeURIComponent(query)}`);
   };
 
   return (
@@ -29,7 +26,7 @@ export default function HomePage() {
           <span className="text-xl font-semibold text-white">Lexicon</span>
         </Link>
         <div className="flex items-center gap-3">
-          <NotificationBell userId={DEMO_USER_ID} />
+          {userId ? <NotificationBell userId={userId} /> : null}
           <Link
             href="/dashboard"
             className="
@@ -53,19 +50,42 @@ export default function HomePage() {
             What are you looking for?
           </h1>
           <p className="text-lg text-[#888] max-w-md mx-auto">
-            Search your story universe like a wiki. Get AI-powered answers.
+            {primaryUniverse
+              ? `Search ${source === 'user' ? 'your' : 'the public'} universe like a wiki with AI-guided answers.`
+              : 'Search unlocks once a universe is available in this beta environment.'}
           </p>
         </div>
 
         {/* Hero Search */}
         <div className="w-full">
-          <HeroSearch onSearch={handleSearch} aiMode={true} />
+          <HeroSearch
+            onSearch={handleSearch}
+            aiMode={true}
+            disabled={!primaryUniverse}
+            placeholder={
+              primaryUniverse
+                ? `Ask anything about ${primaryUniverse.name}...`
+                : 'A public universe needs to be available before search can start...'
+            }
+          />
         </div>
 
         {/* Suggested Queries */}
         <div className="mt-8 w-full">
-          <SuggestedQueries onSelect={handleSearch} />
+          <SuggestedQueries onSelect={handleSearch} disabled={!primaryUniverse} />
         </div>
+
+        {!loading && primaryUniverse ? (
+          <p className="mt-6 text-sm text-[#666]">
+            Search opens in <span className="text-[#aaa]">{primaryUniverse.name}</span>.
+          </p>
+        ) : null}
+
+        {!loading && !primaryUniverse ? (
+          <p className="mt-6 text-sm text-[#666]">
+            No public universe is available yet. Add one or sign in once auth wiring is live.
+          </p>
+        ) : null}
       </section>
 
       {/* Feature Cards - Compact */}
@@ -84,9 +104,9 @@ export default function HomePage() {
             accentColor="#8b5cf6"
           />
           <FeatureCard
-            icon={<Globe className="w-5 h-5" />}
-            title="Web Augmentation"
-            description="Blend your universe with live web data for richer answers"
+            icon={<ScrollText className="w-5 h-5" />}
+            title="Wiki View"
+            description="Turn entities into readable reference pages with connected context"
             accentColor="#10b981"
           />
         </div>

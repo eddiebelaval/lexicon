@@ -97,6 +97,23 @@ export function getServiceSupabase(): ReturnType<typeof createClient<any>> {
   return _serviceClient;
 }
 
+/**
+ * Check whether the server-side Supabase connection is healthy.
+ */
+export async function healthCheckSupabase(): Promise<boolean> {
+  try {
+    const supabase = getServiceSupabase();
+    const { error } = await supabase
+      .from('universes')
+      .select('id', { head: true, count: 'exact' })
+      .limit(1);
+
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
 // ============================================
 // Database Row Type & Mapper
 // ============================================

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BookOpen, Home, LayoutDashboard, MessageSquare, Network, Settings } from 'lucide-react';
 import { NotificationBell } from '@/components/notifications/notification-bell';
+import { useViewerContext } from '@/lib/hooks/use-viewer-context';
 import { cn } from '@/lib/utils';
 
 interface AppHeaderProps {
@@ -12,9 +13,6 @@ interface AppHeaderProps {
   searchComponent?: React.ReactNode;
   rightActions?: React.ReactNode;
 }
-
-// Demo user ID - replace with auth context in production
-const DEMO_USER_ID = '11111111-1111-1111-1111-111111111111';
 
 /**
  * Shared navigation header for all pages
@@ -32,6 +30,7 @@ export function AppHeader({
   rightActions
 }: AppHeaderProps) {
   const pathname = usePathname();
+  const { userId, loading } = useViewerContext();
 
   // Determine active page
   const isHome = pathname === '/';
@@ -97,14 +96,22 @@ export function AppHeader({
           {/* Right Actions */}
           <div className="flex items-center gap-3 shrink-0">
             {rightActions}
-            <NotificationBell userId={DEMO_USER_ID} />
-            <Link
-              href="/settings/notifications"
-              className="p-2 hover:bg-[#1f1f1f] rounded-lg text-[#888] hover:text-white transition-colors"
-              title="Settings"
-            >
-              <Settings className="w-4 h-4" />
-            </Link>
+            {userId ? (
+              <>
+                <NotificationBell userId={userId} />
+                <Link
+                  href="/settings/notifications"
+                  className="p-2 hover:bg-[#1f1f1f] rounded-lg text-[#888] hover:text-white transition-colors"
+                  title="Settings"
+                >
+                  <Settings className="w-4 h-4" />
+                </Link>
+              </>
+            ) : !loading ? (
+              <span className="px-2.5 py-1 rounded-full border border-[#2a2a2a] text-xs text-[#777]">
+                Public Beta
+              </span>
+            ) : null}
           </div>
         </div>
       </div>

@@ -4,7 +4,7 @@
 - **Project:** Lexicon
 - **Description:** Wikipedia + Perplexity for story universes
 - **Started:** January 6, 2026
-- **Current Stage:** Stage 5 - Feature Blocks (COMPLETE)
+- **Current Stage:** Stage 9 - Launch Prep (IN PROGRESS)
 
 ---
 
@@ -274,14 +274,26 @@
 **Verification:**
 - TypeScript: Compiles without errors
 - Build: Passes successfully
-- Tests: 129/129 passing
+- Tests: 196/196 passing
 
 ---
 
 ### Stage 9: Launch Prep ⏳
 **Checkpoint:** "Could a stranger use this without asking me questions?"
 
-**Status:** NOT STARTED
+**Status:** IN PROGRESS
+
+**Current beta-hardening pass:**
+- Public entry points no longer silently depend on demo user IDs
+- Dashboard now shows real public/user universes instead of a hardcoded card
+- Health route distinguishes `healthy`, `degraded`, and `unhealthy`
+- Production smoke coverage added for call sheet generation
+
+**Still open before wider launch:**
+- Neo4j restoration for full graph-first parity
+- Real live web search integration in the search path
+- Full auth UX and onboarding polish
+- Deeper production E2E coverage
 
 ---
 
@@ -321,4 +333,4 @@
 
 ---
 
-*Last Updated: January 8, 2026 - Stage 8 CLEARED (Polish & Harden complete)*
+*Last Updated: March 17, 2026 - Stage 9 IN PROGRESS (beta hardening underway)*

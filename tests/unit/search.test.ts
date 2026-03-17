@@ -25,6 +25,10 @@ vi.mock('@/lib/claude', () => ({
   synthesizeAnswer: vi.fn(),
 }));
 
+vi.mock('@/lib/storylines', () => ({
+  searchStorylines: vi.fn().mockResolvedValue([]),
+}));
+
 // Import mocked modules
 import { readQuery } from '@/lib/neo4j';
 import { parseQuery, synthesizeAnswer } from '@/lib/claude';
@@ -435,7 +439,8 @@ describe('lib/search', () => {
             }),
           ]),
         }),
-        undefined // No web results
+        undefined, // No web results
+        expect.any(Array) // Storylines
       );
     });
 
@@ -473,7 +478,8 @@ describe('lib/search', () => {
             }),
           ]),
         }),
-        undefined
+        undefined, // No web results
+        expect.any(Array) // Storylines
       );
     });
   });

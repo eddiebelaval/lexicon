@@ -9,6 +9,7 @@ interface HeroSearchProps {
   universeId?: string;
   aiMode?: boolean;
   onSearch?: (query: string) => void;
+  disabled?: boolean;
 }
 
 export function HeroSearch({
@@ -16,6 +17,7 @@ export function HeroSearch({
   universeId,
   aiMode: initialAiMode = true,
   onSearch,
+  disabled = false,
 }: HeroSearchProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
@@ -23,7 +25,7 @@ export function HeroSearch({
   const [aiMode, setAiMode] = useState(initialAiMode);
 
   const handleSubmit = useCallback(() => {
-    if (!query.trim()) return;
+    if (disabled || !query.trim()) return;
 
     if (onSearch) {
       onSearch(query);
@@ -34,7 +36,7 @@ export function HeroSearch({
     } else {
       router.push(`/dashboard?search=${encodeURIComponent(query)}`);
     }
-  }, [query, universeId, aiMode, onSearch, router]);
+  }, [aiMode, disabled, onSearch, query, router, universeId]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -77,6 +79,7 @@ export function HeroSearch({
           onBlur={() => setIsFocused(false)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
+          disabled={disabled}
           className="flex-1 bg-transparent outline-none text-white text-lg placeholder:text-[#666] font-sans"
         />
 
@@ -84,6 +87,7 @@ export function HeroSearch({
         <button
           type="button"
           onClick={() => setAiMode(!aiMode)}
+          disabled={disabled}
           className={`
             flex items-center gap-1.5 px-3 py-1.5 rounded-lg
             text-sm font-medium transition-all duration-200
@@ -102,10 +106,10 @@ export function HeroSearch({
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={!query.trim()}
+          disabled={disabled || !query.trim()}
           className={`
             p-2.5 rounded-xl transition-all duration-200
-            ${query.trim()
+            ${!disabled && query.trim()
               ? 'bg-[#38bdf8] text-[#0a0a0a] hover:bg-[#5ccfff] hover:shadow-[0_0_20px_rgba(56,189,248,0.4)]'
               : 'bg-[#1f1f1f] text-[#444] cursor-not-allowed'
             }
@@ -119,11 +123,17 @@ export function HeroSearch({
       {/* Keyboard Hint */}
       <div className="mt-3 text-center">
         <span className="text-xs text-[#666]">
-          Press{' '}
-          <kbd className="px-1.5 py-0.5 mx-1 rounded bg-[#1f1f1f] border border-[#333] text-[#888] font-mono text-[10px]">
-            Enter
-          </kbd>{' '}
-          to search
+          {disabled ? (
+            'A public universe needs to be available before search can start.'
+          ) : (
+            <>
+              Press{' '}
+              <kbd className="px-1.5 py-0.5 mx-1 rounded bg-[#1f1f1f] border border-[#333] text-[#888] font-mono text-[10px]">
+                Enter
+              </kbd>{' '}
+              to search
+            </>
+          )}
         </span>
       </div>
     </div>

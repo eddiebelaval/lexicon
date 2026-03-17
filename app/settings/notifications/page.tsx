@@ -13,30 +13,49 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useViewerContext } from '@/lib/hooks/use-viewer-context';
 import type { UserPreferences, EmailFrequency } from '@/types';
 
-// TODO: Get from auth context
-const DEMO_USER_ID = '11111111-1111-1111-1111-111111111111';
+function buildDefaultPreferences(userId: string): UserPreferences {
+  return {
+    userId,
+    emailDigests: true,
+    emailFrequency: 'daily',
+    showConfidenceScores: true,
+    autoExpandUpdates: false,
+    monitoringEnabled: true,
+    timezone: 'America/New_York',
+    updatedAt: new Date(),
+  };
+}
 
 export default function NotificationSettingsPage() {
+  const { userId, loading: viewerLoading } = useViewerContext();
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   useEffect(() => {
-    fetchPreferences();
-  }, []);
+    if (!viewerLoading) {
+      if (userId) {
+        void fetchPreferences(userId);
+      } else {
+        setLoading(false);
+      }
+    }
+  }, [userId, viewerLoading]);
 
-  async function fetchPreferences() {
+  async function fetchPreferences(currentUserId: string) {
     try {
-      const res = await fetch(`/api/preferences?userId=${DEMO_USER_ID}`);
+      const res = await fetch(`/api/preferences?userId=${currentUserId}`);
       if (res.ok) {
         const data = await res.json();
-        setPreferences(data.preferences);
+        setPreferences(data.preferences ?? buildDefaultPreferences(currentUserId));
       }
     } catch (error) {
       console.error('Failed to fetch preferences:', error);
+      setPreferences(buildDefaultPreferences(currentUserId));
     } finally {
       setLoading(false);
     }
@@ -55,7 +74,7 @@ export default function NotificationSettingsPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: DEMO_USER_ID,
+          userId,
           [key]: value,
         }),
       });
@@ -70,19 +89,53 @@ export default function NotificationSettingsPage() {
       console.error('Failed to update preference:', error);
       setSaveStatus('error');
       // Revert on error
-      fetchPreferences();
+      if (userId) {
+        void fetchPreferences(userId);
+      }
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading) {
+  if (viewerLoading || loading) {
     return (
       <main className="min-h-screen bg-[#0a0a0a] p-6">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-[#666]" />
           </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!userId) {
+    return (
+      <main className="min-h-screen bg-[#0a0a0a] p-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="mb-8">
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 text-[#666] hover:text-white text-sm mb-4 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Dashboard
+            </Link>
+            <h1 className="text-2xl font-semibold text-white mb-2">
+              Notification Settings
+            </h1>
+            <p className="text-[#666]">
+              Notification preferences unlock after sign-in is connected for private beta users.
+            </p>
+          </div>
+
+          <section className="rounded-xl border border-[#252525] bg-[#141414] p-6">
+            <p className="text-sm text-[#888] leading-relaxed">
+              The current beta keeps public browsing separate from personal digests,
+              monitoring, and notification settings. Once account wiring is live, this page
+              will pick up your real preferences instead of a placeholder user.
+            </p>
+          </section>
         </div>
       </main>
     );

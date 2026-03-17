@@ -2,16 +2,16 @@
 
 > What it IS right now. The testable contract.
 
-**Last reconciled:** March 16, 2026
+**Last reconciled:** March 17, 2026
 **Product:** Lexicon + Lexi (production intelligence entity)
 **Repo:** https://github.com/eddiebelaval/lexicon
 **Deploy:** https://lexicon-phi.vercel.app
 **PR:** https://github.com/eddiebelaval/lexicon/pull/4
-**Pipeline Stage:** Stage 9 (Launch Prep) IN PROGRESS — production UI built, needs polish + deploy
+**Pipeline Stage:** Stage 9 (Launch Prep) IN PROGRESS — beta-hardening pass underway
 **Commits:** 22 (13 original + 9 on feature/lexi-production)
-**Tests:** 129 (unit, integration, E2E) — production tests pending
-**API Parity:** 41/42 original + 10 new production routes (51 total endpoints)
-**Production UI:** 4 pages (dashboard, calendar, cast, crew), 13 components, scene editor
+**Tests:** 196 (unit, integration, E2E) — includes beta health + production smoke coverage
+**API Parity:** Original conversation update gap closed; production + lifecycle routes expanded
+**Production UI:** 6 pages (dashboard, calendar, cast, crew, call sheet, intake), scene editor, alerts
 
 ---
 
@@ -35,10 +35,10 @@ Core: Next.js 15 + Supabase (production data) + Neo4j (cast knowledge graph, cur
 | User DB | Supabase (PostgreSQL) — auth, universes, storylines, chat, notifications | Implemented |
 | AI | Claude API (@anthropic-ai/sdk 0.39.0) — search synthesis, query parsing | Implemented |
 | Graph Viz | D3.js 7.9 — force-directed graph (688 LOC, 5 files) | Implemented |
-| Web Enrichment | Firecrawl + Claude | Implemented |
+| Web Enrichment | Firecrawl + Claude | Partial — wiki enrichment implemented, live search web augmentation still pending |
 | Email | Resend | Partial |
-| Deployment | Vercel | Deployed (health unknown) |
-| Unit/Integration | Vitest 2.1 | 113 tests passing |
+| Deployment | Vercel | Deployed (homepage live, health semantics updated locally) |
+| Unit/Integration | Vitest 2.1 | 179 tests passing |
 | E2E | Playwright 1.49 | 17 tests |
 
 ---
@@ -60,7 +60,8 @@ Core: Next.js 15 + Supabase (production data) + Neo4j (cast knowledge graph, cur
 
 ### 3. AI-Powered Search
 - Claude parses intent, extracts entities, determines web search need
-- Neo4j graph queries + optional Firecrawl web augmentation
+- Neo4j graph queries + storyline search
+- Live web augmentation in the search path is not active yet
 - Synthesized answers with source citations
 - 300ms debounced UI, Cmd/Ctrl+K shortcut
 - 15-second timeout, graceful fallback to basic search
@@ -83,7 +84,7 @@ Core: Next.js 15 + Supabase (production data) + Neo4j (cast knowledge graph, cur
 - Perplexity-style with sidebar conversation list
 - SSE streaming responses, inline citations
 - Entity preview in chat, discovery panel
-- Conversations: create, read, list, delete (**update title missing — 1 parity gap**)
+- Conversations: create, read, list, update title, delete
 
 ### 7. Wiki View
 - Wikipedia-style entity articles with relationship matrices
@@ -132,14 +133,14 @@ Core: Next.js 15 + Supabase (production data) + Neo4j (cast knowledge graph, cur
 
 ---
 
-## API Surface (28 endpoints)
+## API Surface
 
 | Domain | Endpoints | CRUD |
 |--------|-----------|------|
 | Entities | 7 | 4/4 |
 | Relationships | 5 | 4/4 |
 | Storylines | 6 | 4/4 |
-| Chat/Conversations | 5 | 3/4 (update missing) |
+| Chat/Conversations | 5 | 4/4 |
 | Notifications | 6 | 4/4 |
 | Search & AI | 5 | Complete |
 | Preferences | 2 | 2/2 |
@@ -149,7 +150,7 @@ Core: Next.js 15 + Supabase (production data) + Neo4j (cast knowledge graph, cur
 | **Cast Contracts** | **2** | **4/4** |
 | **Crew Availability** | **2** | **4/4** |
 | Infrastructure | 3 | Complete |
-| **Total** | **49** | |
+| **Total** | **Expanded beyond original Stage 8 surface** | |
 
 Full audit: see `PARITY_MAP.md`
 
@@ -169,28 +170,27 @@ Full audit: see `PARITY_MAP.md`
 | Storylines | Create with cast, search | Jan 9, 2026 (manual) |
 | Notifications | Trigger, see in UI, dismiss | Jan 9, 2026 (manual) |
 | Auth | Sign up, log in, universe isolation | Jan 6, 2026 (manual) |
-| Build | `npm run build` passes | **Mar 16, 2026** |
-| Tests | `npm run test` — 129 passing | Jan 8, 2026 |
+| Build | `npm run build` passes | **Mar 17, 2026** |
+| Tests | `npm run test -- --run` — 196 passing | **Mar 17, 2026** |
 | Deploy | lexicon-phi.vercel.app loads | Jan 8, 2026 |
 | Production Dashboard | Stats, upcoming scenes, incomplete contracts render | **Mar 16, 2026** (visual) |
 | Cast Board | 15 contracts, checkboxes, status badges render | **Mar 16, 2026** (visual) |
 | Crew Board | 10 crew, availability grid, week nav render | **Mar 16, 2026** (visual) |
 | Calendar | Month view, scene chips, today highlight render | **Mar 16, 2026** (visual) |
+| Health Route | `/api/health` reports beta-ready vs degraded vs unhealthy | **Mar 17, 2026** (3 unit tests) |
+| Call Sheet | `generateCallSheet()` returns crew/cast names and empty-day fallback | **Mar 17, 2026** (2 unit tests) |
 
-**Post-dormancy: Original features need re-verification.** Neo4j still down. Supabase + production UI verified Mar 16.
+**Current read:** private production beta is credible; full graph-first public launch still blocked by Neo4j and live web search.
 
 ---
 
 ## Known Gaps
 
-### Parity (Priority 1)
-- `PUT /api/chat/conversations/[id]` — conversation title update
-
-### Launch Blockers (Priority 2)
-- Landing page (none exists)
-- Onboarding flow
-- Domain selection
-- Service health restoration
+### Beta Blockers (Priority 1)
+- Neo4j still down, so graph-first launch parity is not restored
+- Live web search augmentation is not implemented in the main search path
+- Full auth UX is still partial; public beta flow is honest, but private-account flows need polish
+- Production verification is smoke-level, not deep end-to-end coverage
 
 ### Nice to Have (Priority 3)
 - Bulk update/delete endpoints
@@ -227,3 +227,6 @@ NEXT_PUBLIC_APP_URL, CRON_SECRET
 | 2026-03-16 | Phase 2 Production UI built | 13 components, 4 pages, 1 layout. Dashboard, calendar, cast board, crew board, scene editor. All visually verified. |
 | 2026-03-16 | Cast board API parsing bug | Fixed — was treating ApiResponse as raw array, causing productionId=undefined |
 | 2026-03-16 | Pipeline advanced to Stage 9 (Launch Prep) | All feature blocks complete. Remaining: polish, deploy, onboard. |
+| 2026-03-17 | Beta-hardening pass removed fake demo IDs from key entry points | Home, dashboard, header, and settings now distinguish public beta visitors from signed-in users |
+| 2026-03-17 | Health route was misclassifying beta readiness | Supabase added as core dependency, Neo4j treated as degraded optional service for production beta |
+| 2026-03-17 | Production verification lagged behind shipped surface | Added health route tests and call-sheet smoke coverage; suite now passes at 196 tests |

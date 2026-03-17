@@ -1,8 +1,8 @@
 # Parity Map - Lexicon
 
 > Created: January 9, 2026
-> Last Audit: January 9, 2026
-> Status: **97% Parity Achieved** (Agent-Native CRUD Complete)
+> Last Audit: March 17, 2026
+> Status: **Core CRUD parity restored** (launch honesty gaps remain)
 
 ---
 
@@ -63,12 +63,12 @@ Lexicon is a graph-powered knowledge platform for exploring story universes. Use
 |-------------|-----------------|--------|-------|
 | Create Conversation | `POST /api/chat/conversations` | ✅ Complete | |
 | Read Conversation | `GET /api/chat/conversations/[id]` | ✅ Complete | Includes messages |
-| Update Conversation | N/A | ❌ Missing | No title edit |
+| Update Conversation | `PATCH /api/chat/conversations/[id]` | ✅ Complete | Title update supported |
 | Delete Conversation | `DELETE /api/chat/conversations/[id]` | ✅ Complete | |
 | List Conversations | `GET /api/chat/conversations?universeId=...` | ✅ Complete | |
 | Send Message | `POST /api/chat` | ✅ Complete | SSE streaming |
 
-### CRUD Status: 3/4 Complete (Update missing)
+### CRUD Status: 4/4 Complete
 
 ---
 
@@ -104,7 +104,7 @@ Lexicon is a graph-powered knowledge platform for exploring story universes. Use
 |-------------|-----------------|--------|-------|
 | Basic Search | `GET /api/search?q=...` | ✅ Complete | Graph search |
 | AI Search | `GET /api/search?ai=true` | ✅ Complete | Claude synthesis |
-| Web-Augmented Search | `GET /api/search?includeWeb=true` | ✅ Complete | External sources |
+| Web-Augmented Search | `GET /api/search?includeWeb=true` | ⚠️ Partial | Flag exists, but live web search is not wired in the main search path yet |
 | Graph Visualization | `GET /api/graph?universeId=...` | ✅ Complete | D3.js format |
 | Web Enrichment | `POST /api/wiki/enrich` | ✅ Complete | Firecrawl/Claude |
 
@@ -127,18 +127,18 @@ Lexicon is a graph-powered knowledge platform for exploring story universes. Use
 | Metric | Value |
 |--------|-------|
 | **Total UI Actions** | 42 |
-| **Agent Parity** | 41/42 (97%) |
+| **Agent Parity** | Original CRUD parity restored |
 | **Agent Tools (lib/tools.ts)** | 19 tools with completion signals |
-| **CRUD Complete Entities** | 5/6 (Conversation missing Update) |
-| **Missing Tools** | Bulk Update, Bulk Delete, Export, Conversation Update |
+| **CRUD Complete Entities** | 6/6 |
+| **Missing Tools** | Bulk Update, Bulk Delete, Export |
 | **Pattern 6 Compliance** | ✅ Full (shouldContinue on all tools) |
 
 ---
 
 ## Gaps & Backlog
 
-### Priority 1 (High Impact)
-- [ ] `PUT /api/chat/conversations/[id]` - Update conversation title
+### Priority 1 (Launch Honesty)
+- [ ] Real external web search in the search path
 
 ### Priority 2 (Nice to Have)
 - [ ] `POST /api/entities/bulk-update` - Batch entity updates
@@ -232,6 +232,6 @@ All agent tools now implement Pattern 6 (Agent-Native Design) with explicit comp
 
 ## Verification
 
-**Last tested:** January 9, 2026
-**Test method:** Manual API exploration + codebase audit
-**Next audit:** Before Stage 9 (Launch Prep)
+**Last tested:** March 17, 2026
+**Test method:** Codebase audit + passing automated suite (196 tests)
+**Next audit:** Before broader public launch
