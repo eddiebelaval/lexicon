@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Loader2, AlertCircle, RefreshCw, UserCog } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, AlertCircle, RefreshCw, UserCog, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CrewAvailabilityCell } from '@/components/production/crew-availability-cell';
 import { useProduction } from '@/components/production/production-context';
@@ -76,6 +76,8 @@ export function CrewBoard() {
   >(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [telegramCode, setTelegramCode] = useState<{ crewId: string; code: string } | null>(null);
+  const [generatingCode, setGeneratingCode] = useState<string | null>(null);
 
   const weekDates = getWeekDates(monday);
   const dateStrings = weekDates.map(toDateString);
@@ -226,6 +228,28 @@ export function CrewBoard() {
     }
   };
 
+  // ---- Telegram registration ----
+
+  const handleConnectTelegram = async (crewMemberId: string) => {
+    setGeneratingCode(crewMemberId);
+    setTelegramCode(null);
+    try {
+      const res = await fetch('/api/telegram/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ crewMemberId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTelegramCode({ crewId: crewMemberId, code: data.data.code });
+      }
+    } catch (err) {
+      console.error('Failed to generate Telegram code:', err);
+    } finally {
+      setGeneratingCode(null);
+    }
+  };
+
   // ---- Render ----
 
   if (loading) {
@@ -322,11 +346,35 @@ export function CrewBoard() {
                   )}
                 >
                   <td className="whitespace-nowrap px-4 py-3">
-                    <div className="text-sm font-medium text-gray-200">
-                      {member.name}
-                    </div>
-                    <div className="text-xs capitalize text-gray-500">
-                      {member.role}
+                    <div className="flex items-center gap-2">
+                      <div>
+                        <div className="text-sm font-medium text-gray-200">
+                          {member.name}
+                        </div>
+                        <div className="text-xs capitalize text-gray-500">
+                          {member.role}
+                        </div>
+                      </div>
+                      {/* Connect Telegram button */}
+                      {telegramCode?.crewId === member.id ? (
+                        <span className="ml-auto px-2 py-0.5 text-[10px] font-mono font-bold bg-sky-500/10 text-sky-400 border border-sky-500/30 rounded">
+                          /start {telegramCode.code}
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleConnectTelegram(member.id)}
+                          disabled={generatingCode === member.id}
+                          className="ml-auto p-1 rounded text-gray-600 hover:text-sky-400 hover:bg-sky-500/10 transition-colors"
+                          title="Connect Telegram"
+                        >
+                          {generatingCode === member.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Send className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      )}
                     </div>
                   </td>
                   {dateStrings.map((dateStr) => {

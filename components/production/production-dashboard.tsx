@@ -23,6 +23,7 @@ import {
 import { cn } from '@/lib/utils';
 import { ProductionStats } from './production-stats';
 import { ProductionAlerts } from './production-alerts';
+import ActivityFeed from './activity-feed';
 import { useProduction } from './production-context';
 import { useRealtimeSubscription } from '@/lib/hooks/use-realtime';
 import { SCENE_STATUS_CONFIG, CONTRACT_STATUS_CONFIG } from '@/lib/production-config';
@@ -294,6 +295,9 @@ export function ProductionDashboard() {
 
       {/* Stat cards */}
       <ProductionStats stats={stats} />
+
+      {/* Activity Feed — live audit trail */}
+      {production && <ActivityFeed productionId={production.id} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Upcoming Scenes */}
