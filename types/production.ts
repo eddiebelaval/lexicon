@@ -50,7 +50,7 @@ export interface UpdateProductionInput {
 // Crew Types
 // ============================================
 
-export type CrewRole = 'staff' | 'ac' | 'producer' | 'fixer' | 'editor' | 'coordinator';
+export type CrewRole = 'staff' | 'ac' | 'producer' | 'fixer' | 'editor' | 'coordinator' | 'field_producer' | 'post_supervisor';
 
 export interface CrewMember {
   id: string;

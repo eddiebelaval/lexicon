@@ -43,7 +43,14 @@ export type Capability =
   | 'write:update_notes'
   | 'write:create_cast'
   | 'write:manage_crew'
-  | 'write:generate_call_sheet';
+  | 'write:generate_call_sheet'
+  | 'write:create_crew'
+  | 'write:delete_scene'
+  | 'write:create_contract'
+  | 'write:delete_contract'
+  | 'write:get_alerts'
+  | 'write:update_production'
+  | 'write:update_crew_member';
 
 // ============================================
 // Role → Capability Mapping
@@ -60,6 +67,9 @@ const ROLE_CAPABILITIES: Record<CrewRole, Capability[]> = {
     'write:advance_stage', 'write:update_availability', 'write:update_own_availability',
     'write:mark_scene_shot', 'write:mark_footage_picked_up', 'write:update_notes',
     'write:create_cast', 'write:manage_crew', 'write:generate_call_sheet',
+    'write:create_crew', 'write:delete_scene', 'write:create_contract',
+    'write:delete_contract', 'write:get_alerts', 'write:update_production',
+    'write:update_crew_member',
   ],
 
   // Producer — production-level access, can schedule and assign
@@ -71,6 +81,8 @@ const ROLE_CAPABILITIES: Record<CrewRole, Capability[]> = {
     'write:advance_stage', 'write:update_availability', 'write:update_own_availability',
     'write:mark_scene_shot', 'write:mark_footage_picked_up', 'write:update_notes',
     'write:generate_call_sheet',
+    'write:create_crew', 'write:delete_scene', 'write:create_contract',
+    'write:get_alerts', 'write:update_crew_member',
   ],
 
   // Coordinator — logistics, scheduling, call sheets
@@ -82,6 +94,7 @@ const ROLE_CAPABILITIES: Record<CrewRole, Capability[]> = {
     'write:update_availability', 'write:update_own_availability',
     'write:mark_footage_picked_up', 'write:update_notes',
     'write:generate_call_sheet',
+    'write:create_crew', 'write:get_alerts', 'write:update_crew_member',
   ],
 
   // Fixer — local logistics, limited scheduling
@@ -90,6 +103,7 @@ const ROLE_CAPABILITIES: Record<CrewRole, Capability[]> = {
     'view:own_assignments', 'view:call_sheets',
     'write:update_own_availability', 'write:update_notes',
     'write:mark_footage_picked_up',
+    'write:generate_call_sheet',
   ],
 
   // AC — their schedule, their assignments, footage pickups
@@ -106,6 +120,29 @@ const ROLE_CAPABILITIES: Record<CrewRole, Capability[]> = {
     'view:lifecycle',
     'write:advance_stage', 'write:update_notes',
     'write:update_own_availability',
+    'write:get_alerts',
+  ],
+
+  // Field Producer — assigned to specific cast in the field
+  field_producer: [
+    'view:all_cast', 'view:all_crew', 'view:all_scenes', 'view:all_contracts',
+    'view:activity_log', 'view:alerts', 'view:own_schedule',
+    'view:own_assignments', 'view:call_sheets',
+    'write:schedule_scene', 'write:assign_crew',
+    'write:update_availability', 'write:update_own_availability',
+    'write:mark_footage_picked_up', 'write:update_notes',
+    'write:generate_call_sheet',
+    'write:create_crew', 'write:get_alerts', 'write:update_crew_member',
+    'write:mark_scene_shot',
+  ],
+
+  // Post Supervisor — oversees post-production
+  post_supervisor: [
+    'view:all_scenes', 'view:own_schedule', 'view:own_assignments',
+    'view:lifecycle', 'view:activity_log',
+    'write:advance_stage', 'write:update_notes',
+    'write:update_own_availability',
+    'write:get_alerts',
   ],
 };
 
@@ -137,6 +174,14 @@ export function canUseTool(role: CrewRole, toolName: string): boolean {
     mark_contract: 'write:mark_contract',
     advance_asset_stage: 'write:advance_stage',
     update_crew_availability: 'write:update_availability',
+    create_crew_member: 'write:create_crew',
+    update_crew_member: 'write:update_crew_member',
+    delete_scene: 'write:delete_scene',
+    create_cast_contract: 'write:create_contract',
+    delete_cast_contract: 'write:delete_contract',
+    generate_call_sheet: 'write:generate_call_sheet',
+    get_production_alerts: 'write:get_alerts',
+    update_production: 'write:update_production',
   };
 
   const required = toolCapabilityMap[toolName];
@@ -158,6 +203,9 @@ export function getAllowedToolNames(role: CrewRole): string[] {
   const allTools = [
     'schedule_scene', 'assign_crew', 'mark_contract',
     'advance_asset_stage', 'update_crew_availability',
+    'create_crew_member', 'update_crew_member', 'delete_scene',
+    'create_cast_contract', 'delete_cast_contract', 'generate_call_sheet',
+    'get_production_alerts', 'update_production',
   ];
 
   return allTools.filter((tool) => canUseTool(role, tool));
@@ -175,7 +223,7 @@ export type DashboardScope = 'full' | 'production' | 'own_assignments';
  */
 export function getDashboardScope(role: CrewRole): DashboardScope {
   if (role === 'staff' || role === 'producer') return 'full';
-  if (role === 'coordinator') return 'production';
+  if (role === 'coordinator' || role === 'field_producer' || role === 'post_supervisor') return 'production';
   return 'own_assignments';
 }
 
@@ -190,6 +238,8 @@ export function getRoleDisplayName(role: CrewRole): string {
     fixer: 'Fixer',
     ac: 'AC',
     editor: 'Editor',
+    field_producer: 'Field Producer',
+    post_supervisor: 'Post Supervisor',
   };
   return names[role] || role;
 }
@@ -240,6 +290,16 @@ export function buildRoleInstructions(name: string, role: CrewRole): string {
       `## Behavioral Note`,
       `${name} is a coordinator managing logistics. They need the full picture of scheduling, crew assignments, and call sheets. They can schedule scenes and assign crew but cannot modify contracts.`,
     );
+  } else if (role === 'field_producer') {
+    lines.push(
+      `## Behavioral Note`,
+      `${name} is a field producer assigned to specific cast members in the field. They need their cast's schedule, can mark scenes, and update field notes.`,
+    );
+  } else if (role === 'post_supervisor') {
+    lines.push(
+      `## Behavioral Note`,
+      `${name} is a post supervisor who oversees post-production. They need lifecycle stage visibility, delivery tracking, and editor coordination.`,
+    );
   } else if (role === 'staff' || role === 'producer') {
     lines.push(
       `## Behavioral Note`,
@@ -248,8 +308,12 @@ export function buildRoleInstructions(name: string, role: CrewRole): string {
   }
 
   // Tool restrictions
-  const restrictedTools = ['schedule_scene', 'assign_crew', 'mark_contract', 'advance_asset_stage', 'update_crew_availability']
-    .filter((t) => !canUseTool(role, t));
+  const restrictedTools = [
+    'schedule_scene', 'assign_crew', 'mark_contract', 'advance_asset_stage',
+    'update_crew_availability', 'create_crew_member', 'update_crew_member',
+    'delete_scene', 'create_cast_contract', 'delete_cast_contract',
+    'generate_call_sheet', 'get_production_alerts', 'update_production',
+  ].filter((t) => !canUseTool(role, t));
 
   if (restrictedTools.length > 0) {
     lines.push('');

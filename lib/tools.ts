@@ -56,8 +56,12 @@ import {
   getIncompleteContracts,
   getScenesByStatus,
 } from './production-queries';
-import { createScene, updateScene } from './scenes';
-import { updateCastContract } from './cast-contracts';
+import { createScene, updateScene, getScene, deleteScene } from './scenes';
+import { updateCastContract, createCastContract, getCastContract, deleteCastContract } from './cast-contracts';
+import { createCrewMember, updateCrewMember } from './crew';
+import { generateCallSheet } from './call-sheet';
+import { getAllAlerts } from './production-alerts';
+import { updateProduction } from './productions';
 import {
   createCrewAvailability,
   updateCrewAvailability,
@@ -72,6 +76,12 @@ import type {
   PaymentType,
   AvailabilityStatus,
   AssignmentRole,
+  CrewRole,
+  ProductionStatus,
+  CreateCrewMemberInput,
+  UpdateCrewMemberInput,
+  CreateCastContractInput,
+  UpdateProductionInput,
 } from '@/types';
 import type { Storyline, StorylineWithCast, StorylineStatus } from '@/types';
 import { readQuery } from './neo4j';
@@ -1017,6 +1027,219 @@ export const lexiconTools: Tool[] = [
         },
       },
       required: ['crewMemberId', 'date', 'status'],
+    },
+  },
+  {
+    name: 'create_crew_member',
+    description:
+      'Add a new crew member to a production.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production to add the crew member to',
+        },
+        name: {
+          type: 'string',
+          description: 'Full name of the crew member',
+        },
+        role: {
+          type: 'string',
+          enum: ['staff', 'ac', 'producer', 'fixer', 'editor', 'coordinator', 'field_producer', 'post_supervisor'],
+          description: 'Crew member role',
+        },
+        contactEmail: {
+          type: 'string',
+          description: 'Contact email address',
+        },
+        contactPhone: {
+          type: 'string',
+          description: 'Contact phone number',
+        },
+      },
+      required: ['productionId', 'name', 'role'],
+    },
+  },
+  {
+    name: 'update_crew_member',
+    description:
+      'Edit crew member details or deactivate a crew member.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        crewMemberId: {
+          type: 'string',
+          description: 'The crew member ID to update',
+        },
+        name: {
+          type: 'string',
+          description: 'Updated full name',
+        },
+        role: {
+          type: 'string',
+          enum: ['staff', 'ac', 'producer', 'fixer', 'editor', 'coordinator', 'field_producer', 'post_supervisor'],
+          description: 'Updated crew role',
+        },
+        contactEmail: {
+          type: 'string',
+          description: 'Updated contact email',
+        },
+        contactPhone: {
+          type: 'string',
+          description: 'Updated contact phone',
+        },
+        isActive: {
+          type: 'boolean',
+          description: 'Set to false to deactivate the crew member',
+        },
+      },
+      required: ['crewMemberId'],
+    },
+  },
+  {
+    name: 'delete_scene',
+    description:
+      'Remove a scene from the schedule. Requires explicit confirmation.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        sceneId: {
+          type: 'string',
+          description: 'The scene ID to delete',
+        },
+        confirm: {
+          type: 'boolean',
+          description: 'Must be true to confirm deletion',
+        },
+      },
+      required: ['sceneId', 'confirm'],
+    },
+  },
+  {
+    name: 'create_cast_contract',
+    description:
+      'Add a cast member contract to a production.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID',
+        },
+        castEntityId: {
+          type: 'string',
+          description: 'The cast member entity ID',
+        },
+        contractStatus: {
+          type: 'string',
+          enum: ['unsigned', 'sent', 'signed', 'void'],
+          description: 'Contract status',
+        },
+        paymentType: {
+          type: 'string',
+          enum: ['w2', '1099', 'corp_to_corp', 'buyout', 'none'],
+          description: 'Payment type',
+        },
+        notes: {
+          type: 'string',
+          description: 'Additional notes about the contract',
+        },
+      },
+      required: ['productionId', 'castEntityId'],
+    },
+  },
+  {
+    name: 'delete_cast_contract',
+    description:
+      'Remove a cast contract. Requires explicit confirmation.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        contractId: {
+          type: 'string',
+          description: 'The contract ID to delete',
+        },
+        confirm: {
+          type: 'boolean',
+          description: 'Must be true to confirm deletion',
+        },
+      },
+      required: ['contractId', 'confirm'],
+    },
+  },
+  {
+    name: 'generate_call_sheet',
+    description:
+      'Generate a call sheet for a specific production date, including all scenes, crew assignments, and cast.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID',
+        },
+        date: {
+          type: 'string',
+          description: 'Date to generate the call sheet for (YYYY-MM-DD)',
+        },
+      },
+      required: ['productionId', 'date'],
+    },
+  },
+  {
+    name: 'get_production_alerts',
+    description:
+      'Check for production issues and blockers such as unsigned contracts, double-booked crew, overdue scenes, and stuck assets.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID to check alerts for',
+        },
+      },
+      required: ['productionId'],
+    },
+  },
+  {
+    name: 'update_production',
+    description:
+      'Edit production details such as name, season, status, dates, or notes.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID to update',
+        },
+        name: {
+          type: 'string',
+          description: 'Updated production name',
+        },
+        season: {
+          type: 'string',
+          description: 'Updated season identifier',
+        },
+        status: {
+          type: 'string',
+          enum: ['pre_production', 'active', 'post_production', 'wrapped'],
+          description: 'Updated production status',
+        },
+        startDate: {
+          type: 'string',
+          description: 'Updated start date (YYYY-MM-DD)',
+        },
+        endDate: {
+          type: 'string',
+          description: 'Updated end date (YYYY-MM-DD)',
+        },
+        notes: {
+          type: 'string',
+          description: 'Updated production notes',
+        },
+      },
+      required: ['productionId'],
     },
   },
 ];
@@ -2107,6 +2330,242 @@ export async function executeToolCall(
           success: true,
           result: {
             availability,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'create_crew_member': {
+        const crewInput: CreateCrewMemberInput = {
+          productionId: input.productionId as string,
+          name: input.name as string,
+          role: input.role as CrewRole,
+          contactEmail: input.contactEmail as string | undefined,
+          contactPhone: input.contactPhone as string | undefined,
+        };
+
+        const newCrewMember = await createCrewMember(crewInput);
+
+        return {
+          success: true,
+          result: {
+            crewMember: newCrewMember,
+            action: 'created' as const,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'update_crew_member': {
+        const crewMemberId = input.crewMemberId as string;
+        const crewUpdate: UpdateCrewMemberInput = {};
+        if (input.name !== undefined) crewUpdate.name = input.name as string;
+        if (input.role !== undefined) crewUpdate.role = input.role as CrewRole;
+        if (input.contactEmail !== undefined) crewUpdate.contactEmail = input.contactEmail as string;
+        if (input.contactPhone !== undefined) crewUpdate.contactPhone = input.contactPhone as string;
+        if (input.isActive !== undefined) crewUpdate.isActive = input.isActive as boolean;
+
+        if (Object.keys(crewUpdate).length === 0) {
+          return {
+            success: false,
+            result: null,
+            error: 'No fields provided to update. Specify at least one of: name, role, contactEmail, contactPhone, isActive.',
+            shouldContinue: true,
+          };
+        }
+
+        const updatedCrewMember = await updateCrewMember(crewMemberId, crewUpdate);
+        if (!updatedCrewMember) {
+          return {
+            success: false,
+            result: null,
+            error: `Crew member not found with ID: ${crewMemberId}`,
+            shouldContinue: true,
+          };
+        }
+
+        return {
+          success: true,
+          result: {
+            crewMember: updatedCrewMember,
+            action: 'updated' as const,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'delete_scene': {
+        const sceneId = input.sceneId as string;
+        const confirm = input.confirm as boolean;
+
+        if (!confirm) {
+          return {
+            success: false,
+            result: null,
+            error: 'Deletion not confirmed. Set confirm=true to delete the scene.',
+            shouldContinue: false,
+          };
+        }
+
+        const existingScene = await getScene(sceneId);
+        if (!existingScene) {
+          return {
+            success: false,
+            result: null,
+            error: `Scene not found with ID: ${sceneId}`,
+            shouldContinue: false,
+          };
+        }
+
+        const deleted = await deleteScene(sceneId);
+        if (!deleted) {
+          return {
+            success: false,
+            result: null,
+            error: `Failed to delete scene: ${sceneId}`,
+            shouldContinue: false,
+          };
+        }
+
+        return {
+          success: true,
+          result: {
+            deletedSceneId: sceneId,
+            title: existingScene.title,
+            action: 'deleted' as const,
+          },
+          shouldContinue: false,
+        };
+      }
+
+      case 'create_cast_contract': {
+        const contractInput: CreateCastContractInput = {
+          productionId: input.productionId as string,
+          castEntityId: input.castEntityId as string,
+          contractStatus: input.contractStatus as ContractStatus | undefined,
+          paymentType: input.paymentType as PaymentType | undefined,
+          notes: input.notes as string | undefined,
+        };
+
+        const newContract = await createCastContract(contractInput);
+
+        return {
+          success: true,
+          result: {
+            contract: newContract,
+            action: 'created' as const,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'delete_cast_contract': {
+        const contractId = input.contractId as string;
+        const confirmDelete = input.confirm as boolean;
+
+        if (!confirmDelete) {
+          return {
+            success: false,
+            result: null,
+            error: 'Deletion not confirmed. Set confirm=true to delete the contract.',
+            shouldContinue: false,
+          };
+        }
+
+        const existingContract = await getCastContract(contractId);
+        if (!existingContract) {
+          return {
+            success: false,
+            result: null,
+            error: `Contract not found with ID: ${contractId}`,
+            shouldContinue: false,
+          };
+        }
+
+        const contractDeleted = await deleteCastContract(contractId);
+        if (!contractDeleted) {
+          return {
+            success: false,
+            result: null,
+            error: `Failed to delete contract: ${contractId}`,
+            shouldContinue: false,
+          };
+        }
+
+        return {
+          success: true,
+          result: {
+            deletedContractId: contractId,
+            action: 'deleted' as const,
+          },
+          shouldContinue: false,
+        };
+      }
+
+      case 'generate_call_sheet': {
+        const productionId = input.productionId as string;
+        const date = input.date as string;
+
+        const callSheet = await generateCallSheet(productionId, date);
+
+        return {
+          success: true,
+          result: {
+            callSheet,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'get_production_alerts': {
+        const productionId = input.productionId as string;
+
+        const alerts = await getAllAlerts(productionId);
+
+        return {
+          success: true,
+          result: {
+            alerts,
+            count: alerts.length,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'update_production': {
+        const productionId = input.productionId as string;
+        const prodUpdate: UpdateProductionInput = {};
+        if (input.name !== undefined) prodUpdate.name = input.name as string;
+        if (input.season !== undefined) prodUpdate.season = input.season as string;
+        if (input.status !== undefined) prodUpdate.status = input.status as ProductionStatus;
+        if (input.startDate !== undefined) prodUpdate.startDate = input.startDate as string;
+        if (input.endDate !== undefined) prodUpdate.endDate = input.endDate as string;
+        if (input.notes !== undefined) prodUpdate.notes = input.notes as string;
+
+        if (Object.keys(prodUpdate).length === 0) {
+          return {
+            success: false,
+            result: null,
+            error: 'No fields provided to update. Specify at least one of: name, season, status, startDate, endDate, notes.',
+            shouldContinue: true,
+          };
+        }
+
+        const updatedProduction = await updateProduction(productionId, prodUpdate);
+        if (!updatedProduction) {
+          return {
+            success: false,
+            result: null,
+            error: `Production not found with ID: ${productionId}`,
+            shouldContinue: true,
+          };
+        }
+
+        return {
+          success: true,
+          result: {
+            production: updatedProduction,
+            action: 'updated' as const,
           },
           shouldContinue: true,
         };
