@@ -129,6 +129,39 @@ export const DEFAULT_ASSET_TYPES: AssetTypeDraft[] = [
       { tempId: 'd-5', name: 'Shipped', color: '#22c55e', isInitial: false, isTerminal: true },
     ],
   },
+  {
+    tempId: 'default-equipment',
+    name: 'Equipment',
+    slug: 'equipment',
+    icon: 'Camera',
+    color: '#8b5cf6',
+    enabled: true,
+    stages: [
+      { tempId: 'eq-1', name: 'At Gear House', color: '#22c55e', isInitial: true, isTerminal: false },
+      { tempId: 'eq-2', name: 'Checked Out', color: '#3b82f6', isInitial: false, isTerminal: false },
+      { tempId: 'eq-3', name: 'On Location', color: '#8b5cf6', isInitial: false, isTerminal: false },
+      { tempId: 'eq-4', name: 'Downloading', color: '#f59e0b', isInitial: false, isTerminal: false },
+      { tempId: 'eq-5', name: 'In Transit', color: '#6366f1', isInitial: false, isTerminal: false },
+      { tempId: 'eq-6', name: 'Returned', color: '#22c55e', isInitial: false, isTerminal: true },
+    ],
+  },
+  {
+    tempId: 'default-footage',
+    name: 'Footage',
+    slug: 'footage',
+    icon: 'Film',
+    color: '#ec4899',
+    enabled: true,
+    stages: [
+      { tempId: 'ft-1', name: 'Shot', color: '#6b7280', isInitial: true, isTerminal: false },
+      { tempId: 'ft-2', name: 'Downloaded', color: '#3b82f6', isInitial: false, isTerminal: false },
+      { tempId: 'ft-3', name: 'In Transit', color: '#6366f1', isInitial: false, isTerminal: false },
+      { tempId: 'ft-4', name: 'Uploaded', color: '#8b5cf6', isInitial: false, isTerminal: false },
+      { tempId: 'ft-5', name: 'Delivered to Post', color: '#f59e0b', isInitial: false, isTerminal: false },
+      { tempId: 'ft-6', name: 'In Edit', color: '#ec4899', isInitial: false, isTerminal: false },
+      { tempId: 'ft-7', name: 'Final', color: '#22c55e', isInitial: false, isTerminal: true },
+    ],
+  },
 ];
 
 export function createEmptyIntakeState(): IntakeState {

@@ -67,7 +67,7 @@ import {
   updateCrewAvailability,
   listCrewAvailability,
 } from './crew-availability';
-import { advanceStage } from './lifecycle';
+import { advanceStage, createAssetInstance, updateAssetInstance, listAssetInstances, listAssetTypes, listLifecycleStages, getAssetInstance } from './lifecycle';
 import type {
   CreateProdSceneInput,
   UpdateProdSceneInput,
@@ -1312,6 +1312,110 @@ export const lexiconTools: Tool[] = [
         },
       },
       required: ['productionId', 'productionName'],
+    },
+  },
+  // ----------------------------------------
+  // Asset Instance Management (Gear, Footage, etc.)
+  // ----------------------------------------
+  {
+    name: 'create_asset',
+    description:
+      'Create a new tracked asset (equipment, footage, document). Use for registering gear kits, logging new footage, or creating any lifecycle-tracked item. Set metadata.location for current location, metadata.castMember for associated cast, ownerName for who has custody.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID',
+        },
+        assetTypeSlug: {
+          type: 'string',
+          description: 'Asset type slug: "equipment", "footage", "contract", "shoot", "deliverable"',
+        },
+        name: {
+          type: 'string',
+          description: 'Asset name (e.g., "Kit 3", "Chantel B-roll 03/18", "Episode 4 rough cut")',
+        },
+        description: {
+          type: 'string',
+          description: 'Optional description or notes',
+        },
+        ownerName: {
+          type: 'string',
+          description: 'Who currently has custody (crew member name)',
+        },
+        location: {
+          type: 'string',
+          description: 'Current physical location',
+        },
+        castMember: {
+          type: 'string',
+          description: 'Associated cast member name (for footage or on-location gear)',
+        },
+        dueDate: {
+          type: 'string',
+          description: 'When this asset is due back or due at next stage (YYYY-MM-DD)',
+        },
+      },
+      required: ['productionId', 'assetTypeSlug', 'name'],
+    },
+  },
+  {
+    name: 'update_asset',
+    description:
+      'Update an existing asset — change who has it, where it is, due date, or notes. Use when gear changes hands, footage gets new metadata, or custody transfers.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        assetInstanceId: {
+          type: 'string',
+          description: 'The asset instance ID',
+        },
+        ownerName: {
+          type: 'string',
+          description: 'New custody holder (crew member name)',
+        },
+        location: {
+          type: 'string',
+          description: 'New location',
+        },
+        castMember: {
+          type: 'string',
+          description: 'New associated cast member',
+        },
+        description: {
+          type: 'string',
+          description: 'Updated notes/description',
+        },
+        dueDate: {
+          type: 'string',
+          description: 'Updated due date (YYYY-MM-DD)',
+        },
+      },
+      required: ['assetInstanceId'],
+    },
+  },
+  {
+    name: 'list_assets',
+    description:
+      'List tracked assets for a production. Filter by type (equipment, footage, etc.) to see where everything is. Returns current stage, owner, location, and how long since last transition.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID',
+        },
+        assetTypeSlug: {
+          type: 'string',
+          description: 'Filter by asset type: "equipment", "footage", "contract", "shoot", "deliverable". Omit for all types.',
+        },
+        stageName: {
+          type: 'string',
+          description: 'Filter by current stage name (e.g., "Checked Out", "On Location")',
+        },
+      },
+      required: ['productionId'],
     },
   },
 ];
@@ -2711,12 +2815,188 @@ export async function executeToolCall(
         };
       }
 
+      // ----------------------------------------
+      // Asset Instance Management (Gear, Footage, etc.)
+      // ----------------------------------------
+
+      case 'create_asset': {
+        const productionId = input.productionId as string;
+        const assetTypeSlug = input.assetTypeSlug as string;
+        const name = input.name as string;
+        const description = input.description as string | undefined;
+        const ownerName = input.ownerName as string | undefined;
+        const location = input.location as string | undefined;
+        const castMember = input.castMember as string | undefined;
+        const dueDate = input.dueDate as string | undefined;
+
+        // Look up asset type by slug
+        const assetTypes = await listAssetTypes(productionId);
+        const assetType = assetTypes.items.find((t) => t.slug === assetTypeSlug);
+        if (!assetType) {
+          return {
+            success: false,
+            result: null,
+            error: `Asset type "${assetTypeSlug}" not found for this production. Available types: ${assetTypes.items.map((t) => t.slug).join(', ')}`,
+            shouldContinue: true,
+          };
+        }
+
+        // Get initial stage
+        const stages = await listLifecycleStages(assetType.id);
+        const initialStage = stages.find((s) => s.isInitial);
+        if (!initialStage) {
+          return {
+            success: false,
+            result: null,
+            error: `No initial stage defined for asset type "${assetTypeSlug}"`,
+            shouldContinue: true,
+          };
+        }
+
+        const metadata: Record<string, unknown> = {};
+        if (location) metadata.location = location;
+        if (castMember) metadata.castMember = castMember;
+
+        const asset = await createAssetInstance({
+          productionId,
+          assetTypeId: assetType.id,
+          name,
+          description,
+          currentStageId: initialStage.id,
+          ownerName,
+          metadata,
+          dueDate,
+        });
+
+        return {
+          success: true,
+          result: {
+            asset,
+            assetType: assetType.name,
+            currentStage: initialStage.name,
+            message: `Created ${assetType.name} "${name}"${ownerName ? ` — custody: ${ownerName}` : ''}${location ? ` — location: ${location}` : ''}`,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'update_asset': {
+        const assetInstanceId = input.assetInstanceId as string;
+        const ownerName = input.ownerName as string | undefined;
+        const location = input.location as string | undefined;
+        const castMember = input.castMember as string | undefined;
+        const description = input.description as string | undefined;
+        const dueDate = input.dueDate as string | undefined;
+
+        const updateData: Record<string, unknown> = {};
+        if (ownerName !== undefined) updateData.ownerName = ownerName;
+        if (description !== undefined) updateData.description = description;
+        if (dueDate !== undefined) updateData.dueDate = dueDate;
+
+        // Merge metadata with existing — fetch current asset to preserve other keys
+        if (location !== undefined || castMember !== undefined) {
+          const existing = await getAssetInstance(assetInstanceId);
+          const existingMeta = (existing?.metadata as Record<string, unknown>) || {};
+          const mergedMeta = { ...existingMeta };
+          if (location !== undefined) mergedMeta.location = location;
+          if (castMember !== undefined) mergedMeta.castMember = castMember;
+          updateData.metadata = mergedMeta;
+        }
+
+        const updated = await updateAssetInstance(assetInstanceId, updateData as Parameters<typeof updateAssetInstance>[1]);
+
+        return {
+          success: true,
+          result: {
+            asset: updated,
+            message: `Updated "${updated.name}"${ownerName ? ` — custody: ${ownerName}` : ''}${location ? ` — location: ${location}` : ''}`,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'list_assets': {
+        const productionId = input.productionId as string;
+        const assetTypeSlug = input.assetTypeSlug as string | undefined;
+        const stageName = input.stageName as string | undefined;
+
+        // Resolve asset type ID from slug if provided
+        let assetTypeId: string | undefined;
+        const stageCache = new Map<string, string>();
+
+        if (assetTypeSlug) {
+          const types = await listAssetTypes(productionId);
+          const found = types.items.find((t) => t.slug === assetTypeSlug);
+          if (found) assetTypeId = found.id;
+        }
+
+        // Pre-fetch stages for the resolved type (reuse for both filtering and enrichment)
+        let stageId: string | undefined;
+        if (assetTypeId) {
+          const stages = await listLifecycleStages(assetTypeId);
+          for (const s of stages) {
+            stageCache.set(s.id, s.name);
+          }
+          if (stageName) {
+            const found = stages.find((s) => s.name.toLowerCase() === stageName.toLowerCase());
+            if (found) stageId = found.id;
+          }
+        }
+
+        const assets = await listAssetInstances(productionId, {
+          assetTypeId,
+          stageId,
+          limit: 50,
+        });
+
+        // Fetch stages for any asset types not yet cached (when listing all types)
+        const uncachedTypeIds = new Set<string>();
+        for (const asset of assets.items) {
+          if (!stageCache.has(asset.currentStageId)) {
+            uncachedTypeIds.add(asset.assetTypeId);
+          }
+        }
+        if (uncachedTypeIds.size > 0) {
+          const stageFetches = await Promise.all(
+            [...uncachedTypeIds].map((typeId) => listLifecycleStages(typeId))
+          );
+          for (const stages of stageFetches) {
+            for (const s of stages) {
+              stageCache.set(s.id, s.name);
+            }
+          }
+        }
+
+        const now = Date.now();
+        const enriched = assets.items.map((a) => ({
+          id: a.id,
+          name: a.name,
+          stage: stageCache.get(a.currentStageId) || 'Unknown',
+          owner: a.ownerName || 'Unassigned',
+          location: (a.metadata as Record<string, unknown>)?.location || '',
+          castMember: (a.metadata as Record<string, unknown>)?.castMember || '',
+          dueDate: a.dueDate || '',
+          stageEnteredAt: a.stageEnteredAt,
+          hoursInStage: Math.round((now - new Date(a.stageEnteredAt).getTime()) / (1000 * 60 * 60)),
+        }));
+
+        return {
+          success: true,
+          result: {
+            assets: enriched,
+            total: assets.total,
+            message: `${assets.total} asset${assets.total !== 1 ? 's' : ''} found${assetTypeSlug ? ` (${assetTypeSlug})` : ''}${stageName ? ` in stage "${stageName}"` : ''}`,
+          },
+          shouldContinue: true,
+        };
+      }
+
       default:
         return {
           success: false,
           result: null,
           error: `Unknown tool: ${toolName}`,
-          shouldContinue: true, // Agent may need to try a different tool
+          shouldContinue: true,
         };
     }
   } catch (error) {
