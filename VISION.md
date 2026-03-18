@@ -2,7 +2,7 @@
 
 > What it is BECOMING. The evolving north star.
 
-**Last reconciled:** March 18, 2026
+**Last reconciled:** March 18, 2026 (session 2)
 **Product:** Lexicon — Production Operating System for Unscripted TV
 **Entity:** Lexi (production intelligence)
 **Owner:** Eddie Belaval / ID8Labs
@@ -89,22 +89,31 @@ Lexicon is NOT:
 - Call sheet generator: auto-generate from schedule + crew, printable output
 - Design polish: visual hierarchy, empty states, color consistency
 
+### Already Built (Session 2 — Mar 18, PRs #9-13)
+- Lexi onboarding wizard: conversational production setup, Excel/CSV import via SheetJS
+- Equipment tracking: 6-stage lifecycle (At Gear House -> Checked Out -> On Location -> Downloading -> In Transit -> Returned), chain of custody with owner + location metadata
+- Footage tracking: 7-stage lifecycle (Shot -> Downloaded -> In Transit -> Uploaded -> Delivered to Post -> In Edit -> Final), rich metadata (scene, camera, card, AC notes)
+- Document tracking: 5-stage lifecycle (Draft -> Sent -> Acknowledged -> Signed -> Filed), for scripts, releases, NDAs
+- Automated triggers: 5 new detectors (gear overdue, footage not downloaded, footage not uploaded, approaching deadline, idle cast), 4-hour cron with Telegram delivery
+- Post-production board: footage timeline with transition history, cast/stage filtering
+- Lexi tool parity: 46 tools total — create/update/delete assets, create productions, generate Telegram registration codes
+- Gear board: stage-grouped columns with overdue detection via isTerminal/isInitial flags
+
 ### Next — Launch Readiness
 - **Neo4j re-provisioning** — restore cast knowledge graph for relationship queries
-- **Landing page** — first impression for new users
+- **Landing page** — first impression for new users, production OS positioning
 - **Domain selection** — custom domain for the tool
-- **Telegram surface** — field crew can ask Lexi questions via bot
 - **Diaries S8 seed data** — replace S7 demo data with real S8 cast and schedule
+- **Onboarding UX** — condense to 3 interactions (combined form + immediate file upload)
+- **Design system alignment** — port Mission Control Dark Factory patterns
 
 ### Future
-- **Custom asset types** — shows define their own asset categories beyond the defaults
 - **Cross-show views** — resource contention, shared crew scheduling, portfolio dashboard
-- **Post-production pipeline** — editing, review, corrections, delivery tracking
-- **Script tracking** — outline through locked final with revision management
 - **Timeline visualization** — temporal view of all assets across production lifecycle
 - **API access** — external tools query production data
 - **Mobile companion** — field-optimized view for ACs and coordinators on set
 - **Cross-season continuity** — track cast and storylines across seasons
+- **Telegram group chat** — team-level Lexi interactions
 
 ---
 
@@ -125,3 +134,4 @@ Lexicon is NOT:
 | 2026-03-16 | Phase 2: Production UI | Dashboard, calendar, cast board, crew board, scene editor. Spreadsheet replacement functional. |
 | 2026-03-16 | Phase 3: Course correction — spreadsheet replacement to production OS | Realized the true north star is lifecycle management, intake-first onboarding, real-time collaboration, and multi-show architecture. Lexicon is not replacing a spreadsheet. It's replacing the entire operational layer of TV production. |
 | 2026-03-16 | Phases 3-6 shipped in one session | Lifecycle engine, intake wizard, realtime collab, Lexi autonomy (write tools + alerts + call sheets). All 6 VISION pillars now have code. |
+| 2026-03-18 | Session 2: Full production lifecycle realized | Gear tracking, footage chain of custody, document tracking, automated triggers, post-production board, Lexi tool parity (46 tools). The spreadsheet is dead. |
