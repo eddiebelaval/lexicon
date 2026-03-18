@@ -7,6 +7,7 @@
  */
 
 import { getServiceSupabase } from './supabase';
+import { hoursSince } from './utils';
 
 // ============================================
 // Types
@@ -49,10 +50,6 @@ function daysFromNow(days: number): string {
 
 function todayStr(): string {
   return new Date().toISOString().split('T')[0];
-}
-
-function hoursSince(dateStr: string): number {
-  return (Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60);
 }
 
 function daysBetween(dateStr: string, referenceStr: string): number {

@@ -102,6 +102,22 @@ export function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(
 }
 
 /**
+ * Hours elapsed since a given ISO date string
+ */
+export function hoursSince(dateStr: string): number {
+  return (Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60);
+}
+
+/**
+ * Format hours into a relative display string (e.g., "Just now", "3h", "2d")
+ */
+export function formatRelativeHours(hours: number): string {
+  if (hours < 1) return 'Just now';
+  if (hours < 24) return `${Math.round(hours)}h`;
+  return `${Math.floor(hours / 24)}d`;
+}
+
+/**
  * Safe JSON parse with fallback
  */
 export function safeJsonParse<T>(json: string, fallback: T): T {
