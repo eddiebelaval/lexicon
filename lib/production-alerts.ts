@@ -51,6 +51,10 @@ function todayStr(): string {
   return new Date().toISOString().split('T')[0];
 }
 
+function hoursSince(dateStr: string): number {
+  return (Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60);
+}
+
 function daysBetween(dateStr: string, referenceStr: string): number {
   const a = new Date(dateStr);
   const b = new Date(referenceStr);
@@ -421,31 +425,35 @@ export async function getUnassignedSceneAlerts(
 export async function getGearOverdueAlerts(
   productionId: string
 ): Promise<ProductionAlert[]> {
-  // Find equipment asset type
-  const { data: assetTypes } = await getSupabase()
+  const { data: assetTypes, error: atErr } = await getSupabase()
     .from('asset_types')
     .select('id')
     .eq('production_id', productionId)
     .eq('slug', 'equipment')
     .single();
 
-  if (!assetTypes) return [];
+  if (atErr || !assetTypes) {
+    if (atErr && atErr.code !== 'PGRST116') console.error('Failed to fetch equipment type:', atErr.message);
+    return [];
+  }
   const equipmentTypeId = assetTypes.id as string;
 
-  // Get non-terminal, non-initial stages
-  const { data: stages } = await getSupabase()
+  const { data: stages, error: sErr } = await getSupabase()
     .from('lifecycle_stages')
     .select('id, name')
     .eq('asset_type_id', equipmentTypeId)
     .eq('is_initial', false)
     .eq('is_terminal', false);
 
+  if (sErr) {
+    console.error('Failed to fetch equipment stages:', sErr.message);
+    return [];
+  }
   if (!stages || stages.length === 0) return [];
   const activeStageIds = stages.map((s) => s.id as string);
   const stageNames = new Map(stages.map((s) => [s.id as string, s.name as string]));
 
-  // Get equipment in active stages
-  const { data: instances } = await getSupabase()
+  const { data: instances, error: iErr } = await getSupabase()
     .from('asset_instances')
     .select('id, name, current_stage_id, stage_entered_at, owner_name, metadata')
     .eq('production_id', productionId)
@@ -453,24 +461,27 @@ export async function getGearOverdueAlerts(
     .in('current_stage_id', activeStageIds)
     .is('completed_at', null);
 
+  if (iErr) {
+    console.error('Failed to fetch equipment instances:', iErr.message);
+    return [];
+  }
   if (!instances || instances.length === 0) return [];
 
-  const now = Date.now();
   const alerts: ProductionAlert[] = [];
 
   for (const inst of instances) {
-    const hoursInStage = (now - new Date(inst.stage_entered_at as string).getTime()) / (1000 * 60 * 60);
-    if (hoursInStage < 48) continue;
+    const hours = hoursSince(inst.stage_entered_at as string);
+    if (hours < 48) continue;
 
     const stageName = stageNames.get(inst.current_stage_id as string) || 'unknown stage';
     const owner = (inst.owner_name as string) || 'unknown';
     const location = (inst.metadata as Record<string, unknown>)?.location || '';
-    const days = Math.floor(hoursInStage / 24);
+    const days = Math.floor(hours / 24);
 
     alerts.push({
       id: `gear-overdue-${inst.id}`,
       type: 'gear_overdue',
-      severity: hoursInStage >= 96 ? 'critical' : 'warning',
+      severity: hours >= 96 ? 'critical' : 'warning',
       title: `Gear overdue: ${inst.name}`,
       description: `${stageName} for ${days}d — custody: ${owner}${location ? `, location: ${location}` : ''}`,
       entityId: inst.id as string,
@@ -489,27 +500,33 @@ export async function getGearOverdueAlerts(
 export async function getFootageNotDownloadedAlerts(
   productionId: string
 ): Promise<ProductionAlert[]> {
-  const { data: assetTypes } = await getSupabase()
+  const { data: assetTypes, error: atErr } = await getSupabase()
     .from('asset_types')
     .select('id')
     .eq('production_id', productionId)
     .eq('slug', 'footage')
     .single();
 
-  if (!assetTypes) return [];
+  if (atErr || !assetTypes) {
+    if (atErr && atErr.code !== 'PGRST116') console.error('Failed to fetch footage type:', atErr.message);
+    return [];
+  }
   const footageTypeId = assetTypes.id as string;
 
-  // Find the "Shot" stage (initial stage for footage)
-  const { data: shotStage } = await getSupabase()
+  const { data: shotStage, error: ssErr } = await getSupabase()
     .from('lifecycle_stages')
     .select('id')
     .eq('asset_type_id', footageTypeId)
     .eq('is_initial', true)
     .single();
 
+  if (ssErr) {
+    console.error('Failed to fetch footage initial stage:', ssErr.message);
+    return [];
+  }
   if (!shotStage) return [];
 
-  const { data: instances } = await getSupabase()
+  const { data: instances, error: iErr } = await getSupabase()
     .from('asset_instances')
     .select('id, name, stage_entered_at, owner_name, metadata')
     .eq('production_id', productionId)
@@ -517,14 +534,17 @@ export async function getFootageNotDownloadedAlerts(
     .eq('current_stage_id', shotStage.id)
     .is('completed_at', null);
 
+  if (iErr) {
+    console.error('Failed to fetch footage instances for download check:', iErr.message);
+    return [];
+  }
   if (!instances || instances.length === 0) return [];
 
-  const now = Date.now();
   const alerts: ProductionAlert[] = [];
 
   for (const inst of instances) {
-    const hoursInStage = (now - new Date(inst.stage_entered_at as string).getTime()) / (1000 * 60 * 60);
-    if (hoursInStage < 24) continue;
+    const hours = hoursSince(inst.stage_entered_at as string);
+    if (hours < 24) continue;
 
     const owner = (inst.owner_name as string) || 'unknown AC';
     const castMember = (inst.metadata as Record<string, unknown>)?.castMember || '';
@@ -532,9 +552,9 @@ export async function getFootageNotDownloadedAlerts(
     alerts.push({
       id: `footage-not-downloaded-${inst.id}`,
       type: 'footage_not_downloaded',
-      severity: hoursInStage >= 48 ? 'critical' : 'warning',
+      severity: hours >= 48 ? 'critical' : 'warning',
       title: `Footage not downloaded: ${inst.name}`,
-      description: `Shot ${Math.floor(hoursInStage / 24)}d ago${castMember ? ` (${castMember})` : ''} — AC: ${owner}`,
+      description: `Shot ${Math.floor(hours / 24)}d ago${castMember ? ` (${castMember})` : ''} — AC: ${owner}`,
       entityId: inst.id as string,
       entityName: inst.name as string,
       notifyRole: 'ac',
@@ -551,57 +571,66 @@ export async function getFootageNotDownloadedAlerts(
 export async function getFootageNotUploadedAlerts(
   productionId: string
 ): Promise<ProductionAlert[]> {
-  const { data: assetTypes } = await getSupabase()
+  const { data: assetTypes, error: atErr } = await getSupabase()
     .from('asset_types')
     .select('id')
     .eq('production_id', productionId)
     .eq('slug', 'footage')
     .single();
 
-  if (!assetTypes) return [];
+  if (atErr || !assetTypes) {
+    if (atErr && atErr.code !== 'PGRST116') console.error('Failed to fetch footage type for upload check:', atErr.message);
+    return [];
+  }
   const footageTypeId = assetTypes.id as string;
 
-  // Find the "Downloaded" stage
-  const { data: stages } = await getSupabase()
+  // Get non-initial, non-terminal stages (footage that's in transit between shot and post)
+  const { data: stages, error: sErr } = await getSupabase()
     .from('lifecycle_stages')
-    .select('id, name')
+    .select('id, name, stage_order')
     .eq('asset_type_id', footageTypeId)
+    .eq('is_initial', false)
+    .eq('is_terminal', false)
     .order('stage_order', { ascending: true });
 
-  if (!stages) return [];
+  if (sErr) {
+    console.error('Failed to fetch footage stages for upload check:', sErr.message);
+    return [];
+  }
+  if (!stages || stages.length === 0) return [];
 
-  // "Downloaded" is typically stage_order 1 (after "Shot" which is 0)
-  const downloadedStage = stages.find((s) => (s.name as string).toLowerCase() === 'downloaded');
-  const inTransitStage = stages.find((s) => (s.name as string).toLowerCase() === 'in transit');
-  if (!downloadedStage) return [];
+  // Take the first 2-3 non-initial, non-terminal stages (Downloaded, In Transit, Uploaded)
+  // These are the "pre-post" stages where footage might be stuck
+  const prePostStageIds = stages.filter((s) => (s.stage_order as number) <= 3).map((s) => s.id as string);
+  const stageNameMap = new Map(stages.map((s) => [s.id as string, s.name as string]));
 
-  const stageIds = [downloadedStage.id as string];
-  if (inTransitStage) stageIds.push(inTransitStage.id as string);
-
-  const { data: instances } = await getSupabase()
+  const { data: instances, error: iErr } = await getSupabase()
     .from('asset_instances')
     .select('id, name, current_stage_id, stage_entered_at, owner_name, metadata')
     .eq('production_id', productionId)
     .eq('asset_type_id', footageTypeId)
-    .in('current_stage_id', stageIds)
+    .in('current_stage_id', prePostStageIds)
     .is('completed_at', null);
 
+  if (iErr) {
+    console.error('Failed to fetch footage instances for upload check:', iErr.message);
+    return [];
+  }
   if (!instances || instances.length === 0) return [];
 
-  const now = Date.now();
   const alerts: ProductionAlert[] = [];
 
   for (const inst of instances) {
-    const hoursInStage = (now - new Date(inst.stage_entered_at as string).getTime()) / (1000 * 60 * 60);
-    if (hoursInStage < 48) continue;
+    const hours = hoursSince(inst.stage_entered_at as string);
+    if (hours < 48) continue;
 
-    const stageName = inst.current_stage_id === downloadedStage.id ? 'Downloaded' : 'In Transit';
+    const stageName = stageNameMap.get(inst.current_stage_id as string) || 'pre-upload';
     alerts.push({
       id: `footage-not-uploaded-${inst.id}`,
       type: 'footage_not_uploaded',
-      severity: hoursInStage >= 72 ? 'critical' : 'warning',
+      severity: hours >= 72 ? 'critical' : 'warning',
       title: `Footage not uploaded: ${inst.name}`,
-      description: `${stageName} for ${Math.floor(hoursInStage / 24)}d — needs upload to post`,
+      description: `${stageName} for ${Math.floor(hours / 24)}d — needs upload to post`,
       entityId: inst.id as string,
       entityName: inst.name as string,
       notifyRole: 'coordinator',
@@ -622,7 +651,7 @@ export async function getApproachingDeadlineAlerts(
   const threeDaysOut = daysFromNow(3);
   const oneDayOut = daysFromNow(1);
 
-  const { data: instances } = await getSupabase()
+  const { data: instances, error } = await getSupabase()
     .from('asset_instances')
     .select('id, name, due_date, owner_name')
     .eq('production_id', productionId)
@@ -630,6 +659,10 @@ export async function getApproachingDeadlineAlerts(
     .lte('due_date', threeDaysOut)
     .is('completed_at', null);
 
+  if (error) {
+    console.error('Failed to fetch approaching deadlines:', error.message);
+    return [];
+  }
   if (!instances || instances.length === 0) return [];
 
   return instances.map((inst) => {
@@ -660,22 +693,29 @@ export async function getIdleCastAlerts(
   const today = todayStr();
   const twoWeeksOut = daysFromNow(14);
 
-  // Get all active contracts
-  const { data: contracts } = await getSupabase()
+  const { data: contracts, error: cErr } = await getSupabase()
     .from('cast_contracts')
     .select('id, cast_entity_id, contract_status')
     .eq('production_id', productionId)
     .in('contract_status', ['signed', 'pending', 'offer_sent']);
 
+  if (cErr) {
+    console.error('Failed to fetch contracts for idle cast check:', cErr.message);
+    return [];
+  }
   if (!contracts || contracts.length === 0) return [];
 
-  // Get scenes in next 14 days
-  const { data: scenes } = await getSupabase()
+  const { data: scenes, error: sErr } = await getSupabase()
     .from('scenes')
     .select('cast_entity_ids')
     .eq('production_id', productionId)
     .gte('scheduled_date', today)
     .lte('scheduled_date', twoWeeksOut);
+
+  if (sErr) {
+    console.error('Failed to fetch scenes for idle cast check:', sErr.message);
+    return [];
+  }
 
   // Collect all cast IDs that have scenes
   const castWithScenes = new Set<string>();

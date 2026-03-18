@@ -2,36 +2,27 @@
  * Production Triggers Cron Job
  *
  * Runs every 4 hours via Vercel Cron.
- * Checks all active productions for time-based alerts:
- * - Gear checked out >48h
- * - Footage not downloaded >24h
- * - Footage not uploaded >48h
- * - Approaching deadlines (3d, 1d)
- * - Idle cast (no scenes in 14d)
- *
- * Sends alerts via Telegram to the appropriate crew role.
+ * Checks all active productions for time-based alerts and
+ * sends new alerts via Telegram to the appropriate crew role.
  * Deduplicates against activity_log to prevent spam.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/lib/supabase';
+import { verifyCronSecret } from '@/lib/cron';
 import { getAllAlerts, type ProductionAlert } from '@/lib/production-alerts';
 import { logActivity } from '@/lib/activity-log';
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const DEDUP_HOURS = 4; // Don't resend the same alert within this window
+const DEDUP_HOURS = 4;
 
-function verifyCronSecret(request: NextRequest): boolean {
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET?.trim();
-  if (!cronSecret) return false;
-  return authHeader === `Bearer ${cronSecret}`;
-}
-
-async function sendTelegramAlert(chatId: string, text: string): Promise<boolean> {
-  if (!BOT_TOKEN) return false;
+async function sendTelegramMessage(chatId: string, text: string): Promise<boolean> {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  if (!botToken) {
+    console.warn('[Cron:Triggers] TELEGRAM_BOT_TOKEN not configured');
+    return false;
+  }
   try {
-    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
@@ -43,11 +34,56 @@ async function sendTelegramAlert(chatId: string, text: string): Promise<boolean>
 }
 
 function formatAlertMessage(alert: ProductionAlert, productionName: string): string {
-  const severityIcon = alert.severity === 'critical' ? '[CRITICAL]'
+  const severity = alert.severity === 'critical' ? '[CRITICAL]'
     : alert.severity === 'warning' ? '[WARNING]'
     : '[INFO]';
 
-  return `${severityIcon} <b>${alert.title}</b>\n${alert.description}\n\n<i>${productionName}</i>`;
+  return `${severity} <b>${alert.title}</b>\n${alert.description}\n\n<i>${productionName}</i>`;
+}
+
+interface CronStats {
+  productions: number;
+  alertsFound: number;
+  alertsSent: number;
+  errors: number;
+}
+
+/**
+ * Send alerts to crew members and log for dedup — shared by both
+ * the primary role path and the coordinator fallback path.
+ */
+async function sendAndLogAlerts(
+  alerts: ProductionAlert[],
+  crewMembers: Array<{ telegram_user_id: unknown }>,
+  production: { id: string; name: string },
+  role: string,
+  stats: CronStats,
+): Promise<void> {
+  for (const alert of alerts) {
+    // Send to all matching crew in parallel
+    const results = await Promise.all(
+      crewMembers.map((crew) =>
+        sendTelegramMessage(
+          crew.telegram_user_id as string,
+          formatAlertMessage(alert, production.name),
+        )
+      )
+    );
+
+    for (const sent of results) {
+      if (sent) stats.alertsSent++;
+      else stats.errors++;
+    }
+
+    await logActivity({
+      productionId: production.id,
+      actorName: 'Lexi',
+      actorRole: 'staff',
+      channel: 'system',
+      action: 'trigger_alert_sent',
+      details: { alertId: alert.id, alertType: alert.type, notifyRole: role },
+    });
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -57,10 +93,9 @@ export async function GET(request: NextRequest) {
 
   console.log('[Cron:Triggers] Starting trigger check');
   const db = getServiceSupabase();
-  const stats = { productions: 0, alertsFound: 0, alertsSent: 0, errors: 0 };
+  const stats: CronStats = { productions: 0, alertsFound: 0, alertsSent: 0, errors: 0 };
 
   try {
-    // Get all active productions
     const { data: productions, error: pErr } = await db
       .from('productions')
       .select('id, name, universe_id')
@@ -95,14 +130,13 @@ export async function GET(request: NextRequest) {
         const alerts = await getAllAlerts(production.id);
         stats.alertsFound += alerts.length;
 
-        // Filter to alerts that have a notifyRole and haven't been sent recently
         const newAlerts = alerts.filter(
           (a) => a.notifyRole && !recentAlertIds.has(a.id)
         );
 
         if (newAlerts.length === 0) continue;
 
-        // Group alerts by notifyRole to batch lookups
+        // Group alerts by notifyRole
         const alertsByRole = new Map<string, ProductionAlert[]>();
         for (const alert of newAlerts) {
           const role = alert.notifyRole!;
@@ -110,9 +144,7 @@ export async function GET(request: NextRequest) {
           alertsByRole.get(role)!.push(alert);
         }
 
-        // For each role, find crew with Telegram and send alerts
         for (const [role, roleAlerts] of alertsByRole) {
-          // Find crew members with this role who have Telegram linked
           const { data: crewMembers } = await db
             .from('crew_members')
             .select('id, name, telegram_user_id')
@@ -121,63 +153,24 @@ export async function GET(request: NextRequest) {
             .eq('is_active', true)
             .not('telegram_user_id', 'is', null);
 
-          if (!crewMembers || crewMembers.length === 0) {
-            // No crew with Telegram for this role — try coordinators as fallback
-            if (role !== 'coordinator' && role !== 'staff') {
-              const { data: fallbackCrew } = await db
-                .from('crew_members')
-                .select('id, name, telegram_user_id')
-                .eq('production_id', production.id)
-                .in('role', ['coordinator', 'staff'])
-                .eq('is_active', true)
-                .not('telegram_user_id', 'is', null);
-
-              if (fallbackCrew && fallbackCrew.length > 0) {
-                for (const alert of roleAlerts) {
-                  for (const crew of fallbackCrew) {
-                    const sent = await sendTelegramAlert(
-                      crew.telegram_user_id as string,
-                      formatAlertMessage(alert, production.name)
-                    );
-                    if (sent) stats.alertsSent++;
-                    else stats.errors++;
-                  }
-
-                  // Log that this alert was sent (for dedup)
-                  await logActivity({
-                    productionId: production.id,
-                    actorName: 'Lexi',
-                    actorRole: 'staff',
-                    channel: 'system',
-                    action: 'trigger_alert_sent',
-                    details: { alertId: alert.id, alertType: alert.type, notifyRole: role },
-                  });
-                }
-              }
-            }
+          if (crewMembers && crewMembers.length > 0) {
+            await sendAndLogAlerts(roleAlerts, crewMembers, production, role, stats);
             continue;
           }
 
-          // Send each alert to all matching crew
-          for (const alert of roleAlerts) {
-            for (const crew of crewMembers) {
-              const sent = await sendTelegramAlert(
-                crew.telegram_user_id as string,
-                formatAlertMessage(alert, production.name)
-              );
-              if (sent) stats.alertsSent++;
-              else stats.errors++;
-            }
+          // Fallback to coordinators/staff if target role has no Telegram
+          if (role !== 'coordinator' && role !== 'staff') {
+            const { data: fallbackCrew } = await db
+              .from('crew_members')
+              .select('id, name, telegram_user_id')
+              .eq('production_id', production.id)
+              .in('role', ['coordinator', 'staff'])
+              .eq('is_active', true)
+              .not('telegram_user_id', 'is', null);
 
-            // Log for dedup
-            await logActivity({
-              productionId: production.id,
-              actorName: 'Lexi',
-              actorRole: 'staff',
-              channel: 'system',
-              action: 'trigger_alert_sent',
-              details: { alertId: alert.id, alertType: alert.type, notifyRole: role },
-            });
+            if (fallbackCrew && fallbackCrew.length > 0) {
+              await sendAndLogAlerts(roleAlerts, fallbackCrew, production, role, stats);
+            }
           }
         }
       } catch (err) {
@@ -188,10 +181,7 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Cron:Triggers] Done. ${stats.productions} productions, ${stats.alertsFound} alerts found, ${stats.alertsSent} sent, ${stats.errors} errors`);
 
-    return NextResponse.json({
-      success: true,
-      ...stats,
-    });
+    return NextResponse.json({ success: true, ...stats });
   } catch (error) {
     console.error('[Cron:Triggers] Fatal error:', error);
     return NextResponse.json(
