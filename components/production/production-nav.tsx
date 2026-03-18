@@ -9,7 +9,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Calendar, Users, UserCog, FileText, Send } from 'lucide-react';
+import { LayoutDashboard, Calendar, Users, UserCog, FileText, Send, Camera } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ProductionNavProps {
@@ -21,6 +21,7 @@ const tabs = [
   { label: 'Calendar', href: '/calendar', icon: Calendar },
   { label: 'Cast', href: '/cast', icon: Users },
   { label: 'Crew', href: '/crew', icon: UserCog },
+  { label: 'Gear', href: '/gear', icon: Camera },
   { label: 'Call Sheet', href: '/call-sheet', icon: FileText },
   { label: 'Team', href: '/team', icon: Send },
 ] as const;
