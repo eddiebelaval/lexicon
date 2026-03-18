@@ -330,6 +330,68 @@ Four rapid commits to fix Vercel cron scheduling:
 
 **Lesson:** Always `.trim()` secrets from Vercel env vars. This is the same class of bug that hit Neo4j auth in January.
 
+### March 18, 2026 — Lexi Goes Mobile (The Telegram Session)
+
+The session that gave Lexi hands, a phone, and a team. One of the biggest single-session builds in the Lexicon codebase.
+
+**Telegram Bot (@LexiProductionBot):**
+- grammy bot framework, then replaced with raw fetch handler (grammy swallowed errors silently)
+- Webhook at `/api/telegram/webhook`, secured with `X-Telegram-Bot-Api-Secret-Token`
+- Crew members register with one-time codes from the Team setup page
+- Every message flows: identify crew -> build Lexi context -> Claude tool loop -> reply -> activity log
+- Natural language — no commands required. "Mark Chantel's shoot as done" just works.
+
+**RBAC (Role-Based Access Control):**
+- 33 capabilities across 8 roles (staff, producer, coordinator, field_producer, fixer, ac, editor, post_supervisor)
+- Enforced at TWO layers: system prompt (tells Claude what's allowed) AND tool execution (hard gate before `executeToolCall`)
+- Dashboard scope per role: full / production / own_assignments
+- Lexi's behavioral notes adapt per role — AC gets focused assignment info, EP gets everything
+
+**Activity Log:**
+- `activity_log` table with full attribution: who, what, when, channel (telegram/web/system/api)
+- Real-time feed on dashboard via Supabase Realtime subscription
+- Every Lexi action logged, whether from Telegram or web
+
+**Tool Expansion (5 -> 16 tools):**
+- Original 5: schedule_scene, assign_crew, mark_contract, advance_asset_stage, update_crew_availability
+- Added 8: create_crew_member, update_crew_member, delete_scene, create_cast_contract, delete_cast_contract, generate_call_sheet, get_production_alerts, update_production
+- Added 3: email_call_sheet, email_production_report, email_contract_summary
+- Full dashboard parity — anything a human can do on the web, Lexi can do via Telegram
+
+**Document Generation & Email:**
+- HTML document renderer (`lib/documents.ts`) — call sheets, production reports, contract summaries
+- id8Labs factory aesthetic: professional, monochrome, print-ready
+- Resend integration for email delivery to crew
+- RBAC-gated: EP/producer can send reports, coordinator can send call sheets, AC cannot send
+
+**Team Setup Page:**
+- `/universe/[id]/production/team` — manage Telegram connections
+- One-click code generation, copy-to-clipboard, step-by-step instructions
+- Connected/unconnected status per crew member
+
+**Security Hardening (Polish Pass):**
+- Webhook secret token validation (prevents spoofed Telegram requests)
+- Registration TOCTOU guard (`.is('telegram_user_id', null)` prevents account hijacking)
+- RBAC enforced at tool execution layer (not just system prompt — jailbreak-proof)
+- Tool loop capped at 10 iterations (prevents runaway Claude calls)
+- HTML `escapeHtml()` on all user data in document renderer (XSS prevention)
+- `create_cast_contract` enum values aligned with actual types
+
+**Infrastructure:**
+- Anthropic SDK updated 0.39 -> 0.80 (old version caused "Connection error" on Vercel)
+- All Vercel env vars refreshed (were 68 days stale from dormancy)
+- Vercel function timeout set to 60s for Claude tool loops
+- 3 Supabase migrations applied (telegram, activity_log, RLS fix)
+
+**Code Simplification:**
+- Deduplicated 3 Supabase singletons (now use shared `getServiceSupabase()`)
+- Consolidated crew email helpers
+- Record lookup replaces if/else chain for behavioral notes
+- Extracted shared helpers between webhook route and telegram lib
+- Net -50 lines despite massive feature additions
+
+**Stats:** 12 commits. PR #8 merged. 196 -> 227 tests. 5 -> 16 tools. 6 -> 8 roles. 22 -> 33 capabilities. Lexi is live on Telegram.
+
 ---
 
 ## Key Decisions (and Why)
@@ -371,13 +433,13 @@ Full control over rendering, interaction, styling. Libraries like vis.js or cyto
 
 | Metric | Value |
 |--------|-------|
-| Total LOC | ~50,000+ |
-| Components | 82+ (55 original + 13 production + 4 lifecycle + 8 intake + 2 realtime) |
-| Production UI Pages | 5 (dashboard, calendar, cast, crew, call sheet) |
-| API Endpoints | 59+ (28 original + 10 production + 8 lifecycle + 13 other) |
-| Agent Tools | 27 (22 original + 5 production write tools) |
+| Total LOC | ~53,000+ |
+| Components | 84+ (55 original + 13 production + 4 lifecycle + 8 intake + 2 realtime + 1 activity feed + 1 team page) |
+| Production UI Pages | 6 (dashboard, calendar, cast, crew, call sheet, team) |
+| API Endpoints | 63+ (28 original + 10 production + 8 lifecycle + 13 other + 4 telegram/activity) |
+| Agent Tools | 16 write + 11 read = 27 Claude-facing tools (was 5 write at start of Mar 18) |
 | Lifecycle Tables | 5 (asset_types, lifecycle_stages, asset_instances, stage_transitions, allowed_transitions) |
-| Tests | 196 (unit, integration, E2E, health, production smoke) |
+| Tests | 227 (unit, integration, E2E, health, production, permissions, activity) |
 | Supabase Tables | 12 production + lifecycle + existing |
 | Supabase Migrations | 13 |
 | Seeded Data | 15 cast, 10 crew, 20 scenes, 15 contracts, 50 availability, 3 asset types, 17 stages, 35 instances |
@@ -390,4 +452,5 @@ Full control over rendering, interaction, styling. Libraries like vis.js or cyto
 | Build time (Realtime + Inline Edit) | 1 session (Mar 16) |
 | Build time (Phase 6 Polish) | 1 session (Mar 16) |
 | Build time (Beta Hardening) | 1 session (Mar 17) |
-| PRs merged | #4 (lexi-production), #5 (design-polish), #6 (phase6-polish), #7 (beta-hardening) |
+| Build time (Telegram + RBAC + Docs + Polish) | 1 session (Mar 18) |
+| PRs merged | #4 (lexi-production), #5 (design-polish), #6 (phase6-polish), #7 (beta-hardening), #8 (lexi-telegram) |
