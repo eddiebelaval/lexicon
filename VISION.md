@@ -2,7 +2,7 @@
 
 > What it is BECOMING. The evolving north star.
 
-**Last reconciled:** March 16, 2026
+**Last reconciled:** March 18, 2026
 **Product:** Lexicon — Production Operating System for Unscripted TV
 **Entity:** Lexi (production intelligence)
 **Owner:** Eddie Belaval / ID8Labs
@@ -121,11 +121,10 @@ Lexicon is NOT:
 
 ### Next — Launch Readiness
 - **Neo4j re-provisioning** — restore cast knowledge graph for relationship queries
-- **Auth verification** — test Supabase Email OTP post-dormancy
-- **Deploy to Vercel** — verify production deployment, env vars
 - **Landing page** — first impression for new users
 - **Domain selection** — custom domain for the tool
 - **Telegram surface** — field crew can ask Lexi questions via bot
+- **Diaries S8 seed data** — replace S7 demo data with real S8 cast and schedule
 
 ### Future
 - **Custom asset types** — shows define their own asset categories beyond the defaults

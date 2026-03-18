@@ -2,7 +2,7 @@
 
 > How we got here. The build journal.
 
-**Last updated:** March 16, 2026
+**Last updated:** March 18, 2026
 **Product:** Lexicon
 **Builder:** Eddie Belaval / ID8Labs
 
@@ -298,6 +298,38 @@ Lexi goes from answering questions to doing things.
 
 **Stats:** Lexi now has 27 tools (22 original + 5 new write tools). Total API endpoints: 59.
 
+### March 16, 2026 — Phase 6 Polish (PR #6)
+
+Design and deployment fixes caught in review before going live.
+
+**Deployment fix:** Shared Supabase service client was failing on Vercel — server-side imports were leaking into edge routes. Extracted a clean `createServiceClient()` pattern.
+
+**AbortController cleanup:** Added proper cleanup for all fetch calls and Supabase Realtime subscriptions. Components no longer leak network requests on unmount.
+
+**Print CSS:** Call sheet view got `@media print` rules for high-contrast output — crew can print physical call sheets on set.
+
+**Tool validation:** Tightened Zod schemas on write tools. Lexi can no longer accidentally create scenes with missing dates or advance assets to invalid stages.
+
+### March 17, 2026 — Beta Hardening Pass (PR #7)
+
+The session that made Lexicon honest about what it is and isn't in beta.
+
+**Fake demo ID removal:** Home page, dashboard header, and settings were all hardcoded with `demo-universe-id` placeholders. Replaced with proper auth-gated routing — signed-in users see their universes, public beta visitors see an honest onboarding CTA.
+
+**Health route rewrite:** `/api/health` was reporting "unhealthy" because Neo4j was down, even though production features run entirely on Supabase. Restructured: Supabase = core (required for healthy), Neo4j = optional degraded service for the production beta. Health now reports `beta-ready | degraded | unhealthy` with component-level detail.
+
+**Test coverage expansion:** Added health route unit tests (3) and call sheet smoke tests (2). Also added production-specific smoke coverage for key API paths. Suite jumped from 129 to 196 tests.
+
+### March 17, 2026 — Cron Saga
+
+Four rapid commits to fix Vercel cron scheduling:
+1. Removed cron schedules to unblock a blocked deploy
+2. Attempted restore — but `CRON_SECRET` env var had trailing whitespace
+3. Disabled crons until whitespace trimmed in Vercel dashboard
+4. Final restore with clean `CRON_SECRET`
+
+**Lesson:** Always `.trim()` secrets from Vercel env vars. This is the same class of bug that hit Neo4j auth in January.
+
 ---
 
 ## Key Decisions (and Why)
@@ -339,13 +371,13 @@ Full control over rendering, interaction, styling. Libraries like vis.js or cyto
 
 | Metric | Value |
 |--------|-------|
-| Total LOC | ~50,000 (+1,000 realtime + inline edit) |
+| Total LOC | ~50,000+ |
 | Components | 82+ (55 original + 13 production + 4 lifecycle + 8 intake + 2 realtime) |
-| Production UI Pages | 4 (dashboard, calendar, cast, crew) |
-| API Endpoints | 57 (28 original + 10 production + 8 lifecycle + 11 other) |
-| Agent Tools | 24 (19 original + 5 production) |
+| Production UI Pages | 5 (dashboard, calendar, cast, crew, call sheet) |
+| API Endpoints | 59+ (28 original + 10 production + 8 lifecycle + 13 other) |
+| Agent Tools | 27 (22 original + 5 production write tools) |
 | Lifecycle Tables | 5 (asset_types, lifecycle_stages, asset_instances, stage_transitions, allowed_transitions) |
-| Tests | 129 (production + lifecycle tests pending) |
+| Tests | 196 (unit, integration, E2E, health, production smoke) |
 | Supabase Tables | 12 production + lifecycle + existing |
 | Supabase Migrations | 13 |
 | Seeded Data | 15 cast, 10 crew, 20 scenes, 15 contracts, 50 availability, 3 asset types, 17 stages, 35 instances |
@@ -356,4 +388,6 @@ Full control over rendering, interaction, styling. Libraries like vis.js or cyto
 | Build time (Lifecycle Engine) | 1 session (Mar 16) |
 | Build time (Intake Wizard) | 1 session (Mar 16) |
 | Build time (Realtime + Inline Edit) | 1 session (Mar 16) |
-| PR | #4 — feature/lexi-production |
+| Build time (Phase 6 Polish) | 1 session (Mar 16) |
+| Build time (Beta Hardening) | 1 session (Mar 17) |
+| PRs merged | #4 (lexi-production), #5 (design-polish), #6 (phase6-polish), #7 (beta-hardening) |
