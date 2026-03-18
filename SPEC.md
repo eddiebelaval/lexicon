@@ -2,16 +2,17 @@
 
 > What it IS right now. The testable contract.
 
-**Last reconciled:** March 17, 2026
+**Last reconciled:** March 18, 2026
 **Product:** Lexicon + Lexi (production intelligence entity)
 **Repo:** https://github.com/eddiebelaval/lexicon
 **Deploy:** https://lexicon-phi.vercel.app
-**PR:** https://github.com/eddiebelaval/lexicon/pull/4
-**Pipeline Stage:** Stage 9 (Launch Prep) IN PROGRESS — beta-hardening pass underway
-**Commits:** 22 (13 original + 9 on feature/lexi-production)
-**Tests:** 196 (unit, integration, E2E) — includes beta health + production smoke coverage
+**PRs merged:** #4 (lexi-production), #5 (design-polish), #6 (phase6-polish), #7 (beta-hardening)
+**Pipeline Stage:** Stage 9 (Launch Prep) IN PROGRESS — beta hardening complete, launch readiness next
+**Tests:** 196 (unit, integration, E2E, health, production smoke)
 **API Parity:** Original conversation update gap closed; production + lifecycle routes expanded
 **Production UI:** 6 pages (dashboard, calendar, cast, crew, call sheet, intake), scene editor, alerts
+Build stage: Stage 8
+Drift status: CURRENT
 
 ---
 
@@ -189,8 +190,7 @@ Full audit: see `PARITY_MAP.md`
 ### Beta Blockers (Priority 1)
 - Neo4j still down, so graph-first launch parity is not restored
 - Live web search augmentation is not implemented in the main search path
-- Full auth UX is still partial; public beta flow is honest, but private-account flows need polish
-- Production verification is smoke-level, not deep end-to-end coverage
+- No landing page or custom domain — new users hit raw app UI
 
 ### Nice to Have (Priority 3)
 - Bulk update/delete endpoints
