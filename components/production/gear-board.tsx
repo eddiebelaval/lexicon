@@ -12,7 +12,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Camera, Film, Clock, User, MapPin, AlertTriangle, RefreshCw } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatRelativeHours } from '@/lib/utils';
 
 interface AssetView {
   id: string;
@@ -40,12 +40,6 @@ interface GearBoardProps {
 }
 
 const OVERDUE_HOURS = 48;
-
-function formatRelativeHours(hours: number): string {
-  if (hours < 1) return 'Just now';
-  if (hours < 24) return `${hours}h`;
-  return `${Math.floor(hours / 24)}d`;
-}
 
 export function GearBoard({ productionId }: GearBoardProps) {
   const [equipmentGroups, setEquipmentGroups] = useState<StageGroup[]>([]);

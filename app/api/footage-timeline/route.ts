@@ -1,7 +1,7 @@
 /**
  * Footage Timeline API
  *
- * GET /api/footage-timeline?productionId=X&castEntityId=Y
+ * GET /api/footage-timeline?productionId=X&castMemberName=Y
  *
  * Returns all footage assets for a production (or filtered by cast member),
  * enriched with stage names, transition history, and metadata.
@@ -10,6 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/lib/supabase';
+import { hoursSince } from '@/lib/utils';
 
 interface FootageTimelineEntry {
   id: string;
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const productionId = searchParams.get('productionId');
-    const castEntityId = searchParams.get('castEntityId');
+    const castMemberName = searchParams.get('castMemberName') || searchParams.get('castEntityId');
 
     if (!productionId) {
       return NextResponse.json(
@@ -62,20 +63,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, data: [] });
     }
 
-    // Get all stages for footage type
-    const { data: stages } = await db
-      .from('lifecycle_stages')
-      .select('id, name, color, stage_order')
-      .eq('asset_type_id', footageType.id)
-      .order('stage_order', { ascending: true });
-
-    const stageMap = new Map<string, { name: string; color: string }>();
-    for (const s of stages || []) {
-      stageMap.set(s.id as string, { name: s.name as string, color: s.color as string });
-    }
-
-    // Get footage instances
-    let query = db
+    // Fetch stages and instances in parallel (both depend only on footageType.id)
+    let instanceQuery = db
       .from('asset_instances')
       .select('*')
       .eq('production_id', productionId)
@@ -83,15 +72,26 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(100);
 
-    // Filter by cast member if provided
-    if (castEntityId) {
-      query = query.contains('metadata', { castMember: castEntityId });
+    if (castMemberName) {
+      instanceQuery = instanceQuery.contains('metadata', { castMember: castMemberName });
     }
 
-    const { data: instances, error: iErr } = await query;
+    const [stagesResult, instancesResult] = await Promise.all([
+      db.from('lifecycle_stages')
+        .select('id, name, color, stage_order')
+        .eq('asset_type_id', footageType.id)
+        .order('stage_order', { ascending: true }),
+      instanceQuery,
+    ]);
 
-    if (iErr) {
-      console.error('Failed to fetch footage instances:', iErr.message);
+    const stageMap = new Map<string, { name: string; color: string }>();
+    for (const s of stagesResult.data || []) {
+      stageMap.set(s.id as string, { name: s.name as string, color: s.color as string });
+    }
+
+    const instances = instancesResult.data;
+    if (instancesResult.error) {
+      console.error('Failed to fetch footage instances:', instancesResult.error.message);
       return NextResponse.json(
         { success: false, error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch footage' } },
         { status: 500 }
@@ -102,13 +102,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, data: [] });
     }
 
-    // Get transition history for all instances
+    // Get transition history (capped at 500 to prevent unbounded growth)
     const instanceIds = instances.map((i) => i.id as string);
     const { data: transitions } = await db
       .from('stage_transitions')
       .select('asset_instance_id, from_stage_id, to_stage_id, transitioned_by_name, reason, transitioned_at')
       .in('asset_instance_id', instanceIds)
-      .order('transitioned_at', { ascending: true });
+      .order('transitioned_at', { ascending: true })
+      .limit(500);
 
     // Group transitions by instance
     const transitionsByInstance = new Map<string, typeof transitions>();
@@ -118,7 +119,6 @@ export async function GET(request: NextRequest) {
       transitionsByInstance.get(instId)!.push(t);
     }
 
-    const now = Date.now();
     const timeline: FootageTimelineEntry[] = instances.map((inst) => {
       const meta = (inst.metadata as Record<string, unknown>) || {};
       const stage = stageMap.get(inst.current_stage_id as string);
@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
         acNotes: (meta.acNotes as string) || '',
         location: (meta.location as string) || '',
         shotDate: (meta.shotDate as string) || '',
-        hoursInStage: Math.round((now - new Date(inst.stage_entered_at as string).getTime()) / (1000 * 60 * 60)),
+        hoursInStage: Math.round(hoursSince(inst.stage_entered_at as string)),
         createdAt: inst.created_at as string,
         transitions: instTransitions.map((t) => ({
           fromStage: stageMap.get(t.from_stage_id as string)?.name || null,

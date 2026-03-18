@@ -10,8 +10,8 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Film, Clock, User, MapPin, ChevronDown, ChevronRight, Filter } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Film, Clock, ChevronDown, ChevronRight, Filter } from 'lucide-react';
+import { cn, formatRelativeHours } from '@/lib/utils';
 
 interface FootageEntry {
   id: string;
@@ -39,12 +39,6 @@ interface FootageEntry {
 
 interface PostBoardProps {
   productionId: string;
-}
-
-function formatRelativeHours(hours: number): string {
-  if (hours < 1) return 'Just now';
-  if (hours < 24) return `${hours}h`;
-  return `${Math.floor(hours / 24)}d`;
 }
 
 export function PostBoard({ productionId }: PostBoardProps) {
@@ -82,14 +76,6 @@ export function PostBoard({ productionId }: PostBoardProps) {
       if (f.castMember) set.add(f.castMember);
     }
     return [...set].sort();
-  }, [footage]);
-
-  const stages = useMemo(() => {
-    const set = new Set<string>();
-    for (const f of footage) {
-      set.add(f.currentStage);
-    }
-    return [...set];
   }, [footage]);
 
   const filtered = useMemo(() => {
