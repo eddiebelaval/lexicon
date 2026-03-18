@@ -182,6 +182,9 @@ export function canUseTool(role: CrewRole, toolName: string): boolean {
     advance_asset_stage: 'write:advance_stage',
     create_asset: 'write:advance_stage',
     update_asset: 'write:advance_stage',
+    delete_asset: 'write:advance_stage',
+    create_production: 'write:update_production',
+    generate_registration_code: 'write:update_production',
     update_crew_availability: 'write:update_availability',
     create_crew_member: 'write:create_crew',
     update_crew_member: 'write:update_crew_member',
@@ -214,7 +217,8 @@ export function canUseTool(role: CrewRole, toolName: string): boolean {
 export function getAllowedToolNames(role: CrewRole): string[] {
   const allTools = [
     'schedule_scene', 'assign_crew', 'mark_contract',
-    'advance_asset_stage', 'create_asset', 'update_asset', 'list_assets',
+    'advance_asset_stage', 'create_asset', 'update_asset', 'delete_asset', 'list_assets',
+    'create_production', 'list_productions', 'generate_registration_code',
     'update_crew_availability',
     'create_crew_member', 'update_crew_member', 'delete_scene',
     'create_cast_contract', 'delete_cast_contract', 'generate_call_sheet',
@@ -307,7 +311,8 @@ export function buildRoleInstructions(name: string, role: CrewRole): string {
   // Tool restrictions
   const restrictedTools = [
     'schedule_scene', 'assign_crew', 'mark_contract', 'advance_asset_stage',
-    'create_asset', 'update_asset',
+    'create_asset', 'update_asset', 'delete_asset',
+    'create_production', 'generate_registration_code',
     'update_crew_availability', 'create_crew_member', 'update_crew_member',
     'delete_scene', 'create_cast_contract', 'delete_cast_contract',
     'generate_call_sheet', 'get_production_alerts', 'update_production',

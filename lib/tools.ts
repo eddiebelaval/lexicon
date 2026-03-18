@@ -67,7 +67,9 @@ import {
   updateCrewAvailability,
   listCrewAvailability,
 } from './crew-availability';
-import { advanceStage, createAssetInstance, updateAssetInstance, listAssetInstances, listAssetTypes, listLifecycleStages, getAssetInstance } from './lifecycle';
+import { advanceStage, createAssetInstance, updateAssetInstance, deleteAssetInstance, listAssetInstances, listAssetTypes, listLifecycleStages, getAssetInstance } from './lifecycle';
+import { listProductions, createProduction } from './productions';
+import { generateRegistrationCode } from './telegram';
 import type {
   CreateProdSceneInput,
   UpdateProdSceneInput,
@@ -1320,7 +1322,7 @@ export const lexiconTools: Tool[] = [
   {
     name: 'create_asset',
     description:
-      'Create a new tracked asset (equipment, footage, document). Use for registering gear kits, logging new footage, or creating any lifecycle-tracked item. Set metadata.location for current location, metadata.castMember for associated cast, ownerName for who has custody.',
+      'Create a new tracked asset (equipment, footage, document). Use for registering gear kits, logging new footage, tracking cast documents (scripts, releases, NDAs), or creating any lifecycle-tracked item.',
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -1330,11 +1332,11 @@ export const lexiconTools: Tool[] = [
         },
         assetTypeSlug: {
           type: 'string',
-          description: 'Asset type slug: "equipment", "footage", "contract", "shoot", "deliverable"',
+          description: 'Asset type slug: "equipment", "footage", "document", "contract", "shoot", "deliverable"',
         },
         name: {
           type: 'string',
-          description: 'Asset name (e.g., "Kit 3", "Chantel B-roll 03/18", "Episode 4 rough cut")',
+          description: 'Asset name (e.g., "Kit 3", "Chantel B-roll 03/18", "Chantel Release Form", "Episode 4 Script")',
         },
         description: {
           type: 'string',
@@ -1350,11 +1352,35 @@ export const lexiconTools: Tool[] = [
         },
         castMember: {
           type: 'string',
-          description: 'Associated cast member name (for footage or on-location gear)',
+          description: 'Associated cast member name (for footage, documents, or on-location gear)',
         },
         dueDate: {
           type: 'string',
           description: 'When this asset is due back or due at next stage (YYYY-MM-DD)',
+        },
+        documentType: {
+          type: 'string',
+          description: 'For document assets: script, release, nda, interview_guide, contract_amendment',
+        },
+        sceneTitle: {
+          type: 'string',
+          description: 'For footage: which scene this footage is from',
+        },
+        camera: {
+          type: 'string',
+          description: 'For footage: camera name/number',
+        },
+        card: {
+          type: 'string',
+          description: 'For footage: memory card identifier',
+        },
+        acNotes: {
+          type: 'string',
+          description: 'For footage: AC field notes about the shoot',
+        },
+        shotDate: {
+          type: 'string',
+          description: 'For footage: when it was shot (YYYY-MM-DD)',
         },
       },
       required: ['productionId', 'assetTypeSlug', 'name'],
@@ -1416,6 +1442,89 @@ export const lexiconTools: Tool[] = [
         },
       },
       required: ['productionId'],
+    },
+  },
+  // ----------------------------------------
+  // Production & Administration Tools
+  // ----------------------------------------
+  {
+    name: 'create_production',
+    description:
+      'Create a new production within the current universe. Use when someone says "set up a new show" or "create a new season."',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        universeId: {
+          type: 'string',
+          description: 'The universe ID to create the production in',
+        },
+        name: {
+          type: 'string',
+          description: 'Production name (e.g., "Diaries Season 8")',
+        },
+        season: {
+          type: 'string',
+          description: 'Season number or cycle name',
+        },
+        startDate: {
+          type: 'string',
+          description: 'Production start date (YYYY-MM-DD)',
+        },
+        endDate: {
+          type: 'string',
+          description: 'Production end date (YYYY-MM-DD)',
+        },
+        notes: {
+          type: 'string',
+          description: 'Production notes',
+        },
+      },
+      required: ['universeId', 'name'],
+    },
+  },
+  {
+    name: 'list_productions',
+    description:
+      'List all productions for a universe. Returns production name, season, status, and date range.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        universeId: {
+          type: 'string',
+          description: 'The universe ID',
+        },
+      },
+      required: ['universeId'],
+    },
+  },
+  {
+    name: 'delete_asset',
+    description:
+      'Delete a tracked asset instance. Use when an asset was created in error or is no longer relevant.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        assetInstanceId: {
+          type: 'string',
+          description: 'The asset instance ID to delete',
+        },
+      },
+      required: ['assetInstanceId'],
+    },
+  },
+  {
+    name: 'generate_registration_code',
+    description:
+      'Generate a Telegram registration code for a crew member. The crew member uses /start <code> in Telegram to link their account.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        crewMemberId: {
+          type: 'string',
+          description: 'The crew member ID to generate a code for',
+        },
+      },
+      required: ['crewMemberId'],
     },
   },
 ];
@@ -2856,6 +2965,14 @@ export async function executeToolCall(
         const metadata: Record<string, unknown> = {};
         if (location) metadata.location = location;
         if (castMember) metadata.castMember = castMember;
+        // Footage-specific metadata
+        if (input.sceneTitle) metadata.sceneTitle = input.sceneTitle;
+        if (input.camera) metadata.camera = input.camera;
+        if (input.card) metadata.card = input.card;
+        if (input.acNotes) metadata.acNotes = input.acNotes;
+        if (input.shotDate) metadata.shotDate = input.shotDate;
+        // Document-specific metadata
+        if (input.documentType) metadata.documentType = input.documentType;
 
         const asset = await createAssetInstance({
           productionId,
@@ -2988,6 +3105,83 @@ export async function executeToolCall(
             message: `${assets.total} asset${assets.total !== 1 ? 's' : ''} found${assetTypeSlug ? ` (${assetTypeSlug})` : ''}${stageName ? ` in stage "${stageName}"` : ''}`,
           },
           shouldContinue: true,
+        };
+      }
+
+      // ----------------------------------------
+      // Production & Administration
+      // ----------------------------------------
+
+      case 'create_production': {
+        const production = await createProduction({
+          universeId: input.universeId as string,
+          name: input.name as string,
+          season: input.season as string | undefined,
+          startDate: input.startDate as string | undefined,
+          endDate: input.endDate as string | undefined,
+          notes: input.notes as string | undefined,
+        });
+
+        return {
+          success: true,
+          result: {
+            production,
+            message: `Created production "${production.name}"${production.season ? ` (${production.season})` : ''}`,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'list_productions': {
+        const result = await listProductions(input.universeId as string);
+
+        return {
+          success: true,
+          result: {
+            productions: result.items.map((p) => ({
+              id: p.id,
+              name: p.name,
+              season: p.season,
+              status: p.status,
+              startDate: p.startDate,
+              endDate: p.endDate,
+            })),
+            total: result.total,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'delete_asset': {
+        const deleted = await deleteAssetInstance(input.assetInstanceId as string);
+
+        return {
+          success: deleted,
+          result: { deleted, message: deleted ? 'Asset deleted.' : 'Asset not found.' },
+          error: deleted ? undefined : 'Asset not found',
+          shouldContinue: false,
+        };
+      }
+
+      case 'generate_registration_code': {
+        const code = await generateRegistrationCode(input.crewMemberId as string);
+
+        if (!code) {
+          return {
+            success: false,
+            result: null,
+            error: 'Failed to generate registration code',
+            shouldContinue: false,
+          };
+        }
+
+        return {
+          success: true,
+          result: {
+            code,
+            message: `Registration code: ${code} — crew member uses /start ${code} in Telegram to connect.`,
+          },
+          shouldContinue: false,
         };
       }
 

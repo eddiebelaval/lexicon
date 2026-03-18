@@ -162,6 +162,21 @@ export const DEFAULT_ASSET_TYPES: AssetTypeDraft[] = [
       { tempId: 'ft-7', name: 'Final', color: '#22c55e', isInitial: false, isTerminal: true },
     ],
   },
+  {
+    tempId: 'default-document',
+    name: 'Document',
+    slug: 'document',
+    icon: 'FileText',
+    color: '#06b6d4',
+    enabled: true,
+    stages: [
+      { tempId: 'doc-1', name: 'Draft', color: '#6b7280', isInitial: true, isTerminal: false },
+      { tempId: 'doc-2', name: 'Sent', color: '#3b82f6', isInitial: false, isTerminal: false },
+      { tempId: 'doc-3', name: 'Acknowledged', color: '#8b5cf6', isInitial: false, isTerminal: false },
+      { tempId: 'doc-4', name: 'Signed', color: '#10b981', isInitial: false, isTerminal: false },
+      { tempId: 'doc-5', name: 'Filed', color: '#22c55e', isInitial: false, isTerminal: true },
+    ],
+  },
 ];
 
 export function createEmptyIntakeState(): IntakeState {
