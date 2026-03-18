@@ -255,7 +255,7 @@ export function renderContractSummaryHtml(
   const pending = contracts.filter(c => c.contractStatus === 'pending').length;
   const total = contracts.length;
 
-  let content = `
+  const content = `
     <div class="doc-header">
       <h1 class="doc-title">Contract Summary</h1>
       <p class="doc-subtitle">${productionName} — ${total} cast member${total !== 1 ? 's' : ''}</p>
