@@ -29,53 +29,23 @@ Not a spreadsheet replacement. Not a project management tool. An operating syste
 
 ## Pillars
 
-### 1. Asset Lifecycle Management
-Every production asset has a life. Contracts start as drafts and end as signed documents. Scripts start as outlines and end as locked finals. Shoots start as scheduled dates and end as uploaded footage. Every asset type moves through **typed stages** with transitions, timestamps, owners, and blockers.
+### 1. **Asset Lifecycle Management** -- REALIZED
+Every production asset has a life. Contracts start as drafts and end as signed documents. Scripts start as outlines and end as locked finals. Shoots start as scheduled dates and end as uploaded footage. Every asset type moves through typed stages with transitions, timestamps, owners, and blockers. Shipped: 30K LOC, typed lifecycle stages, completion tracking, stage transitions.
 
-The lifecycle model is the core differentiator. Spreadsheets are static. Lexicon is temporal. When someone asks "where are we?", the answer isn't a cell value — it's a map of everything in motion, what's blocked, what's next, what's overdue.
+### 2. **Intake-First Onboarding** -- REALIZED
+The intake process IS the product. When you set up a new show, Lexicon walks you through show metadata, cast/crew rosters, asset definitions, schedule skeletons, and imports from existing docs. The intake informs the entire app — dashboard layout, completion tracking, calendar structure. Shipped: conversational intake with Lexi, CSV/Excel import.
 
-**Asset types and their lifecycles:**
+### 3. **Lexi Entity** -- REALIZED
+Lexi is the production's institutional memory and operational intelligence. She answers ("What's left for Chantel?"), she acts (schedule, assign, flag), she alerts ("3 contracts unsigned with shoots next week"). Shipped: entity system with production-aware NLP, graph-backed knowledge.
 
-| Asset | Stages |
-|-------|--------|
-| Contracts | Draft > Sent > Negotiating > Signed > Active > Complete |
-| Scripts | Outline > Draft > Review > Locked > Revisions > Final |
-| Scenes/Shoots | Proposed > Scheduled > Crew Assigned > Shot > Footage Uploaded > Logged |
-| Post-Production | Ingested > Editing > Review > Corrections > Final > Delivered |
-| Deliverables | Defined > In Progress > Review > Approved > Shipped |
+### 4. **Real-Time Collaboration** -- PARTIAL
+Every team member sees the same board with live updates. Supabase Realtime powers the sync layer. Missing: multi-user presence indicators, conflict resolution for simultaneous edits.
 
-The stages are not hardcoded. Each show defines its own asset types and lifecycles during intake. Diaries has "Shoot Done / INTV Done / PU Done / $ Done." Another show might have completely different completion criteria. The platform adapts.
+### 5. **Multi-Show Architecture** -- PARTIAL
+Each show is its own world with its own cast, crew, assets, and lifecycles. Cross-show views surface scheduling conflicts and resource contention. Missing: crew sharing across shows, cross-show calendar overlay.
 
-### 2. Intake-First Onboarding
-The intake process IS the product. When you set up a new show, Lexicon walks you through:
-- Show metadata (name, season, network, production company, date range)
-- Cast roster (names, locations, pairings, storyline arcs)
-- Crew roster (names, roles, availability patterns)
-- Asset definitions (what types of assets does this show track? what stages do they move through?)
-- Schedule skeleton (key dates, shoot blocks, post windows)
-- Import from existing docs (CSV, Excel) — meet teams where their data already lives
-
-The intake is not a form. It's a conversation with Lexi. "Tell me about your show." The intake document informs the entire app — dashboard layout, completion tracking columns, calendar structure, notification triggers. Different shows get different boards because different shows have different workflows.
-
-### 3. Lexi Entity — Intelligence That Acts
-Lexi is not a chatbot. She is the production's institutional memory and operational intelligence. She knows every asset, every person, every stage, every dependency.
-
-**She answers:** "What's left for Chantel?" "Who's available Thursday?" "Which cast haven't done interviews?" "What's blocking the Miami shoot?"
-
-**She acts:** Schedule a scene. Assign an AC. Mark footage uploaded. Send a contract reminder. Generate a call sheet. Flag an overdue pickup.
-
-**She alerts:** "3 contracts unsigned with shoots next week." "Ryan is double-booked on Thursday." "Post deliverables for episode 4 are 2 days overdue."
-
-### 4. Real-Time Collaboration
-Every team member sees the same board. When a coordinator marks a contract signed, the producer's dashboard updates. When an AC uploads footage, the post supervisor sees it. No refresh. No "did you update the spreadsheet?"
-
-Supabase Realtime powers the sync layer. Every data mutation broadcasts to all connected clients. The board is always current.
-
-### 5. Multi-Show Architecture
-Each show is its own world with its own cast, crew, assets, and lifecycles. A showrunner managing three shows sees three separate productions with clean boundaries. Crew can be shared across shows (a coordinator who works on Diaries and Pillow Talk). Cross-show views surface scheduling conflicts and resource contention.
-
-### 6. Production-Native Data Model
-The data model mirrors how productions actually work, not how databases or spreadsheets force you to think. Cast relationships live in a graph (Neo4j). Schedules, contracts, and logistics live in structured tables (Supabase). The AI layer connects them. Every query speaks the language of production — "Who's shooting this week?" not "SELECT * FROM scenes WHERE..."
+### 6. **Production-Native Data Model** -- REALIZED
+The data model mirrors how productions actually work. Cast relationships live in a graph (Neo4j). Schedules, contracts, and logistics live in structured tables (Supabase). The AI layer connects them. Shipped: hybrid Neo4j + Supabase schema, production-native queries.
 
 ---
 
