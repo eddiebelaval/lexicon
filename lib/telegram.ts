@@ -18,7 +18,10 @@
 import { Bot, webhookCallback } from 'grammy';
 import type { Context } from 'grammy';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { sendChatMessage } from './chat';
+import Anthropic from '@anthropic-ai/sdk';
+import type { ToolUseBlock, TextBlock, ToolResultBlockParam, MessageParam, ContentBlock } from '@anthropic-ai/sdk/resources/messages';
+import { lexiconTools, executeToolCall } from './tools';
+import { LEXI_SYSTEM_PROMPT, buildProductionContext } from './lexi';
 import { logActivity } from './activity-log';
 import { buildRoleInstructions, getRoleDisplayName } from './permissions';
 import type { CrewMember } from '@/types';
@@ -209,42 +212,88 @@ async function handleMessage(ctx: Context): Promise<void> {
   await ctx.replyWithChatAction('typing');
 
   try {
-    // Augment the message with crew identity + role instructions
+    // Build Lexi's system prompt with production context + role instructions
+    const productionContext = await buildProductionContext(crew.productionId);
     const roleInstructions = buildRoleInstructions(crew.name, crew.role);
-    const augmentedMessage = `[From: ${crew.name} (${getRoleDisplayName(crew.role)}) via Telegram]\n[Role Context: ${roleInstructions}]\n\n${messageText}`;
+    const systemPrompt = LEXI_SYSTEM_PROMPT + '\n\n' + productionContext + '\n\n' + roleInstructions;
 
-    // Use the existing chat service — same intelligence as the web UI
-    const response = await sendChatMessage({
-      universeId: crew.production.universeId,
-      message: augmentedMessage,
-      mode: 'production',
-      productionId: crew.productionId,
-    });
+    // Call Claude directly — no conversation persistence needed for Telegram
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+    const messages: MessageParam[] = [{ role: 'user', content: messageText }];
+    let fullResponseText = '';
+    let continueLoop = true;
+    const executedTools: { name: string; result: unknown }[] = [];
 
-    const replyText = response.message.content || 'Done.';
+    while (continueLoop) {
+      const response = await client.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2048,
+        system: systemPrompt,
+        tools: lexiconTools,
+        messages,
+      });
 
-    // Log activity for every tool that was executed
-    const toolCalls = response.toolCallResults || [];
-    for (const tool of toolCalls) {
-      if (tool.success) {
-        await logActivity({
-          productionId: crew.productionId,
-          actorName: crew.name,
-          actorRole: crew.role,
-          actorCrewId: crew.id,
-          channel: 'telegram',
-          action: formatToolAction(tool.toolCallId, tool.result),
-          details: {
-            toolCallId: tool.toolCallId,
-            result: tool.result,
-            originalMessage: messageText,
-          },
-        });
+      const toolUseBlocks = response.content.filter(
+        (block): block is ToolUseBlock => block.type === 'tool_use'
+      );
+      const textBlocks = response.content.filter(
+        (block): block is TextBlock => block.type === 'text'
+      );
+
+      for (const tb of textBlocks) {
+        fullResponseText += tb.text;
+      }
+
+      if (toolUseBlocks.length > 0) {
+        messages.push({ role: 'assistant', content: response.content as ContentBlock[] });
+        const toolResults: ToolResultBlockParam[] = [];
+
+        for (const toolUse of toolUseBlocks) {
+          const result = await executeToolCall(
+            toolUse.name,
+            toolUse.input as Record<string, unknown>,
+            crew.production.universeId
+          );
+          executedTools.push({ name: toolUse.name, result: result.result });
+          toolResults.push({
+            type: 'tool_result',
+            tool_use_id: toolUse.id,
+            content: JSON.stringify(result),
+            is_error: !result.success,
+          });
+        }
+
+        messages.push({ role: 'user', content: toolResults });
+      } else {
+        continueLoop = false;
+      }
+
+      if (response.stop_reason === 'end_turn' && toolUseBlocks.length === 0) {
+        continueLoop = false;
       }
     }
 
+    const replyText = fullResponseText || 'Done.';
+
+    // Log activity for every tool that was executed
+    for (const tool of executedTools) {
+      await logActivity({
+        productionId: crew.productionId,
+        actorName: crew.name,
+        actorRole: crew.role,
+        actorCrewId: crew.id,
+        channel: 'telegram',
+        action: formatToolAction(tool.name, tool.result),
+        details: {
+          toolName: tool.name,
+          result: tool.result,
+          originalMessage: messageText,
+        },
+      });
+    }
+
     // If no tools were called, still log the query
-    if (toolCalls.length === 0) {
+    if (executedTools.length === 0) {
       await logActivity({
         productionId: crew.productionId,
         actorName: crew.name,
@@ -259,15 +308,15 @@ async function handleMessage(ctx: Context): Promise<void> {
     if (replyText.length > 4000) {
       const chunks = splitMessage(replyText, 4000);
       for (const chunk of chunks) {
-        await ctx.reply(chunk, { parse_mode: 'Markdown' });
+        await ctx.reply(chunk);
       }
     } else {
-      await ctx.reply(replyText, { parse_mode: 'Markdown' });
+      await ctx.reply(replyText);
     }
   } catch (error) {
     console.error('Telegram message handler error:', error);
     await ctx.reply(
-      "Something went wrong processing your request. The web dashboard is still available as a fallback. I've logged this error."
+      "Something went wrong processing your request. The web dashboard is still available as a fallback."
     );
   }
 }
