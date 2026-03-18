@@ -1133,12 +1133,12 @@ export const lexiconTools: Tool[] = [
         },
         contractStatus: {
           type: 'string',
-          enum: ['unsigned', 'sent', 'signed', 'void'],
+          enum: ['signed', 'pending', 'offer_sent', 'dnc', 'email_sent', 'declined'],
           description: 'Contract status',
         },
         paymentType: {
           type: 'string',
-          enum: ['w2', '1099', 'corp_to_corp', 'buyout', 'none'],
+          enum: ['daily', 'flat'],
           description: 'Payment type',
         },
         notes: {

@@ -5,23 +5,7 @@
  * of changes with attribution: "Marcus (AC) marked Chantel's shoot done via Telegram at 3:42pm"
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _client: SupabaseClient<any> | null = null;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getClient(): SupabaseClient<any> {
-  if (!_client) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key) throw new Error('Missing Supabase env vars for activity log');
-    _client = createClient(url, key, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-  }
-  return _client;
-}
+import { getServiceSupabase } from './supabase';
 
 // ============================================
 // Types
@@ -60,7 +44,7 @@ export interface LogActivityInput {
  */
 export async function logActivity(input: LogActivityInput): Promise<ActivityEntry | null> {
   try {
-    const db = getClient();
+    const db = getServiceSupabase();
     const { data, error } = await db
       .from('activity_log')
       .insert({
@@ -88,17 +72,24 @@ export async function logActivity(input: LogActivityInput): Promise<ActivityEntr
 }
 
 /**
- * Get recent activity for a production. Dashboard feed.
+ * Get recent activity for a production, optionally filtered by channel.
  */
 export async function getRecentActivity(
   productionId: string,
-  limit = 20
+  limit = 20,
+  channel?: ActivityChannel
 ): Promise<ActivityEntry[]> {
-  const db = getClient();
-  const { data, error } = await db
+  const db = getServiceSupabase();
+  let query = db
     .from('activity_log')
     .select('*')
-    .eq('production_id', productionId)
+    .eq('production_id', productionId);
+
+  if (channel) {
+    query = query.eq('channel', channel);
+  }
+
+  const { data, error } = await query
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -112,27 +103,14 @@ export async function getRecentActivity(
 
 /**
  * Get activity filtered by channel (e.g., "telegram" only).
+ * @deprecated Use getRecentActivity with channel parameter instead.
  */
 export async function getActivityByChannel(
   productionId: string,
   channel: ActivityChannel,
   limit = 20
 ): Promise<ActivityEntry[]> {
-  const db = getClient();
-  const { data, error } = await db
-    .from('activity_log')
-    .select('*')
-    .eq('production_id', productionId)
-    .eq('channel', channel)
-    .order('created_at', { ascending: false })
-    .limit(limit);
-
-  if (error) {
-    console.error('Failed to fetch activity by channel:', error);
-    return [];
-  }
-
-  return (data || []).map(mapRow);
+  return getRecentActivity(productionId, limit, channel);
 }
 
 // ============================================

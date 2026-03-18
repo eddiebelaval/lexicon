@@ -8,28 +8,20 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
 import type { ToolUseBlock, TextBlock, ToolResultBlockParam, MessageParam, ContentBlock } from '@anthropic-ai/sdk/resources/messages';
+import { getServiceSupabase } from '@/lib/supabase';
 import { lexiconTools, executeToolCall } from '@/lib/tools';
 import { LEXI_SYSTEM_PROMPT, buildProductionContext } from '@/lib/lexi';
 import { logActivity } from '@/lib/activity-log';
 import { buildRoleInstructions, getRoleDisplayName } from '@/lib/permissions';
+import { formatToolAction, splitMessage } from '@/lib/telegram';
 import type { CrewRole } from '@/types';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
-
-// ---- Supabase ----
-function getDb() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } }
-  );
-}
 
 // ---- Telegram helpers ----
 async function sendTelegramMessage(chatId: number, text: string) {
@@ -52,22 +44,14 @@ async function sendTyping(chatId: number) {
   });
 }
 
-function splitMessage(text: string, max: number): string[] {
-  const chunks: string[] = [];
-  let rest = text;
-  while (rest.length > 0) {
-    if (rest.length <= max) { chunks.push(rest); break; }
-    let idx = rest.lastIndexOf('\n', max);
-    if (idx < max * 0.5) idx = rest.lastIndexOf(' ', max);
-    if (idx === -1) idx = max;
-    chunks.push(rest.slice(0, idx));
-    rest = rest.slice(idx).trimStart();
-  }
-  return chunks;
-}
-
 // ---- Main handler ----
 export async function POST(request: NextRequest) {
+  // Validate request is from Telegram via secret token
+  const secretToken = request.headers.get('x-telegram-bot-api-secret-token');
+  if (process.env.TELEGRAM_WEBHOOK_SECRET && secretToken !== process.env.TELEGRAM_WEBHOOK_SECRET) {
+    return NextResponse.json({ ok: false }, { status: 401 });
+  }
+
   let chatId = 0;
 
   try {
@@ -115,7 +99,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Look up crew member
-    const db = getDb();
+    const db = getServiceSupabase();
     const { data: crew, error: crewErr } = await db
       .from('crew_members')
       .select('*, productions!inner(id, universe_id, name)')
@@ -138,14 +122,21 @@ export async function POST(request: NextRequest) {
     const roleInstructions = buildRoleInstructions(crew.name, crew.role as CrewRole);
     const systemPrompt = LEXI_SYSTEM_PROMPT + '\n\n' + productionContext + '\n\n' + roleInstructions;
 
-    // Call Claude with tool loop
+    // Call Claude with tool loop (capped at 10 iterations to prevent runaway)
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
     const messages: MessageParam[] = [{ role: 'user', content: messageText }];
     let fullResponseText = '';
     let continueLoop = true;
+    let loopCount = 0;
+    const MAX_TOOL_LOOPS = 10;
     const executedTools: { name: string; result: unknown }[] = [];
+    const crewRole = crew.role as CrewRole;
 
     while (continueLoop) {
+      if (loopCount++ >= MAX_TOOL_LOOPS) {
+        console.warn(`Tool loop cap reached after ${MAX_TOOL_LOOPS} iterations`);
+        break;
+      }
       const response = await client.messages.create({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 2048,
@@ -167,6 +158,18 @@ export async function POST(request: NextRequest) {
         const toolResults: ToolResultBlockParam[] = [];
 
         for (const toolUse of toolUseBlocks) {
+          // RBAC enforcement at tool execution layer
+          const { canUseTool } = await import('@/lib/permissions');
+          if (!canUseTool(crewRole, toolUse.name)) {
+            toolResults.push({
+              type: 'tool_result',
+              tool_use_id: toolUse.id,
+              content: JSON.stringify({ success: false, error: `Your role (${getRoleDisplayName(crewRole)}) does not have permission to use ${toolUse.name}` }),
+              is_error: true,
+            });
+            continue;
+          }
+
           const result = await executeToolCall(
             toolUse.name,
             toolUse.input as Record<string, unknown>,
@@ -183,10 +186,6 @@ export async function POST(request: NextRequest) {
 
         messages.push({ role: 'user', content: toolResults });
       } else {
-        continueLoop = false;
-      }
-
-      if (response.stop_reason === 'end_turn' && toolUseBlocks.length === 0) {
         continueLoop = false;
       }
     }
@@ -231,7 +230,7 @@ export async function POST(request: NextRequest) {
 
 // ---- Registration ----
 async function handleRegistration(chatId: number, telegramUserId: string, username: string | null, code: string) {
-  const db = getDb();
+  const db = getServiceSupabase();
 
   const { data: existing } = await db
     .from('crew_members')
@@ -263,7 +262,8 @@ async function handleRegistration(chatId: number, telegramUserId: string, userna
 
   await db.from('crew_members')
     .update({ telegram_user_id: telegramUserId, telegram_username: username })
-    .eq('id', regCode.crew_members.id);
+    .eq('id', regCode.crew_members.id)
+    .is('telegram_user_id', null);
 
   await db.from('telegram_registration_codes')
     .update({ used_at: new Date().toISOString() })
@@ -273,17 +273,6 @@ async function handleRegistration(chatId: number, telegramUserId: string, userna
   await sendTelegramMessage(chatId,
     `Welcome, ${regCode.crew_members.name}! You're connected as ${roleName}.\n\nJust message me naturally. Everything I do shows up on the team dashboard.`
   );
-}
-
-function formatToolAction(toolName: string): string {
-  const actions: Record<string, string> = {
-    schedule_scene: 'scheduled a scene',
-    assign_crew: 'assigned crew to a scene',
-    mark_contract: 'updated a contract',
-    advance_asset_stage: 'advanced an asset stage',
-    update_crew_availability: 'updated crew availability',
-  };
-  return actions[toolName] || `executed ${toolName}`;
 }
 
 export async function GET() {

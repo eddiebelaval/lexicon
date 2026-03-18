@@ -181,7 +181,7 @@ async function sendToMultiple(
 
   // Resend supports batch sending — send to all at once
   try {
-    const { data, error } = await resend.emails.send({
+    const { error } = await resend.emails.send({
       from: getSender(),
       to: addresses,
       subject,
@@ -193,31 +193,34 @@ async function sendToMultiple(
       return { success: false, sentTo: [], failed: addresses, error: error.message };
     }
 
-    return { success: true, sentTo: addresses, failed: [], };
+    return { success: true, sentTo: addresses, failed: [] };
   } catch (err) {
     return {
       success: false,
-      sentTo,
+      sentTo: [],
       failed: addresses,
       error: err instanceof Error ? err.message : 'Unknown error',
     };
   }
 }
 
-async function getCrewEmails(productionId: string): Promise<string[]> {
+async function getCrewEmailsByFilter(
+  productionId: string,
+  filter?: (m: CrewMember) => boolean
+): Promise<string[]> {
   const result = await listCrewMembers(productionId);
   const members: CrewMember[] = Array.isArray(result) ? result : (result as { items: CrewMember[] }).items || [];
   return members
-    .filter(m => m.isActive && m.contactEmail)
+    .filter(m => m.isActive && m.contactEmail && (!filter || filter(m)))
     .map(m => m.contactEmail!);
 }
 
-async function getProducerEmails(productionId: string): Promise<string[]> {
-  const result = await listCrewMembers(productionId);
-  const members: CrewMember[] = Array.isArray(result) ? result : (result as { items: CrewMember[] }).items || [];
-  return members
-    .filter(m => m.isActive && m.contactEmail && (m.role === 'staff' || m.role === 'producer'))
-    .map(m => m.contactEmail!);
+function getCrewEmails(productionId: string): Promise<string[]> {
+  return getCrewEmailsByFilter(productionId);
+}
+
+function getProducerEmails(productionId: string): Promise<string[]> {
+  return getCrewEmailsByFilter(productionId, m => m.role === 'staff' || m.role === 'producer');
 }
 
 function formatDateShort(date: string): string {

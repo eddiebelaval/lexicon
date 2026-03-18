@@ -94,6 +94,54 @@ export default function TeamSetupPage() {
     }, 2000);
   };
 
+  function renderActionButton(member: CrewWithTelegram, isConnected: boolean, isActive: boolean) {
+    if (isConnected) {
+      return <span className="text-xs text-emerald-400/80 font-medium">Connected</span>;
+    }
+
+    if (isActive && activeCode!.step === 'generating') {
+      return <Loader2 className="h-4 w-4 animate-spin text-sky-400" />;
+    }
+
+    if (isActive && (activeCode!.step === 'ready' || activeCode!.step === 'copied')) {
+      return (
+        <button
+          type="button"
+          onClick={() => copyCommand(activeCode!.code)}
+          className={cn(
+            'flex items-center gap-2 px-3 py-1.5 rounded text-xs font-mono font-bold transition-colors',
+            activeCode!.step === 'copied'
+              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+              : 'bg-sky-500/10 text-sky-400 border border-sky-500/30 hover:bg-sky-500/20'
+          )}
+        >
+          {activeCode!.step === 'copied' ? (
+            <>
+              <CheckCircle2 className="h-3 w-3" />
+              Copied
+            </>
+          ) : (
+            <>
+              <Copy className="h-3 w-3" />
+              /start {activeCode!.code}
+            </>
+          )}
+        </button>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={() => generateCode(member.id)}
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-400 border border-[#2a2a2a] rounded hover:text-sky-400 hover:border-sky-500/30 hover:bg-sky-500/5 transition-colors"
+      >
+        <Send className="h-3 w-3" />
+        Connect Telegram
+      </button>
+    );
+  }
+
   const connectedCount = crew.filter((c) => c.telegramUserId).length;
 
   if (loading) {
@@ -201,43 +249,7 @@ export default function TeamSetupPage() {
                   </div>
                 </div>
 
-                {isConnected ? (
-                  <span className="text-xs text-emerald-400/80 font-medium">Connected</span>
-                ) : isActive && activeCode.step === 'generating' ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-sky-400" />
-                ) : isActive && (activeCode.step === 'ready' || activeCode.step === 'copied') ? (
-                  <button
-                    type="button"
-                    onClick={() => copyCommand(activeCode.code)}
-                    className={cn(
-                      'flex items-center gap-2 px-3 py-1.5 rounded text-xs font-mono font-bold transition-colors',
-                      activeCode.step === 'copied'
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-sky-500/10 text-sky-400 border border-sky-500/30 hover:bg-sky-500/20'
-                    )}
-                  >
-                    {activeCode.step === 'copied' ? (
-                      <>
-                        <CheckCircle2 className="h-3 w-3" />
-                        Copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3 w-3" />
-                        /start {activeCode.code}
-                      </>
-                    )}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => generateCode(member.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-400 border border-[#2a2a2a] rounded hover:text-sky-400 hover:border-sky-500/30 hover:bg-sky-500/5 transition-colors"
-                  >
-                    <Send className="h-3 w-3" />
-                    Connect Telegram
-                  </button>
-                )}
+                {renderActionButton(member, isConnected, isActive)}
               </div>
 
               {/* Expanded instructions when code is ready */}

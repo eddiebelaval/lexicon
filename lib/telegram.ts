@@ -17,9 +17,9 @@
 
 import { Bot, webhookCallback } from 'grammy';
 import type { Context } from 'grammy';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
 import type { ToolUseBlock, TextBlock, ToolResultBlockParam, MessageParam, ContentBlock } from '@anthropic-ai/sdk/resources/messages';
+import { getServiceSupabase } from './supabase';
 import { lexiconTools, executeToolCall } from './tools';
 import { LEXI_SYSTEM_PROMPT, buildProductionContext } from './lexi';
 import { logActivity } from './activity-log';
@@ -50,26 +50,6 @@ export function getTelegramWebhookHandler() {
 }
 
 // ============================================
-// Supabase Client
-// ============================================
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _db: SupabaseClient<any> | null = null;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getDb(): SupabaseClient<any> {
-  if (!_db) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key) throw new Error('Missing Supabase env vars');
-    _db = createClient(url, key, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-  }
-  return _db;
-}
-
-// ============================================
 // Crew Member Lookup
 // ============================================
 
@@ -78,7 +58,7 @@ interface CrewWithProduction extends CrewMember {
 }
 
 async function findCrewByTelegramId(telegramUserId: string): Promise<CrewWithProduction | null> {
-  const db = getDb();
+  const db = getServiceSupabase();
   const { data, error } = await db
     .from('crew_members')
     .select('*, productions!inner(id, universe_id, name)')
@@ -119,7 +99,7 @@ async function handleRegistration(ctx: Context, code: string): Promise<void> {
     return;
   }
 
-  const db = getDb();
+  const db = getServiceSupabase();
 
   // Check if already registered
   const { data: existing } = await db
@@ -267,10 +247,6 @@ async function handleMessage(ctx: Context): Promise<void> {
       } else {
         continueLoop = false;
       }
-
-      if (response.stop_reason === 'end_turn' && toolUseBlocks.length === 0) {
-        continueLoop = false;
-      }
     }
 
     const replyText = fullResponseText || 'Done.';
@@ -328,7 +304,7 @@ async function handleMessage(ctx: Context): Promise<void> {
 /**
  * Convert a tool call into a human-readable action string.
  */
-function formatToolAction(toolName: string, _result: unknown): string {
+export function formatToolAction(toolName: string, _result?: unknown): string {
   const actions: Record<string, string> = {
     schedule_scene: 'scheduled a scene',
     assign_crew: 'assigned crew to a scene',
@@ -342,7 +318,7 @@ function formatToolAction(toolName: string, _result: unknown): string {
 /**
  * Split a long message into chunks that fit Telegram's 4096 char limit.
  */
-function splitMessage(text: string, maxLength: number): string[] {
+export function splitMessage(text: string, maxLength: number): string[] {
   const chunks: string[] = [];
   let remaining = text;
 
@@ -437,7 +413,7 @@ function registerHandlers(bot: Bot): void {
  * Called from the dashboard when a coordinator clicks "Connect Telegram".
  */
 export async function generateRegistrationCode(crewMemberId: string): Promise<string | null> {
-  const db = getDb();
+  const db = getServiceSupabase();
 
   // Generate a 6-character alphanumeric code
   const code = Array.from({ length: 6 }, () =>

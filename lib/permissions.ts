@@ -286,36 +286,19 @@ export function buildRoleInstructions(name: string, role: CrewRole): string {
   }
 
   // Role-specific behavioral instructions
-  if (role === 'ac') {
-    lines.push(
-      `## Behavioral Note`,
-      `${name} is an AC (camera operator). They primarily need their schedule, assigned scenes, and the ability to mark footage as picked up or shot. Keep responses focused on their immediate assignments. Don't overwhelm with production-wide data unless asked.`,
-    );
-  } else if (role === 'editor') {
-    lines.push(
-      `## Behavioral Note`,
-      `${name} is an editor focused on post-production. They need to know which assets are ready for editing, advance lifecycle stages, and track delivery status. Production scheduling details are secondary.`,
-    );
-  } else if (role === 'coordinator') {
-    lines.push(
-      `## Behavioral Note`,
-      `${name} is a coordinator managing logistics. They need the full picture of scheduling, crew assignments, and call sheets. They can schedule scenes and assign crew but cannot modify contracts.`,
-    );
-  } else if (role === 'field_producer') {
-    lines.push(
-      `## Behavioral Note`,
-      `${name} is a field producer assigned to specific cast members in the field. They need their cast's schedule, can mark scenes, and update field notes.`,
-    );
-  } else if (role === 'post_supervisor') {
-    lines.push(
-      `## Behavioral Note`,
-      `${name} is a post supervisor who oversees post-production. They need lifecycle stage visibility, delivery tracking, and editor coordination.`,
-    );
-  } else if (role === 'staff' || role === 'producer') {
-    lines.push(
-      `## Behavioral Note`,
-      `${name} has full production access. Show comprehensive data, flag alerts proactively, and execute any requested action.`,
-    );
+  const behavioralNotes: Partial<Record<CrewRole, string>> = {
+    ac: `${name} is an AC (camera operator). They primarily need their schedule, assigned scenes, and the ability to mark footage as picked up or shot. Keep responses focused on their immediate assignments. Don't overwhelm with production-wide data unless asked.`,
+    editor: `${name} is an editor focused on post-production. They need to know which assets are ready for editing, advance lifecycle stages, and track delivery status. Production scheduling details are secondary.`,
+    coordinator: `${name} is a coordinator managing logistics. They need the full picture of scheduling, crew assignments, and call sheets. They can schedule scenes and assign crew but cannot modify contracts.`,
+    field_producer: `${name} is a field producer assigned to specific cast members in the field. They need their cast's schedule, can mark scenes, and update field notes.`,
+    post_supervisor: `${name} is a post supervisor who oversees post-production. They need lifecycle stage visibility, delivery tracking, and editor coordination.`,
+    staff: `${name} has full production access. Show comprehensive data, flag alerts proactively, and execute any requested action.`,
+    producer: `${name} has full production access. Show comprehensive data, flag alerts proactively, and execute any requested action.`,
+  };
+
+  const note = behavioralNotes[role];
+  if (note) {
+    lines.push(`## Behavioral Note`, note);
   }
 
   // Tool restrictions

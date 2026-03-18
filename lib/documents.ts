@@ -47,6 +47,15 @@ const STYLES = `
   @media print { body { background: #fff; } .doc { padding: 20px; } }
 `;
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function wrap(title: string, content: string): string {
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>${title}</title><style>${STYLES}</style></head>
@@ -96,11 +105,11 @@ export function renderCallSheetHtml(callSheet: CallSheet): string {
       content += `
         <div class="scene-block">
           <div class="scene-header">
-            <span class="scene-title">${scene.sceneNumber ? `#${scene.sceneNumber} — ` : ''}${scene.title}</span>
+            <span class="scene-title">${scene.sceneNumber ? `#${scene.sceneNumber} — ` : ''}${escapeHtml(scene.title)}</span>
             ${statusBadge(scene.status)}
           </div>
           ${scene.scheduledTime ? `<div class="scene-detail">Time: ${scene.scheduledTime}</div>` : ''}
-          ${scene.location ? `<div class="scene-detail">Location: ${scene.location}${scene.locationDetails ? ` (${scene.locationDetails})` : ''}</div>` : ''}
+          ${scene.location ? `<div class="scene-detail">Location: ${escapeHtml(scene.location)}${scene.locationDetails ? ` (${escapeHtml(scene.locationDetails)})` : ''}</div>` : ''}
           ${castNames.length > 0 ? `<div class="scene-detail">Cast: ${castNames.join(', ')}</div>` : ''}
           ${scene.equipmentNotes ? `<div class="scene-detail">Equipment: ${scene.equipmentNotes}</div>` : ''}
           ${scene.isSelfShot ? `<div class="scene-detail"><span class="badge badge-gray">Self-Shot</span></div>` : ''}
@@ -186,7 +195,7 @@ export function renderProductionReportHtml(data: ProductionReportData): string {
         <h2 class="section-title">Alerts (${data.alerts.length})</h2>
         ${data.alerts.map(a => `
           <div style="padding: 8px 12px; margin-bottom: 6px; border-left: 3px solid ${a.severity === 'critical' ? '#ef4444' : a.severity === 'warning' ? '#f59e0b' : '#3b82f6'}; background: #fafafa; font-size: 13px;">
-            ${a.message}
+            ${escapeHtml(a.message)}
           </div>
         `).join('')}
       </div>
