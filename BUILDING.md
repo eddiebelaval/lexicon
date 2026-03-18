@@ -392,6 +392,31 @@ The session that gave Lexi hands, a phone, and a team. One of the biggest single
 
 **Stats:** 12 commits. PR #8 merged. 196 -> 227 tests. 5 -> 16 tools. 6 -> 8 roles. 22 -> 33 capabilities. Lexi is live on Telegram.
 
+### March 18, 2026 (Session 2) — The Full Lifecycle
+
+**The thesis:** A production is a chain of custody problem. Gear moves through locations and people. Footage moves from cameras through drives to post. Documents move from draft to signed. Every transition needs: who, when, where, why.
+
+**Why:** Eddie's Diaries team runs on Excel. The daily friction: "Where is Kit 3?", "Did we download that footage?", "Is Chantel's release signed?" This session replaced all of that.
+
+**PR #9 — Lexi Onboarding Wizard:**
+Replaced the 5-step form wizard with Lexi-as-conversation. Full-screen chat UI with a deterministic state machine (18 states, no LLM calls). Excel/CSV import via SheetJS with auto-detect for cast/crew/schedule sheets. Batch creation API creates everything in one POST. Key insight: no API cost for onboarding — the LLM-powered Lexi kicks in *after* setup.
+
+**PR #10 — Gear + Footage Tracking:**
+Equipment (6 stages) and Footage (7 stages) asset types built entirely on the existing lifecycle engine. Zero new tables — pure wiring. Three new Lexi tools (create_asset, update_asset, list_assets) with proper metadata merge. Gear Board UI at `/production/gear` with stage-grouped columns, overdue detection via isTerminal/isInitial flags.
+
+**PR #11 — Automated Triggers:**
+5 new alert detectors: gear overdue (48h/96h), footage not downloaded (24h), footage not uploaded (48h), approaching deadline (3d/1d), idle cast (14d). Cron at `/api/cron/triggers` every 4 hours. Routes alerts to crew by role via Telegram. Deduplicates against activity_log. Falls back to coordinator/staff.
+
+**PR #12 — Post-Production + Documents + Tool Parity:**
+Post-production board with footage timeline (rich metadata, transition history, cast/stage filtering). Document asset type (Draft -> Sent -> Acknowledged -> Signed -> Filed). Four new admin tools (create_production, list_productions, delete_asset, generate_registration_code). Lexi now has 46 tools — everything the dashboard can do, she can do.
+
+**PR #13 — Polish:**
+Extracted shared utilities (formatRelativeHours, hoursSince) to lib/utils.ts. Parallelized stages + instances queries in footage timeline API. Capped transitions query. Removed dead code. All review-driven fixes from 9 parallel review agents across the session.
+
+**Architecture decision:** Every new feature followed the same pattern: define asset type + stages in intake-types.ts, wire Lexi tools in tools.ts, build UI component mirroring the gear board pattern. The lifecycle engine was designed for exactly this — zero new database tables across all 5 PRs.
+
+**Stats:** 5 PRs merged. ~4,600 lines shipped. 27 -> 46 Lexi tools. 3 -> 7 default asset types. 6 -> 8 production UI pages. 2 -> 3 cron jobs. 5 -> 10 alert detectors.
+
 ---
 
 ## Key Decisions (and Why)
@@ -433,24 +458,23 @@ Full control over rendering, interaction, styling. Libraries like vis.js or cyto
 
 | Metric | Value |
 |--------|-------|
-| Total LOC | ~53,000+ |
-| Components | 84+ (55 original + 13 production + 4 lifecycle + 8 intake + 2 realtime + 1 activity feed + 1 team page) |
-| Production UI Pages | 6 (dashboard, calendar, cast, crew, call sheet, team) |
-| API Endpoints | 63+ (28 original + 10 production + 8 lifecycle + 13 other + 4 telegram/activity) |
-| Agent Tools | 16 write + 11 read = 27 Claude-facing tools (was 5 write at start of Mar 18) |
+| Total LOC | ~58,000+ |
+| Components | 90+ (55 original + 13 production + 4 lifecycle + 8 intake + 2 realtime + 1 activity feed + 1 team + 3 onboarding + 2 gear/post + 1 nav update) |
+| Production UI Pages | 8 (dashboard, calendar, cast, crew, gear, post, call sheet, team) + intake + onboard |
+| API Endpoints | 70+ (28 original + 10 production + 8 lifecycle + 13 other + 4 telegram/activity + 1 onboard + 1 footage-timeline + 1 triggers cron + 4 asset mgmt) |
+| Agent Tools | 46 Claude-facing tools (was 27 at session start, 5 at project start) |
+| Default Asset Types | 7 (Contract, Shoot, Deliverable, Equipment, Footage, Document + custom) |
+| Alert Detectors | 10 (5 original + gear overdue, footage not downloaded, footage not uploaded, approaching deadline, idle cast) |
+| Cron Jobs | 3 (monitoring 6AM, digest 7AM, triggers 4h) |
 | Lifecycle Tables | 5 (asset_types, lifecycle_stages, asset_instances, stage_transitions, allowed_transitions) |
 | Tests | 227 (unit, integration, E2E, health, production, permissions, activity) |
-| Supabase Tables | 12 production + lifecycle + existing |
-| Supabase Migrations | 13 |
-| Seeded Data | 15 cast, 10 crew, 20 scenes, 15 contracts, 50 availability, 3 asset types, 17 stages, 35 instances |
+| Supabase Tables | 14 |
+| Supabase Migrations | 14 |
 | Build time (original) | 3 days (Jan 5-8) |
 | Dormancy | 66 days (Jan 9 — Mar 15) |
 | Build time (Lexi backend) | 1 overnight session (Mar 15-16) |
-| Build time (Production UI) | 1 session (Mar 16) |
-| Build time (Lifecycle Engine) | 1 session (Mar 16) |
-| Build time (Intake Wizard) | 1 session (Mar 16) |
-| Build time (Realtime + Inline Edit) | 1 session (Mar 16) |
-| Build time (Phase 6 Polish) | 1 session (Mar 16) |
+| Build time (Production UI + Lifecycle + Intake + Realtime + Polish) | 1 session (Mar 16) |
 | Build time (Beta Hardening) | 1 session (Mar 17) |
-| Build time (Telegram + RBAC + Docs + Polish) | 1 session (Mar 18) |
-| PRs merged | #4 (lexi-production), #5 (design-polish), #6 (phase6-polish), #7 (beta-hardening), #8 (lexi-telegram) |
+| Build time (Telegram + RBAC + Docs) | 1 session (Mar 18 AM) |
+| Build time (Onboarding + Gear + Triggers + Post + Documents + Tool Parity) | 1 session (Mar 18 PM) |
+| PRs merged | #4-#13 (10 PRs total) |

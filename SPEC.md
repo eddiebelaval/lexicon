@@ -2,16 +2,17 @@
 
 > What it IS right now. The testable contract.
 
-**Last reconciled:** March 18, 2026
+**Last reconciled:** March 18, 2026 (session 2)
 **Product:** Lexicon + Lexi (production intelligence entity)
 **Repo:** https://github.com/eddiebelaval/lexicon
 **Deploy:** https://lexicon-phi.vercel.app
-**PRs merged:** #4 (lexi-production), #5 (design-polish), #6 (phase6-polish), #7 (beta-hardening)
-**Pipeline Stage:** Stage 9 (Launch Prep) IN PROGRESS — beta hardening complete, launch readiness next
-**Tests:** 196 (unit, integration, E2E, health, production smoke)
-**API Parity:** Original conversation update gap closed; production + lifecycle routes expanded
-**Production UI:** 6 pages (dashboard, calendar, cast, crew, call sheet, intake), scene editor, alerts
-Build stage: Stage 8
+**PRs merged:** #4-#8 (lexi-production through telegram), #9 (onboarding wizard), #10 (gear tracking), #11 (automated triggers), #12 (post-production + docs + tool parity), #13 (polish)
+**Pipeline Stage:** Stage 9 (Launch Prep) — feature-complete for production beta
+**Tests:** 227 (unit, integration, E2E, health, production, permissions, activity)
+**Agent Tools:** 46 (was 27 at start of session)
+**Asset Types:** 7 default (Contract, Shoot, Deliverable, Equipment, Footage, Document + custom)
+**Production UI:** 8 pages (dashboard, calendar, cast, crew, gear, post, call sheet, team) + intake
+**Cron Jobs:** 3 (monitoring 6AM, digest 7AM, triggers every 4h)
 Drift status: CURRENT
 
 ---
@@ -108,28 +109,45 @@ Core: Next.js 15 + Supabase (production data) + Neo4j (cast knowledge graph, cur
 - **Crew Availability:** 50 entries seeded. Daily status: available, ooo, dark, holding, booked
 - **Upload Tasks:** Track footage pickup and upload logistics
 
-### 12. Lexi Entity (NEW)
-- Production-aware system prompt (lib/lexi.ts)
+### 12. Lexi Entity
+- Production-aware system prompt with gear/footage/document context (lib/lexi.ts)
 - buildProductionContext() injects live production state into Claude
 - Chat mode toggle: 'universe' (original Lexicon) vs 'production' (Lexi)
 - 6 production query functions for answering questions
-- 5 agent tools with Pattern 6 completion signals
+- 46 agent tools (create/update/delete assets, productions, crew, contracts, scenes, documents, registration codes)
+- RBAC: 8 roles x 33 capabilities, tool-level enforcement
+- Telegram bot: @LexiProductionBot with crew registration, tool execution, activity logging
 
-### 13. Production UI (NEW — Phase 2)
-- **Dashboard** (`/universe/[id]/production`): stat cards (total cast, signed contracts, scenes progress, active crew), upcoming scenes list, incomplete contracts list
-- **Calendar** (`/universe/[id]/production/calendar`): week/month toggle, scene chips with status color coding (scheduled=blue, shot=green, cancelled=red, postponed=yellow, self_shot=purple), click-to-expand detail, today highlighting, prev/next navigation
-- **Cast Board** (`/universe/[id]/production/cast`): contract table with status badges, payment type, interactive completion checkboxes (Shoot/INTV/PU/$), optimistic toggle updates, summary bar
-- **Crew Board** (`/universe/[id]/production/crew`): weekly availability grid (crew x Mon-Fri), color-coded cells (available=green, booked=blue, OOO=red, dark=gray, holding=yellow), click-to-cycle status, week navigation
-- **Scene Editor**: modal form for create/edit scenes with cast entity search, all scheduling fields, self-shot toggle
-- **Production Layout**: shared header (breadcrumb + "Ask Lexi" button), tab navigation (Dashboard/Calendar/Cast/Crew)
-- **Universe Integration**: Production entry point in Graph/Wiki view toggle (Clapperboard icon)
+### 13. Production UI
+- **Dashboard** (`/universe/[id]/production`): stat cards, upcoming scenes, incomplete contracts
+- **Calendar** (`/universe/[id]/production/calendar`): week/month, scene chips, status color coding
+- **Cast Board** (`/universe/[id]/production/cast`): contract table, interactive completion checkboxes
+- **Crew Board** (`/universe/[id]/production/crew`): weekly availability grid, click-to-cycle
+- **Gear Board** (`/universe/[id]/production/gear`): stage-grouped columns for Equipment + Footage, overdue detection (isTerminal/isInitial flags), custody + location per asset
+- **Post Board** (`/universe/[id]/production/post`): footage timeline with rich metadata (scene, camera, card, AC notes, shot date), expandable with transition history, cast/stage filtering
+- **Call Sheet** (`/universe/[id]/production/call-sheet`): auto-generated from schedule + crew
+- **Team** (`/universe/[id]/production/team`): Telegram registration codes
+- **Scene Editor**: modal form with cast assignment, all scheduling fields
+- **Production Layout**: 8-tab navigation (Dashboard, Calendar, Cast, Crew, Gear, Post, Call Sheet, Team)
 
-### 14. Infrastructure
+### 14. Automated Triggers
+- 10 alert detectors running in parallel: unsigned contracts, double-booked crew, overdue deliverables, stuck stages, unassigned scenes, gear overdue (48h/96h), footage not downloaded (24h), footage not uploaded (48h), approaching deadlines (3d/1d), idle cast (14d)
+- Cron route (`/api/cron/triggers`) every 4 hours via Vercel Cron
+- Telegram delivery routed by crew role, fallback to coordinator/staff
+- Deduplication via activity_log (4-hour window)
+
+### 15. Onboarding
+- Lexi-as-conversation: state machine engine (18 states, no LLM calls)
+- Excel/CSV import via SheetJS with auto-detect for cast/crew/schedule sheets
+- Batch creation API: universe + production + cast + crew + asset types in one POST
+
+### 16. Infrastructure
 - Supabase Email OTP auth, universe isolation
-- 28 API routes, consistent response format: `{ success, data?, error? }`
-- 19 agent-native tools with Pattern 6 completion signals
+- 67+ API routes, consistent response format: `{ success, data?, error? }`
+- 46 agent-native tools with Pattern 6 completion signals
+- 3 Vercel cron jobs (monitoring, digest, triggers)
 - Dark mode (ThemeProvider), Geist font
-- Seed script: Three Musketeers (~50 entities, ~30 relationships)
+- Shared utilities: hoursSince(), formatRelativeHours(), verifyCronSecret()
 - Error handling: retry buttons, loading skeletons, auto-dismiss error banners
 
 ---
@@ -188,13 +206,14 @@ Full audit: see `PARITY_MAP.md`
 ## Known Gaps
 
 ### Beta Blockers (Priority 1)
-- Neo4j still down, so graph-first launch parity is not restored
-- Live web search augmentation is not implemented in the main search path
+- Neo4j still down — graph-first launch parity not restored
 - No landing page or custom domain — new users hit raw app UI
+- No auth on `/api/onboard` (TODO placeholder user ID)
 
 ### Nice to Have (Priority 3)
-- Bulk update/delete endpoints
-- Universe data export
+- Onboarding UX: condense to 3 interactions (combined form + immediate file upload)
+- Design system alignment with Mission Control patterns
+- Live web search augmentation in search path
 - CI/CD pipeline
 - Error monitoring / analytics
 
@@ -230,3 +249,4 @@ NEXT_PUBLIC_APP_URL, CRON_SECRET
 | 2026-03-17 | Beta-hardening pass removed fake demo IDs from key entry points | Home, dashboard, header, and settings now distinguish public beta visitors from signed-in users |
 | 2026-03-17 | Health route was misclassifying beta readiness | Supabase added as core dependency, Neo4j treated as degraded optional service for production beta |
 | 2026-03-17 | Production verification lagged behind shipped surface | Added health route tests and call-sheet smoke coverage; suite now passes at 196 tests |
+| 2026-03-18 | Session 2: 5 PRs shipped — onboarding, gear, footage, triggers, post, documents, tool parity | Lexi: 27 -> 46 tools. Asset types: 3 -> 7. UI pages: 6 -> 8. Cron jobs: 2 -> 3. 4,600+ lines shipped. |
