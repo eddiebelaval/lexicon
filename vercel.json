@@ -1,4 +1,12 @@
 {
+  "functions": {
+    "app/api/telegram/webhook/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/chat/route.ts": {
+      "maxDuration": 60
+    }
+  },
   "crons": [
     {
       "path": "/api/cron/monitor",
