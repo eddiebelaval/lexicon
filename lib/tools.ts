@@ -1242,6 +1242,78 @@ export const lexiconTools: Tool[] = [
       required: ['productionId'],
     },
   },
+
+  // ----------------------------------------
+  // Document & Email Operations (Lexi)
+  // ----------------------------------------
+  {
+    name: 'email_call_sheet',
+    description:
+      'Generate a call sheet for a specific date and email it to crew. If no recipients specified, sends to all active crew with email addresses.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID',
+        },
+        date: {
+          type: 'string',
+          description: 'Date for the call sheet (YYYY-MM-DD)',
+        },
+        recipients: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Optional specific email addresses to send to. If omitted, sends to all active crew.',
+        },
+      },
+      required: ['productionId', 'date'],
+    },
+  },
+  {
+    name: 'email_production_report',
+    description:
+      'Generate a production report with stats, alerts, upcoming scenes, and incomplete contracts, then email it to producers/EPs.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID',
+        },
+        recipients: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Optional specific email addresses. If omitted, sends to all producers and EPs.',
+        },
+      },
+      required: ['productionId'],
+    },
+  },
+  {
+    name: 'email_contract_summary',
+    description:
+      'Generate a contract summary showing all cast contract statuses and completion tracking, then email it.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID',
+        },
+        productionName: {
+          type: 'string',
+          description: 'Production name for the document header',
+        },
+        recipients: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Optional specific email addresses. If omitted, sends to producers and EPs.',
+        },
+      },
+      required: ['productionId', 'productionName'],
+    },
+  },
 ];
 
 // ============================================
@@ -2568,6 +2640,74 @@ export async function executeToolCall(
             action: 'updated' as const,
           },
           shouldContinue: true,
+        };
+      }
+
+      // ----------------------------------------
+      // Document & Email Operations (Lexi)
+      // ----------------------------------------
+      case 'email_call_sheet': {
+        const { emailCallSheet } = await import('./production-email');
+        const productionId = input.productionId as string;
+        const date = input.date as string;
+        const recipients = input.recipients as string[] | undefined;
+
+        const result = await emailCallSheet(productionId, date, recipients);
+
+        return {
+          success: result.success,
+          result: {
+            sentTo: result.sentTo,
+            failed: result.failed,
+            message: result.success
+              ? `Call sheet for ${date} sent to ${result.sentTo.length} recipient${result.sentTo.length !== 1 ? 's' : ''}`
+              : result.error,
+          },
+          error: result.error,
+          shouldContinue: false,
+        };
+      }
+
+      case 'email_production_report': {
+        const { emailProductionReport } = await import('./production-email');
+        const productionId = input.productionId as string;
+        const recipients = input.recipients as string[] | undefined;
+
+        const result = await emailProductionReport(productionId, recipients);
+
+        return {
+          success: result.success,
+          result: {
+            sentTo: result.sentTo,
+            failed: result.failed,
+            message: result.success
+              ? `Production report sent to ${result.sentTo.length} recipient${result.sentTo.length !== 1 ? 's' : ''}`
+              : result.error,
+          },
+          error: result.error,
+          shouldContinue: false,
+        };
+      }
+
+      case 'email_contract_summary': {
+        const { emailContractSummary } = await import('./production-email');
+        const productionId = input.productionId as string;
+        const productionName = input.productionName as string;
+        const recipients = input.recipients as string[] | undefined;
+
+        const result = await emailContractSummary(productionId, productionName, recipients);
+
+        return {
+          success: result.success,
+          result: {
+            sentTo: result.sentTo,
+            failed: result.failed,
+            message: result.success
+              ? `Contract summary sent to ${result.sentTo.length} recipient${result.sentTo.length !== 1 ? 's' : ''}`
+              : result.error,
+          },
+          error: result.error,
+          shouldContinue: false,
         };
       }
 

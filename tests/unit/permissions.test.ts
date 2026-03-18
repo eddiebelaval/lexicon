@@ -125,7 +125,10 @@ describe('permissions', () => {
       expect(tools).toContain('generate_call_sheet');
       expect(tools).toContain('get_production_alerts');
       expect(tools).toContain('update_production');
-      expect(tools.length).toBe(13);
+      expect(tools).toContain('email_call_sheet');
+      expect(tools).toContain('email_production_report');
+      expect(tools).toContain('email_contract_summary');
+      expect(tools.length).toBe(16);
     });
 
     it('ac gets minimal write tools', () => {

@@ -50,7 +50,11 @@ export type Capability =
   | 'write:delete_contract'
   | 'write:get_alerts'
   | 'write:update_production'
-  | 'write:update_crew_member';
+  | 'write:update_crew_member'
+  // Email capabilities
+  | 'write:email_call_sheet'
+  | 'write:email_production_report'
+  | 'write:email_contract_summary';
 
 // ============================================
 // Role → Capability Mapping
@@ -70,6 +74,7 @@ const ROLE_CAPABILITIES: Record<CrewRole, Capability[]> = {
     'write:create_crew', 'write:delete_scene', 'write:create_contract',
     'write:delete_contract', 'write:get_alerts', 'write:update_production',
     'write:update_crew_member',
+    'write:email_call_sheet', 'write:email_production_report', 'write:email_contract_summary',
   ],
 
   // Producer — production-level access, can schedule and assign
@@ -83,6 +88,7 @@ const ROLE_CAPABILITIES: Record<CrewRole, Capability[]> = {
     'write:generate_call_sheet',
     'write:create_crew', 'write:delete_scene', 'write:create_contract',
     'write:get_alerts', 'write:update_crew_member',
+    'write:email_call_sheet', 'write:email_production_report', 'write:email_contract_summary',
   ],
 
   // Coordinator — logistics, scheduling, call sheets
@@ -95,6 +101,7 @@ const ROLE_CAPABILITIES: Record<CrewRole, Capability[]> = {
     'write:mark_footage_picked_up', 'write:update_notes',
     'write:generate_call_sheet',
     'write:create_crew', 'write:get_alerts', 'write:update_crew_member',
+    'write:email_call_sheet',
   ],
 
   // Fixer — local logistics, limited scheduling
@@ -182,6 +189,9 @@ export function canUseTool(role: CrewRole, toolName: string): boolean {
     generate_call_sheet: 'write:generate_call_sheet',
     get_production_alerts: 'write:get_alerts',
     update_production: 'write:update_production',
+    email_call_sheet: 'write:email_call_sheet',
+    email_production_report: 'write:email_production_report',
+    email_contract_summary: 'write:email_contract_summary',
   };
 
   const required = toolCapabilityMap[toolName];
@@ -206,6 +216,7 @@ export function getAllowedToolNames(role: CrewRole): string[] {
     'create_crew_member', 'update_crew_member', 'delete_scene',
     'create_cast_contract', 'delete_cast_contract', 'generate_call_sheet',
     'get_production_alerts', 'update_production',
+    'email_call_sheet', 'email_production_report', 'email_contract_summary',
   ];
 
   return allTools.filter((tool) => canUseTool(role, tool));
