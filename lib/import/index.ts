@@ -14,3 +14,5 @@ export {
   type CSVParseResult,
   type ParseOptions,
 } from './csv-parser';
+
+export { parseSpreadsheet } from './xlsx-parser';
