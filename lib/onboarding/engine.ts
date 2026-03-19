@@ -35,6 +35,7 @@ export type OnboardingStateId =
   | 'user_role'
   | 'ready_to_launch'
   | 'launching'
+  | 'team_invite'
   | 'complete';
 
 export type InputType =
@@ -47,6 +48,7 @@ export type InputType =
   | 'cast_entry'  // Name + location mini-form
   | 'crew_entry'  // Name + role + contact mini-form
   | 'launch'      // Launch button
+  | 'team_invite' // Telegram invite cards with codes
 
 export interface ChoiceOption {
   label: string;
@@ -455,16 +457,29 @@ export const STATE_DEFINITIONS: Record<OnboardingStateId, StateDefinition> = {
   launching: {
     getMessage: () => 'Setting everything up...',
     inputType: 'none',
-    processInput: () => ({
-      nextState: 'complete',
+    processInput: (_input, data) => ({
+      nextState: data.crew.length > 0 ? 'team_invite' : 'complete',
       updatedData: {},
       userMessage: '',
     }),
   },
 
+  team_invite: {
+    getMessage: (data) => {
+      const count = data.crew.length;
+      return `Production is live. I generated Telegram invite codes for your ${count} crew member${count !== 1 ? 's' : ''}.\n\nEach person opens @LexiProductionBot in Telegram and sends /start followed by their code. Once connected, they can message me directly and everything shows up on your dashboard.`;
+    },
+    inputType: 'team_invite',
+    processInput: () => ({
+      nextState: 'complete',
+      updatedData: {},
+      userMessage: 'Got it',
+    }),
+  },
+
   complete: {
     getMessage: (data) =>
-      `Your production is live. "${data.showName}" is ready to go.\n\nHeading to your dashboard now.`,
+      `"${data.showName}" is ready to go. Heading to your dashboard now.`,
     inputType: 'none',
     processInput: () => ({
       nextState: 'complete',

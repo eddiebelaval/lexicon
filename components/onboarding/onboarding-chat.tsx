@@ -11,7 +11,7 @@
 
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Upload, ArrowRight, Loader2, Rocket, UserPlus } from 'lucide-react';
+import { Upload, ArrowRight, Loader2, Rocket, UserPlus, Copy, Check, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { CrewRole } from '@/types';
 import {
@@ -28,6 +28,17 @@ import {
   type OnboardingMessage,
   type ChoiceOption,
 } from '@/lib/onboarding/engine';
+
+// ============================================
+// Crew Invite Types
+// ============================================
+
+interface CrewInvite {
+  crewMemberId: string;
+  name: string;
+  role: string;
+  code: string | null;
+}
 
 // ============================================
 // Shared Init Helper
@@ -61,6 +72,7 @@ export function OnboardingChat() {
   const [fileUploading, setFileUploading] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
+  const [crewInvites, setCrewInvites] = useState<CrewInvite[]>([]);
 
   // Initialize
   useEffect(() => {
@@ -153,18 +165,50 @@ export function OnboardingChat() {
         throw new Error((errData as { error?: string }).error || `Launch failed (${res.status})`);
       }
 
-      const result = await res.json() as { productionId: string; universeId: string };
+      const result = await res.json() as {
+        productionId: string;
+        universeId: string;
+        crewInvites: CrewInvite[];
+      };
 
-      const completed = advanceToNextState(updated);
-      setState(completed);
-      clearState();
+      // Store invite codes and universe ID for later navigation
+      setCrewInvites(result.crewInvites || []);
+      launchResultRef.current = result;
 
-      setTimeout(() => {
-        router.push(`/universe/${result.universeId}/production`);
-      }, 1500);
+      // Advance: launching → team_invite (if crew) or complete (if no crew)
+      const advanced = advanceToNextState(updated);
+      setState(advanced);
+      saveState(advanced);
+      setLaunching(false);
+
+      // If no crew, go straight to dashboard
+      if (!result.crewInvites || result.crewInvites.length === 0) {
+        clearState();
+        setTimeout(() => {
+          router.push(`/universe/${result.universeId}/production`);
+        }, 1500);
+      }
     } catch (err) {
       setLaunchError(err instanceof Error ? err.message : 'Something went wrong');
       setLaunching(false);
+    }
+  }, [state, router]);
+
+  // Ref to hold launch result for navigation after team_invite
+  const launchResultRef = useRef<{ universeId: string; productionId: string } | null>(null);
+
+  // Handle "Go to dashboard" from team_invite state
+  const handleTeamInviteDone = useCallback(() => {
+    if (!state) return;
+    const updated = processUserInput(state, 'done');
+    setState(updated);
+    clearState();
+
+    const universeId = launchResultRef.current?.universeId;
+    if (universeId) {
+      setTimeout(() => {
+        router.push(`/universe/${universeId}/production`);
+      }, 1000);
     }
   }, [state, router]);
 
@@ -298,6 +342,14 @@ export function OnboardingChat() {
             <CrewEntryInput
               onSubmit={(entry) => handleInput(entry)}
               showSkip={true}
+            />
+          )}
+
+          {/* Team invite cards */}
+          {currentInputType === 'team_invite' && !isTyping && (
+            <TeamInviteCards
+              invites={crewInvites}
+              onDone={handleTeamInviteDone}
             />
           )}
 
@@ -725,6 +777,81 @@ function CrewEntryInput({
           {name ? "That's the team" : 'Skip crew for now'}
         </button>
       )}
+    </div>
+  );
+}
+
+// ============================================
+// Team Invite Cards
+// ============================================
+
+function TeamInviteCards({
+  invites,
+  onDone,
+}: {
+  invites: CrewInvite[];
+  onDone: () => void;
+}) {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopy = async (invite: CrewInvite) => {
+    if (!invite.code) return;
+    const text = `/start ${invite.code}`;
+    await navigator.clipboard.writeText(text);
+    setCopiedId(invite.crewMemberId);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-2 max-h-64 overflow-y-auto">
+        {invites.map((invite) => (
+          <div
+            key={invite.crewMemberId}
+            className="flex items-center justify-between px-4 py-3 rounded-xl border border-panel-border bg-surface-tertiary"
+          >
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-200 truncate">{invite.name}</p>
+              <p className="text-xs text-gray-500">{invite.role}</p>
+            </div>
+            {invite.code ? (
+              <button
+                type="button"
+                onClick={() => handleCopy(invite)}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono transition-colors shrink-0 ml-3',
+                  copiedId === invite.crewMemberId
+                    ? 'bg-green-900/30 text-green-400 border border-green-800/40'
+                    : 'bg-surface-elevated border border-panel-border text-gray-300 hover:border-vhs-800/40'
+                )}
+              >
+                {copiedId === invite.crewMemberId ? (
+                  <>
+                    <Check className="w-3 h-3" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3 h-3" />
+                    /start {invite.code}
+                  </>
+                )}
+              </button>
+            ) : (
+              <span className="text-xs text-gray-600 ml-3">No code</span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={onDone}
+        className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-sm font-medium bg-vhs-400 text-white hover:bg-vhs-500 transition-colors"
+      >
+        <Send className="w-4 h-4" />
+        Go to Dashboard
+      </button>
     </div>
   );
 }
