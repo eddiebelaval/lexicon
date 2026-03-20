@@ -71,6 +71,8 @@ import { advanceStage, createAssetInstance, updateAssetInstance, deleteAssetInst
 import { listProductions, createProduction } from './productions';
 import { generateRegistrationCode } from './telegram';
 import { getServiceSupabase } from './supabase';
+import { createEpisode, getEpisode, listEpisodes, updateEpisode, deleteEpisode } from './episodes';
+import type { EpisodeStatus, CreateEpisodeInput, UpdateEpisodeInput } from '@/types';
 import type {
   CreateProdSceneInput,
   UpdateProdSceneInput,
@@ -969,6 +971,22 @@ export const lexiconTools: Tool[] = [
           type: 'boolean',
           description: 'Mark payment as completed',
         },
+        dailyRate: {
+          type: 'number',
+          description: 'Per-day rate in dollars (for daily-rate cast)',
+        },
+        flatFee: {
+          type: 'number',
+          description: 'Flat fee in dollars (for flat-rate cast)',
+        },
+        totalPayment: {
+          type: 'number',
+          description: 'Total payment amount in dollars',
+        },
+        paidAmount: {
+          type: 'number',
+          description: 'Amount paid so far in dollars',
+        },
         notes: {
           type: 'string',
           description: 'Additional notes for the contract',
@@ -1143,6 +1161,18 @@ export const lexiconTools: Tool[] = [
           type: 'string',
           enum: ['daily', 'flat'],
           description: 'Payment type',
+        },
+        dailyRate: {
+          type: 'number',
+          description: 'Per-day rate in dollars (for daily-rate cast)',
+        },
+        flatFee: {
+          type: 'number',
+          description: 'Flat fee in dollars (for flat-rate cast)',
+        },
+        totalPayment: {
+          type: 'number',
+          description: 'Total payment amount in dollars',
         },
         notes: {
           type: 'string',
@@ -1690,6 +1720,117 @@ export const lexiconTools: Tool[] = [
         },
       },
       required: ['crewMemberId', 'dates', 'status'],
+    },
+  },
+
+  // ----------------------------------------
+  // Episode Management (Lexi)
+  // ----------------------------------------
+  {
+    name: 'list_episodes',
+    description:
+      'List all episodes for a production. Shows episode number, title, air date, and status.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID',
+        },
+        status: {
+          type: 'string',
+          enum: ['planned', 'in_production', 'in_post', 'delivered', 'aired'],
+          description: 'Optional filter by episode status',
+        },
+      },
+      required: ['productionId'],
+    },
+  },
+  {
+    name: 'create_episode',
+    description:
+      'Create a new episode for a production. Use when someone says "add episode 5" or "set up the next episode".',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID',
+        },
+        episodeNumber: {
+          type: 'number',
+          description: 'Episode number (e.g., 1, 2, 3)',
+        },
+        title: {
+          type: 'string',
+          description: 'Episode title',
+        },
+        description: {
+          type: 'string',
+          description: 'Episode description or synopsis',
+        },
+        airDate: {
+          type: 'string',
+          description: 'Scheduled air date (YYYY-MM-DD)',
+        },
+        status: {
+          type: 'string',
+          enum: ['planned', 'in_production', 'in_post', 'delivered', 'aired'],
+          description: 'Episode status (default: planned)',
+        },
+      },
+      required: ['productionId', 'episodeNumber'],
+    },
+  },
+  {
+    name: 'update_episode',
+    description:
+      'Update episode details such as title, air date, or status.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        episodeId: {
+          type: 'string',
+          description: 'The episode ID to update',
+        },
+        title: {
+          type: 'string',
+          description: 'Updated title',
+        },
+        description: {
+          type: 'string',
+          description: 'Updated description',
+        },
+        airDate: {
+          type: 'string',
+          description: 'Updated air date (YYYY-MM-DD)',
+        },
+        status: {
+          type: 'string',
+          enum: ['planned', 'in_production', 'in_post', 'delivered', 'aired'],
+          description: 'Updated status',
+        },
+      },
+      required: ['episodeId'],
+    },
+  },
+  {
+    name: 'assign_scene_to_episode',
+    description:
+      'Link a scene to an episode. Use when someone says "that shoot is for episode 3" or "assign this scene to episode 5".',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        sceneId: {
+          type: 'string',
+          description: 'The scene ID to link',
+        },
+        episodeId: {
+          type: 'string',
+          description: 'The episode ID to link to. Set to null to unlink.',
+        },
+      },
+      required: ['sceneId'],
     },
   },
 ];
@@ -2692,12 +2833,20 @@ export async function executeToolCall(
           contractUpdate.paymentDone = input.paymentDone as boolean;
         if (input.notes !== undefined)
           contractUpdate.notes = input.notes as string;
+        if (input.dailyRate !== undefined)
+          contractUpdate.dailyRate = input.dailyRate as number;
+        if (input.flatFee !== undefined)
+          contractUpdate.flatFee = input.flatFee as number;
+        if (input.totalPayment !== undefined)
+          contractUpdate.totalPayment = input.totalPayment as number;
+        if (input.paidAmount !== undefined)
+          contractUpdate.paidAmount = input.paidAmount as number;
 
         if (Object.keys(contractUpdate).length === 0) {
           return {
             success: false,
             result: null,
-            error: 'No fields provided to update. Specify at least one of: contractStatus, paymentType, shootDone, interviewDone, pickupDone, paymentDone, notes.',
+            error: 'No fields provided to update. Specify at least one of: contractStatus, paymentType, dailyRate, flatFee, totalPayment, paidAmount, shootDone, interviewDone, pickupDone, paymentDone, notes.',
             shouldContinue: true,
           };
         }
@@ -2894,6 +3043,9 @@ export async function executeToolCall(
           castEntityId: input.castEntityId as string,
           contractStatus: input.contractStatus as ContractStatus | undefined,
           paymentType: input.paymentType as PaymentType | undefined,
+          dailyRate: input.dailyRate as number | undefined,
+          flatFee: input.flatFee as number | undefined,
+          totalPayment: input.totalPayment as number | undefined,
           notes: input.notes as string | undefined,
         };
 
@@ -3347,6 +3499,116 @@ export async function executeToolCall(
             message: `Registration code: ${code} — crew member uses /start ${code} in Telegram to connect.`,
           },
           shouldContinue: false,
+        };
+      }
+
+      // ----------------------------------------
+      // Episode Management (Lexi)
+      // ----------------------------------------
+
+      case 'list_episodes': {
+        const productionId = input.productionId as string;
+        const status = input.status as EpisodeStatus | undefined;
+
+        const result = await listEpisodes(productionId, { status });
+
+        return {
+          success: true,
+          result: {
+            episodes: result.items.map((e) => ({
+              id: e.id,
+              episodeNumber: e.episodeNumber,
+              title: e.title,
+              airDate: e.airDate,
+              status: e.status,
+            })),
+            total: result.total,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'create_episode': {
+        const episodeInput: CreateEpisodeInput = {
+          productionId: input.productionId as string,
+          episodeNumber: input.episodeNumber as number,
+          title: input.title as string | undefined,
+          description: input.description as string | undefined,
+          airDate: input.airDate as string | undefined,
+          status: input.status as EpisodeStatus | undefined,
+        };
+
+        const newEpisode = await createEpisode(episodeInput);
+
+        return {
+          success: true,
+          result: {
+            episode: newEpisode,
+            action: 'created' as const,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'update_episode': {
+        const episodeId = input.episodeId as string;
+        const episodeUpdate: UpdateEpisodeInput = {};
+        if (input.title !== undefined) episodeUpdate.title = input.title as string;
+        if (input.description !== undefined) episodeUpdate.description = input.description as string;
+        if (input.airDate !== undefined) episodeUpdate.airDate = input.airDate as string;
+        if (input.status !== undefined) episodeUpdate.status = input.status as EpisodeStatus;
+
+        if (Object.keys(episodeUpdate).length === 0) {
+          return {
+            success: false,
+            result: null,
+            error: 'No fields provided to update.',
+            shouldContinue: true,
+          };
+        }
+
+        const updatedEpisode = await updateEpisode(episodeId, episodeUpdate);
+        if (!updatedEpisode) {
+          return {
+            success: false,
+            result: null,
+            error: `Episode not found with ID: ${episodeId}`,
+            shouldContinue: true,
+          };
+        }
+
+        return {
+          success: true,
+          result: {
+            episode: updatedEpisode,
+            action: 'updated' as const,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'assign_scene_to_episode': {
+        const sceneId = input.sceneId as string;
+        const episodeId = (input.episodeId as string | null) || null;
+
+        const scene = await updateScene(sceneId, { episodeId });
+        if (!scene) {
+          return {
+            success: false,
+            result: null,
+            error: `Scene not found with ID: ${sceneId}`,
+            shouldContinue: true,
+          };
+        }
+
+        return {
+          success: true,
+          result: {
+            scene,
+            episodeId,
+            action: episodeId ? 'linked' : 'unlinked',
+          },
+          shouldContinue: true,
         };
       }
 

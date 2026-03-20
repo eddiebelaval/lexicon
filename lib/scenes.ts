@@ -52,6 +52,7 @@ function parseSceneFromDb(row: Record<string, unknown>): ProdScene {
     status: row.status as ProdScene['status'],
     equipmentNotes: row.equipment_notes as string | null,
     isSelfShot: row.is_self_shot as boolean,
+    episodeId: (row.episode_id as string | null) ?? null,
     createdAt: new Date(row.created_at as string),
     updatedAt: new Date(row.updated_at as string),
   };
@@ -82,6 +83,7 @@ export async function createScene(
       status: input.status || 'scheduled',
       equipment_notes: input.equipmentNotes || null,
       is_self_shot: input.isSelfShot || false,
+      episode_id: input.episodeId || null,
     })
     .select()
     .single();
@@ -191,6 +193,7 @@ export async function updateScene(
   if (input.status !== undefined) updates.status = input.status;
   if (input.equipmentNotes !== undefined) updates.equipment_notes = input.equipmentNotes;
   if (input.isSelfShot !== undefined) updates.is_self_shot = input.isSelfShot;
+  if (input.episodeId !== undefined) updates.episode_id = input.episodeId;
 
   const { data, error } = await getSupabase()
     .from('scenes')
