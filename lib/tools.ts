@@ -1865,6 +1865,54 @@ export const lexiconTools: Tool[] = [
       required: ['sceneId'],
     },
   },
+
+  // ----------------------------------------
+  // Document Template Operations
+  // ----------------------------------------
+  {
+    name: 'list_templates',
+    description:
+      'List available document templates for the current production. Returns template names, categories, and variable placeholders.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID',
+        },
+        category: {
+          type: 'string',
+          description:
+            'Filter by category: call_sheet, contract, memo, report, checklist, release_form, custom',
+        },
+      },
+      required: ['productionId'],
+    },
+  },
+  {
+    name: 'generate_document',
+    description:
+      'Generate a filled document from a template. Fills placeholders with production data. Returns the rendered HTML content or triggers a .docx download.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        templateId: {
+          type: 'string',
+          description: 'The template ID to generate from',
+        },
+        productionId: {
+          type: 'string',
+          description: 'The production ID for context data',
+        },
+        overrides: {
+          type: 'object',
+          description:
+            'Key-value pairs to fill template placeholders. Keys should match template variable names.',
+        },
+      },
+      required: ['templateId', 'productionId'],
+    },
+  },
 ];
 
 // ============================================
@@ -3986,6 +4034,93 @@ export async function executeToolCall(
             message: `Set ${results.length} date${results.length !== 1 ? 's' : ''} to "${status}"`,
           },
           shouldContinue: true,
+        };
+      }
+
+      // ----------------------------------------
+      // Document Template Operations
+      // ----------------------------------------
+      case 'list_templates': {
+        const { listTemplates } = await import('./template-engine');
+        const productionId = input.productionId as string;
+        const category = input.category as string | undefined;
+
+        const result = await listTemplates(productionId, { category });
+
+        return {
+          success: true,
+          result: {
+            templates: result.items.map(t => ({
+              id: t.id,
+              name: t.name,
+              category: t.category,
+              format: t.sourceFormat,
+              variables: t.variables,
+              description: t.description,
+            })),
+            total: result.total,
+            message: result.total > 0
+              ? `Found ${result.total} template${result.total !== 1 ? 's' : ''}`
+              : 'No templates found. Templates can be uploaded in Settings.',
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'generate_document': {
+        const { getTemplate, renderHtml: renderHtmlTemplate } = await import('./template-engine');
+        const templateId = input.templateId as string;
+        const overrides = (input.overrides as Record<string, string>) || {};
+
+        const template = await getTemplate(templateId);
+        if (!template) {
+          return {
+            success: false,
+            result: null,
+            error: 'Template not found',
+            shouldContinue: true,
+          };
+        }
+
+        if (template.sourceFormat === 'docx') {
+          return {
+            success: true,
+            result: {
+              message: `Template "${template.name}" is a Word document. Use the web UI to download the filled .docx file.`,
+              templateId: template.id,
+              format: 'docx',
+              downloadUrl: `/api/documents/generate`,
+            },
+            shouldContinue: false,
+          };
+        }
+
+        if (!template.content) {
+          return {
+            success: false,
+            result: null,
+            error: 'Template has no content',
+            shouldContinue: true,
+          };
+        }
+
+        const data: Record<string, string> = {
+          date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+          ...overrides,
+        };
+
+        const rendered = renderHtmlTemplate(template.content, data);
+
+        return {
+          success: true,
+          result: {
+            templateName: template.name,
+            category: template.category,
+            content: rendered,
+            format: template.sourceFormat,
+            message: `Generated "${template.name}" document`,
+          },
+          shouldContinue: false,
         };
       }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { PageHeader } from '@/components/shell';
 import { useProduction } from '@/components/production/production-context';
 import {
@@ -14,12 +14,13 @@ import {
   Loader2,
   ChevronRight,
 } from 'lucide-react';
-import type { Production } from '@/types';
+import type { Production, DocumentTemplate } from '@/types';
 
-type SettingsTab = 'general' | 'notifications' | 'import' | 'team';
+type SettingsTab = 'general' | 'templates' | 'notifications' | 'import' | 'team';
 
 const tabs: { id: SettingsTab; label: string; icon: typeof Settings }[] = [
   { id: 'general', label: 'General', icon: Settings },
+  { id: 'templates', label: 'Templates', icon: FileText },
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'import', label: 'Import', icon: Upload },
   { id: 'team', label: 'Team', icon: Users },
@@ -97,6 +98,7 @@ export default function SettingsPage() {
         {activeTab === 'general' && (
           <GeneralTab production={production} onSaved={refetch} />
         )}
+        {activeTab === 'templates' && <TemplatesTab productionId={production.id} />}
         {activeTab === 'notifications' && <NotificationsTab />}
         {activeTab === 'import' && <ImportTab productionId={production.id} />}
         {activeTab === 'team' && <TeamTab />}
@@ -236,6 +238,254 @@ function GeneralTab({ production, onSaved }: { production: Production; onSaved: 
         {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : <Save size={14} />}
         {saving ? 'Saving...' : saved ? 'Saved' : 'Save Changes'}
       </button>
+    </div>
+  );
+}
+
+// ─── Templates Tab ─────────────────────────────
+
+function TemplatesTab({ productionId }: { productionId: string }) {
+  const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showUpload, setShowUpload] = useState(false);
+
+  const fetchTemplates = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/templates?productionId=${productionId}`);
+      const data = await res.json();
+      if (data.success) {
+        setTemplates(data.data.items || []);
+      }
+    } catch {
+      // Silently fail
+    } finally {
+      setLoading(false);
+    }
+  }, [productionId]);
+
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
+
+  const handleCreateTemplate = async (name: string, content: string, category: string) => {
+    try {
+      const res = await fetch('/api/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productionId, name, content, category }),
+      });
+      if (res.ok) {
+        fetchTemplates();
+        setShowUpload(false);
+      }
+    } catch {
+      // Silently fail
+    }
+  };
+
+  const categoryLabels: Record<string, string> = {
+    call_sheet: 'Call Sheet',
+    contract: 'Contract',
+    memo: 'Memo',
+    report: 'Report',
+    checklist: 'Checklist',
+    release_form: 'Release Form',
+    custom: 'Custom',
+  };
+
+  return (
+    <div style={{ maxWidth: '640px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+          Document templates that Lexi can fill with production data.
+        </p>
+        <button
+          onClick={() => setShowUpload(!showUpload)}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '6px 14px',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--accent)',
+            color: '#fff',
+            fontSize: '12px',
+            fontWeight: 500,
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          <FileText size={12} />
+          New Template
+        </button>
+      </div>
+
+      {/* New template form */}
+      {showUpload && (
+        <NewTemplateForm
+          onSubmit={handleCreateTemplate}
+          onCancel={() => setShowUpload(false)}
+        />
+      )}
+
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="animate-spin" size={20} style={{ color: 'var(--text-tertiary)' }} />
+        </div>
+      ) : templates.length === 0 ? (
+        <div style={{
+          padding: '40px 20px',
+          textAlign: 'center',
+          borderRadius: 'var(--radius-lg)',
+          border: '2px dashed var(--border)',
+          background: 'var(--bg-card)',
+        }}>
+          <FileText size={32} style={{ color: 'var(--text-muted)', margin: '0 auto 12px' }} />
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '4px' }}>No templates yet</p>
+          <p style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>
+            Create templates with {'{{placeholders}}'} that Lexi fills with production data.
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {templates.map(t => (
+            <div
+              key={t.id}
+              style={{
+                padding: '12px 16px',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border)',
+                background: 'var(--bg-card)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>{t.name}</p>
+                  {t.description && (
+                    <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '2px' }}>{t.description}</p>
+                  )}
+                </div>
+                <span style={{
+                  padding: '2px 8px',
+                  borderRadius: '8px',
+                  background: 'var(--accent-muted)',
+                  color: 'var(--accent-text)',
+                  fontSize: '11px',
+                }}>
+                  {categoryLabels[t.category] || t.category}
+                </span>
+              </div>
+
+              {t.variables.length > 0 && (
+                <div style={{ display: 'flex', gap: '4px', marginTop: '8px', flexWrap: 'wrap' }}>
+                  {t.variables.map(v => (
+                    <span key={v} style={{
+                      padding: '1px 6px',
+                      borderRadius: '4px',
+                      background: 'var(--bg-input)',
+                      border: '1px solid var(--border)',
+                      fontSize: '11px',
+                      fontFamily: 'var(--font-mono)',
+                      color: 'var(--text-tertiary)',
+                    }}>
+                      {'{{'}{v}{'}}'}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NewTemplateForm({
+  onSubmit,
+  onCancel,
+}: {
+  onSubmit: (name: string, content: string, category: string) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState('');
+  const [content, setContent] = useState('');
+  const [category, setCategory] = useState('custom');
+
+  return (
+    <div style={{
+      padding: '16px',
+      marginBottom: '16px',
+      borderRadius: 'var(--radius-md)',
+      border: '1px solid var(--accent)',
+      background: 'var(--bg-card)',
+    }}>
+      <FieldGroup label="Template Name">
+        <input
+          type="text"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          placeholder="e.g., Daily Call Sheet"
+          style={inputStyle}
+        />
+      </FieldGroup>
+
+      <FieldGroup label="Category">
+        <select value={category} onChange={e => setCategory(e.target.value)} style={inputStyle}>
+          <option value="call_sheet">Call Sheet</option>
+          <option value="contract">Contract</option>
+          <option value="memo">Memo</option>
+          <option value="report">Report</option>
+          <option value="checklist">Checklist</option>
+          <option value="release_form">Release Form</option>
+          <option value="custom">Custom</option>
+        </select>
+      </FieldGroup>
+
+      <FieldGroup label="Content (use {{variable_name}} for placeholders)">
+        <textarea
+          value={content}
+          onChange={e => setContent(e.target.value)}
+          rows={6}
+          placeholder={'CALL SHEET\nDate: {{date}}\nProduction: {{production_name}}\n\nCast Call Times:\n{{cast_name}} - {{call_time}}'}
+          style={{ ...inputStyle, resize: 'vertical', minHeight: '120px', fontFamily: 'var(--font-mono)', fontSize: '12px' }}
+        />
+      </FieldGroup>
+
+      <div style={{ display: 'flex', gap: '8px' }}>
+        <button
+          onClick={() => name && onSubmit(name, content, category)}
+          disabled={!name}
+          style={{
+            padding: '6px 16px',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--accent)',
+            color: '#fff',
+            fontSize: '13px',
+            fontWeight: 500,
+            border: 'none',
+            cursor: name ? 'pointer' : 'not-allowed',
+            opacity: name ? 1 : 0.5,
+          }}
+        >
+          Create Template
+        </button>
+        <button
+          onClick={onCancel}
+          style={{
+            padding: '6px 16px',
+            borderRadius: 'var(--radius-md)',
+            background: 'transparent',
+            color: 'var(--text-secondary)',
+            fontSize: '13px',
+            border: '1px solid var(--border)',
+            cursor: 'pointer',
+          }}
+        >
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }
