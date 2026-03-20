@@ -35,7 +35,7 @@ const supabase = createClient(
 // Status mapping: Excel → Lexicon
 // ============================================
 
-type ContractStatus = 'pending' | 'signed' | 'active' | 'complete' | 'cancelled';
+import type { ContractStatus } from '@/types';
 
 // DB constraint: contract_status IN ('signed', 'pending', 'offer_sent', 'dnc', 'email_sent', 'declined')
 function mapShootStatus(raw: string): {
@@ -376,10 +376,12 @@ async function importToSupabase(
       console.error(`  FAILED: ${member.name} — ${error.message}`);
     } else {
       castSuccess++;
-      const statusIcon = member.contractStatus === 'complete' ? '[DONE]'
-        : member.contractStatus === 'active' ? '[ACTIVE]'
-        : member.contractStatus === 'signed' ? '[SIGNED]'
+      const statusIcon = member.contractStatus === 'signed' ? '[SIGNED]'
         : member.contractStatus === 'pending' ? '[PENDING]'
+        : member.contractStatus === 'offer_sent' ? '[OFFER]'
+        : member.contractStatus === 'email_sent' ? '[EMAIL]'
+        : member.contractStatus === 'dnc' ? '[DNC]'
+        : member.contractStatus === 'declined' ? '[DECLINED]'
         : '[--]';
       console.log(`  ${statusIcon} ${member.name} — ${member.city || 'no city'} (${member.producer || 'no producer'})`);
     }
