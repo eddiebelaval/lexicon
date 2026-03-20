@@ -21,11 +21,11 @@
   --text-muted: #4d4944;
   --text-inverse: #1a1815;
 
-  /* Accent: VHS Orange */
-  --accent: #ef6f2e;
-  --accent-hover: #f58442;
-  --accent-muted: rgba(239, 111, 46, 0.12);
-  --accent-text: #f5a574;
+  /* Accent: Burnt Coral */
+  --accent: #CD6B5A;
+  --accent-hover: #D87D6E;
+  --accent-muted: rgba(205, 107, 90, 0.12);
+  --accent-text: #E09484;
 
   /* Borders (near-invisible, Claude-style) */
   --border: rgba(255, 255, 255, 0.06);
@@ -49,8 +49,8 @@
   /* Sidebar specific */
   --sidebar-width: 240px;
   --sidebar-collapsed: 56px;
-  --sidebar-active-bg: rgba(239, 111, 46, 0.08);
-  --sidebar-active-border: #ef6f2e;
+  --sidebar-active-bg: rgba(205, 107, 90, 0.08);
+  --sidebar-active-border: #CD6B5A;
   --sidebar-hover-bg: rgba(255, 255, 255, 0.04);
 
   /* Drawer */
@@ -61,6 +61,11 @@
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+
+  /* Typography */
+  --font-heading: var(--font-playfair), 'Playfair Display', Georgia, serif;
+  --font-body: var(--font-outfit), 'Outfit', system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), 'Geist Mono', monospace;
 
   /* Transitions */
   --ease-out: cubic-bezier(0.165, 0.85, 0.45, 1);

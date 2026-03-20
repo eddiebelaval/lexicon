@@ -119,8 +119,9 @@
 }
 
 .landing-headline {
+  font-family: var(--font-heading);
   font-size: 64px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.04em;
   line-height: 1.05;
   color: #fff;
@@ -150,8 +151,9 @@
 }
 
 .landing-section-title {
+  font-family: var(--font-heading);
   font-size: 28px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--text-primary);
   text-align: center;
@@ -573,8 +575,9 @@
 }
 
 .feature-title {
+  font-family: var(--font-heading);
   font-size: 32px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.15;
   color: var(--text-primary);
@@ -826,8 +829,9 @@
 }
 
 .landing-pitch-title {
+  font-family: var(--font-heading);
   font-size: 28px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--text-primary);
   margin-bottom: 20px;
