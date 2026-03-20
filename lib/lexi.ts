@@ -16,6 +16,7 @@ import type {
   CastContract,
   ProductionSummary,
 } from '@/types';
+import { getCastDisplayName } from '@/lib/cast-utils';
 
 // ============================================
 // Lexi System Prompt
@@ -145,6 +146,7 @@ function mapContractRow(row: Record<string, unknown>): CastContract {
     id: row.id as string,
     productionId: row.production_id as string,
     castEntityId: row.cast_entity_id as string,
+    castName: (row.cast_name as string) ?? null,
     contractStatus: row.contract_status as CastContract['contractStatus'],
     paymentType: row.payment_type as CastContract['paymentType'],
     dailyRate: row.daily_rate != null ? Number(row.daily_rate) : null,
@@ -259,7 +261,7 @@ export async function buildProductionContext(
         if (!contract.pickupDone) missing.push('pickup');
         if (!contract.paymentDone) missing.push('payment');
         lines.push(
-          `- ${contract.castEntityId}: ${contract.contractStatus} | Missing: ${missing.join(', ')}`
+          `- ${getCastDisplayName(contract)}: ${contract.contractStatus} | Missing: ${missing.join(', ')}`
         );
       }
       lines.push('');

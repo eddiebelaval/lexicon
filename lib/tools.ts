@@ -1152,6 +1152,10 @@ export const lexiconTools: Tool[] = [
           type: 'string',
           description: 'The cast member entity ID',
         },
+        castName: {
+          type: 'string',
+          description: 'Human-readable display name for the cast member',
+        },
         contractStatus: {
           type: 'string',
           enum: ['signed', 'pending', 'offer_sent', 'dnc', 'email_sent', 'declined'],
@@ -3069,6 +3073,7 @@ export async function executeToolCall(
         const contractInput: CreateCastContractInput = {
           productionId: input.productionId as string,
           castEntityId: input.castEntityId as string,
+          castName: input.castName as string | undefined,
           contractStatus: input.contractStatus as ContractStatus | undefined,
           paymentType: input.paymentType as PaymentType | undefined,
           dailyRate: input.dailyRate as number | undefined,

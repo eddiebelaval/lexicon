@@ -177,6 +177,7 @@ export interface CastContract {
   id: string;
   productionId: string;
   castEntityId: string;
+  castName: string | null;
   contractStatus: ContractStatus;
   paymentType: PaymentType | null;
   dailyRate: number | null;
@@ -196,6 +197,7 @@ export interface CastContract {
 export interface CreateCastContractInput {
   productionId: string;
   castEntityId: string;
+  castName?: string;
   contractStatus?: ContractStatus;
   paymentType?: PaymentType;
   dailyRate?: number;
@@ -205,6 +207,7 @@ export interface CreateCastContractInput {
 }
 
 export interface UpdateCastContractInput {
+  castName?: string | null;
   contractStatus?: ContractStatus;
   paymentType?: PaymentType | null;
   dailyRate?: number | null;

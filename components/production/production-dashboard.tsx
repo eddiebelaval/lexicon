@@ -1,32 +1,28 @@
 'use client';
 
 /**
- * Production Dashboard — Overview of production status
+ * Production Dashboard — BLUF (Bottom Line Up Front)
  *
- * Shows stat cards, upcoming scenes, and incomplete contracts
- * for the active production in a universe.
+ * KPI row, alerts, Lexi brief, collapsible sections for scenes,
+ * contracts, and activity feed.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
-  Users,
-  FileCheck,
   Clapperboard,
-  UserCog,
-  MapPin,
-  CalendarDays,
   AlertTriangle,
   RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ProductionStats } from './production-stats';
-import { ProductionAlerts } from './production-alerts';
+import { KPIRow, BLUFAlert, CollapsibleSection, DataTable, LexiBriefCard } from './bluf';
+import type { AlertItem } from './bluf';
 import ActivityFeed from './activity-feed';
 import { useProduction } from './production-context';
 import { useRealtimeSubscription } from '@/lib/hooks/use-realtime';
 import { SCENE_STATUS_CONFIG, CONTRACT_STATUS_CONFIG } from '@/lib/production-config';
+import { getCastDisplayName } from '@/lib/cast-utils';
 import type {
   ProdScene,
   CastContract,
@@ -94,6 +90,13 @@ export function ProductionDashboard() {
   const [state, setState] = useState<LoadingState>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
+  // BLUF: alerts state
+  const [alerts, setAlerts] = useState<AlertItem[]>([]);
+
+  // BLUF: Lexi brief state
+  const [lexiBrief, setLexiBrief] = useState('');
+  const [briefGeneratedAt, setBriefGeneratedAt] = useState('');
+
   const fetchData = useCallback(async () => {
     if (!production) return;
     setState('loading');
@@ -137,6 +140,64 @@ export function ProductionDashboard() {
     if (production) fetchData();
   }, [production, fetchData]);
 
+  // Fetch alerts
+  useEffect(() => {
+    if (!production) return;
+    const controller = new AbortController();
+
+    async function fetchAlerts() {
+      try {
+        const res = await fetch(
+          `/api/production-alerts?productionId=${production!.id}`,
+          { signal: controller.signal }
+        );
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          setAlerts(
+            data.data.map((a: { severity: string; type: string; title: string; description?: string }) => ({
+              severity: a.severity as AlertItem['severity'],
+              type: a.type,
+              message: a.title,
+              details: a.description,
+            }))
+          );
+        }
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        console.error('Failed to fetch alerts for BLUF:', err);
+      }
+    }
+
+    fetchAlerts();
+    return () => controller.abort();
+  }, [production]);
+
+  // Fetch Lexi brief
+  useEffect(() => {
+    if (!production) return;
+    const controller = new AbortController();
+
+    async function fetchBrief() {
+      try {
+        const res = await fetch(
+          `/api/lexi-brief?productionId=${production!.id}`,
+          { signal: controller.signal }
+        );
+        const data = await res.json();
+        if (data.success && data.data) {
+          setLexiBrief(data.data.text);
+          setBriefGeneratedAt(data.data.generatedAt);
+        }
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        console.error('Failed to fetch Lexi brief:', err);
+      }
+    }
+
+    fetchBrief();
+    return () => controller.abort();
+  }, [production]);
+
   // Auto-refresh when production data changes (filtered to this production)
   useRealtimeSubscription('scenes', {
     filter: production ? `production_id=eq.${production.id}` : undefined,
@@ -159,13 +220,38 @@ export function ProductionDashboard() {
   // -----------------------------------------------------------------------
 
   const totalCast = contracts.length;
-  const signedContracts = contracts.filter(
+  const signedCount = contracts.filter(
     (c) => c.contractStatus === 'signed'
   ).length;
+  const signedPct = totalCast > 0 ? Math.round((signedCount / totalCast) * 100) : 0;
   const scenesShot = scenes.filter(
     (s) => s.status === 'shot' || s.status === 'self_shot'
   ).length;
   const activeCrew = crew.filter((c) => c.isActive).length;
+
+  // Completion: average of (signed%, scenes shot%, contract items done%)
+  const contractItemsDone = contracts.reduce((sum, c) => {
+    let done = 0;
+    if (c.shootDone) done++;
+    if (c.interviewDone) done++;
+    if (c.pickupDone) done++;
+    if (c.paymentDone) done++;
+    return sum + done;
+  }, 0);
+  const contractItemsTotal = contracts.length * 4;
+  const completionPct =
+    totalCast > 0 && scenes.length > 0
+      ? Math.round(
+          ((signedPct +
+            (scenesShot / scenes.length) * 100 +
+            (contractItemsTotal > 0 ? (contractItemsDone / contractItemsTotal) * 100 : 0)) /
+            3)
+        )
+      : 0;
+
+  const alertCount = alerts.length;
+  const criticalCount = alerts.filter((a) => a.severity === 'critical').length;
+  const warningCount = alerts.filter((a) => a.severity === 'warning').length;
 
   const upcomingScenes = scenes
     .filter(
@@ -183,47 +269,66 @@ export function ProductionDashboard() {
       !c.shootDone || !c.interviewDone || !c.pickupDone || !c.paymentDone
   );
 
-  const stats = [
-    {
-      label: 'Total Cast',
-      value: totalCast,
-      detail: `${signedContracts} signed`,
-      icon: Users,
-    },
-    {
-      label: 'Signed Contracts',
-      value: signedContracts,
-      detail: totalCast > 0
-        ? `${Math.round((signedContracts / totalCast) * 100)}%`
-        : undefined,
-      icon: FileCheck,
-    },
-    {
-      label: 'Scenes',
-      value: `${scenesShot}/${scenes.length}`,
-      detail: 'shot / total',
-      icon: Clapperboard,
-    },
-    {
-      label: 'Active Crew',
-      value: activeCrew,
-      detail: `${crew.length} total`,
-      icon: UserCog,
-    },
-  ];
-
   // -----------------------------------------------------------------------
   // Render helpers
   // -----------------------------------------------------------------------
 
-  function getMissingItems(c: CastContract): string[] {
+  function getMissingItems(c: CastContract): string {
     const missing: string[] = [];
     if (!c.shootDone) missing.push('shoot');
     if (!c.interviewDone) missing.push('intv');
     if (!c.pickupDone) missing.push('pickup');
     if (!c.paymentDone) missing.push('payment');
-    return missing;
+    return missing.join(', ');
   }
+
+  // Scene DataTable columns/rows
+  const sceneColumns = [
+    { key: 'number', label: 'Scene #' },
+    { key: 'title', label: 'Title' },
+    { key: 'date', label: 'Date' },
+    { key: 'location', label: 'Location' },
+    { key: 'status', label: 'Status' },
+  ];
+
+  const sceneRows: Record<string, ReactNode>[] = upcomingScenes.map((scene) => ({
+    number: scene.sceneNumber ? `#${scene.sceneNumber}` : '',
+    title: scene.title,
+    date: scene.scheduledDate ? formatDateShort(scene.scheduledDate) : '',
+    location: scene.location ?? '',
+    status: (
+      <span
+        className={cn(
+          'px-2 py-0.5 text-xs font-medium rounded-full capitalize',
+          `${SCENE_STATUS_CONFIG[scene.status].bg} ${SCENE_STATUS_CONFIG[scene.status].text}`
+        )}
+      >
+        {SCENE_STATUS_CONFIG[scene.status].label}
+      </span>
+    ),
+  }));
+
+  // Contract DataTable columns/rows
+  const contractColumns = [
+    { key: 'name', label: 'Name' },
+    { key: 'status', label: 'Status' },
+    { key: 'missing', label: 'Missing' },
+  ];
+
+  const contractRows: Record<string, ReactNode>[] = incompleteContracts.map((contract) => ({
+    name: getCastDisplayName(contract),
+    status: (
+      <span
+        className={cn(
+          'px-2 py-0.5 text-xs font-medium rounded-full capitalize',
+          `${CONTRACT_STATUS_CONFIG[contract.contractStatus].bg} ${CONTRACT_STATUS_CONFIG[contract.contractStatus].text}`
+        )}
+      >
+        {CONTRACT_STATUS_CONFIG[contract.contractStatus].label}
+      </span>
+    ),
+    missing: <span className="text-xs text-red-400/80">{getMissingItems(contract)}</span>,
+  }));
 
   // -----------------------------------------------------------------------
   // States
@@ -285,128 +390,42 @@ export function ProductionDashboard() {
   }
 
   // -----------------------------------------------------------------------
-  // Main render
+  // Main render — BLUF layers
   // -----------------------------------------------------------------------
 
   return (
-    <div className="space-y-8">
-      {/* Alerts banner */}
-      <ProductionAlerts />
+    <div className="space-y-0">
+      {/* 1. KPI Row */}
+      <KPIRow items={[
+        { label: 'Cast Signed', value: `${signedCount}/${contracts.length}`, color: signedPct >= 75 ? 'var(--bluf-healthy)' : signedPct >= 40 ? 'var(--bluf-warning)' : 'var(--bluf-critical)' },
+        { label: 'Scenes Shot', value: `${scenesShot}/${scenes.length}`, meta: 'completed' },
+        { label: 'Active Crew', value: String(activeCrew) },
+        { label: 'Completion', value: `${completionPct}%`, color: completionPct >= 75 ? 'var(--bluf-healthy)' : completionPct >= 40 ? 'var(--bluf-warning)' : 'var(--bluf-critical)' },
+        { label: 'Alerts', value: String(alertCount), color: criticalCount > 0 ? 'var(--bluf-critical)' : warningCount > 0 ? 'var(--bluf-warning)' : 'var(--bluf-healthy)' },
+      ]} />
 
-      {/* Stat cards */}
-      <ProductionStats stats={stats} />
+      {/* 2. BLUF Alert */}
+      <BLUFAlert alerts={alerts} />
 
-      {/* Activity Feed — live audit trail */}
-      {production && <ActivityFeed productionId={production.id} />}
+      {/* 3. Lexi Brief */}
+      {lexiBrief && briefGeneratedAt && (
+        <LexiBriefCard briefText={lexiBrief} generatedAt={briefGeneratedAt} />
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upcoming Scenes */}
-        <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
-            Upcoming Scenes
-          </h2>
+      {/* 4. Upcoming Scenes (collapsible) */}
+      <CollapsibleSection title="Upcoming Scenes" count={upcomingScenes.length} defaultOpen={upcomingScenes.length > 0}>
+        <DataTable columns={sceneColumns} rows={sceneRows} compact />
+      </CollapsibleSection>
 
-          {upcomingScenes.length === 0 ? (
-            <div className="flex flex-col items-center py-10 text-center border border-panel-border rounded-lg bg-surface-secondary">
-              <CalendarDays className="h-8 w-8 text-gray-600 mb-2" />
-              <p className="text-sm text-gray-400">No upcoming scenes</p>
-              <p className="text-xs text-gray-600 mt-0.5">Schedule scenes from the Calendar tab.</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {upcomingScenes.map((scene) => (
-                <div
-                  key={scene.id}
-                  className="flex items-center justify-between bg-surface-secondary border border-panel-border rounded-lg px-4 py-3"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      {scene.sceneNumber && (
-                        <span className="text-xs font-mono text-gray-500">
-                          #{scene.sceneNumber}
-                        </span>
-                      )}
-                      <span className="text-sm font-medium text-gray-200 truncate">
-                        {scene.title}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                      {scene.scheduledDate && (
-                        <span className="flex items-center gap-1">
-                          <CalendarDays className="h-3 w-3" />
-                          {formatDateShort(scene.scheduledDate)}
-                        </span>
-                      )}
-                      {scene.location && (
-                        <span className="flex items-center gap-1 truncate">
-                          <MapPin className="h-3 w-3" />
-                          {scene.location}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+      {/* 5. Contracts Needing Attention */}
+      <CollapsibleSection title="Contracts Needing Attention" count={incompleteContracts.length} defaultOpen={incompleteContracts.length > 0}>
+        <DataTable columns={contractColumns} rows={contractRows} compact />
+      </CollapsibleSection>
 
-                  <span
-                    className={cn(
-                      'ml-3 shrink-0 px-2 py-0.5 text-xs font-medium rounded-full capitalize',
-                      `${SCENE_STATUS_CONFIG[scene.status].bg} ${SCENE_STATUS_CONFIG[scene.status].text}`
-                    )}
-                  >
-                    {SCENE_STATUS_CONFIG[scene.status].label}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Incomplete Contracts */}
-        <section>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
-            Incomplete Contracts
-          </h2>
-
-          {incompleteContracts.length === 0 ? (
-            <div className="flex flex-col items-center py-10 text-center border border-panel-border rounded-lg bg-surface-secondary">
-              <FileCheck className="h-8 w-8 text-emerald-500/50 mb-2" />
-              <p className="text-sm text-emerald-400">All contracts complete</p>
-              <p className="text-xs text-gray-600 mt-0.5">Nothing needs attention right now.</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {incompleteContracts.map((contract) => {
-                const missing = getMissingItems(contract);
-                return (
-                  <div
-                    key={contract.id}
-                    className="flex items-center justify-between bg-surface-secondary border border-panel-border rounded-lg px-4 py-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-200 truncate font-mono">
-                        {contract.castEntityId}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span
-                          className={cn(
-                            'px-2 py-0.5 text-xs font-medium rounded-full capitalize',
-                            `${CONTRACT_STATUS_CONFIG[contract.contractStatus].bg} ${CONTRACT_STATUS_CONFIG[contract.contractStatus].text}`
-                          )}
-                        >
-                          {CONTRACT_STATUS_CONFIG[contract.contractStatus].label}
-                        </span>
-                        <span className="text-xs text-gray-600">|</span>
-                        <span className="text-xs text-red-400/80">
-                          missing: {missing.join(', ')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-      </div>
+      {/* 6. Activity (collapsed by default) */}
+      <CollapsibleSection title="Activity" defaultOpen={false}>
+        <ActivityFeed productionId={production.id} />
+      </CollapsibleSection>
     </div>
   );
 }
