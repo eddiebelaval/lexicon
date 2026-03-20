@@ -173,11 +173,10 @@ export function renderHtml(
   templateContent: string,
   data: Record<string, string>
 ): string {
-  let result = templateContent;
-  for (const [key, value] of Object.entries(data)) {
-    result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
-  }
-  return result;
+  return templateContent.replace(/\{\{([^}]+)\}\}/g, (_, key) => {
+    const trimmed = key.trim();
+    return trimmed in data ? data[trimmed] : `{{${trimmed}}}`;
+  });
 }
 
 /**

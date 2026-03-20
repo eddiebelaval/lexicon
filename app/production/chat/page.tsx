@@ -56,13 +56,14 @@ export default function ChatPage() {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let assistantContent = '';
+      let newConversationId = conversationId;
 
       if (reader) {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value);
+          const chunk = decoder.decode(value, { stream: true });
           const lines = chunk.split('\n');
 
           for (const line of lines) {
@@ -76,7 +77,8 @@ export default function ChatPage() {
                   assistantContent += parsed.data.content;
                   setStreamingContent(assistantContent);
                 } else if (parsed.type === 'done' && parsed.data?.message) {
-                  setConversationId(parsed.data.message.conversationId);
+                  newConversationId = parsed.data.message.conversationId;
+                  setConversationId(newConversationId);
                 }
               } catch {
                 // Skip malformed SSE lines
@@ -88,7 +90,7 @@ export default function ChatPage() {
 
       const assistantMessage: Message = {
         id: `msg-${Date.now()}-assistant`,
-        conversationId: conversationId || 'temp',
+        conversationId: newConversationId || 'temp',
         role: 'assistant',
         content: assistantContent,
         citations: [],

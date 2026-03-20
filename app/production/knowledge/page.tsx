@@ -318,7 +318,7 @@ export default function KnowledgePage() {
                                     background: 'var(--accent-muted)',
                                     color: 'var(--accent-text)',
                                   }}>
-                                    {platform}: {handle as string}
+                                    {platform}: {String(handle)}
                                   </span>
                                 )
                               ))}
