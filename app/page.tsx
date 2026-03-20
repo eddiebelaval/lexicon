@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { SequinWave } from '@/components/landing/sequin-wave';
+import { FeedbackLoop } from '@/components/landing/feedback-loop';
 import { Footer } from '@/components/shell/footer';
 
 export default function LandingPage() {
@@ -28,7 +28,7 @@ export default function LandingPage() {
     <div className="landing">
       {/* Hero: Shader background with content overlay */}
       <section className="landing-hero">
-        <SequinWave className="landing-shader" />
+        <FeedbackLoop className="landing-shader" />
         <div className="landing-hero-overlay" />
 
         {/* Header (over shader) */}
