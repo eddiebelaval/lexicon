@@ -117,7 +117,7 @@ function parseSeasons(raw: string | null | undefined): string[] {
  * @param filename - Original filename (used for logging, not parsing logic)
  * @returns Parsed result with rows, stats, and extracted season tags
  */
-export function parseCastSpreadsheet(buffer: Buffer, filename: string): CastParseResult {
+export function parseCastSpreadsheet(buffer: Buffer, _filename: string): CastParseResult {
   const workbook = XLSX.read(buffer, { type: 'buffer' });
 
   // Use the first sheet

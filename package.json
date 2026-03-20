@@ -1,8 +1,8 @@
 {
   "name": "lexicon",
-  "version": "0.1.0",
+  "version": "0.9.0-beta",
   "private": true,
-  "description": "Wikipedia + Perplexity for story universes. Graph-powered knowledge platform for narrative worlds.",
+  "description": "Production OS for unscripted TV. Upload your spreadsheet, Lexi does the rest.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

@@ -524,8 +524,8 @@
 }
 
 .agent-brief-send:hover {
-  background: rgba(239, 111, 46, 0.08);
-  border-color: rgba(239, 111, 46, 0.3);
+  background: rgba(205, 107, 90, 0.08);
+  border-color: rgba(205, 107, 90, 0.3);
   color: var(--vhs-orange);
 }
 

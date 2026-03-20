@@ -258,7 +258,7 @@
   gap: 6px;
   padding: 6px 14px;
   background: var(--accent-muted);
-  border: 1px solid rgba(239, 111, 46, 0.2);
+  border: 1px solid rgba(205, 107, 90, 0.2);
   border-radius: var(--radius-md);
   color: var(--accent-text);
   font-size: 13px;
@@ -269,8 +269,8 @@
 }
 
 .page-header-lexi-btn:hover {
-  background: rgba(239, 111, 46, 0.18);
-  border-color: rgba(239, 111, 46, 0.35);
+  background: rgba(205, 107, 90, 0.18);
+  border-color: rgba(205, 107, 90, 0.35);
 }
 
 /* ═══════════════════ Mobile Shell Header ═══════════════════ */
