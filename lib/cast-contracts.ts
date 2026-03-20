@@ -40,6 +40,7 @@ function parseCastContractFromDb(row: Record<string, unknown>): CastContract {
     id: row.id as string,
     productionId: row.production_id as string,
     castEntityId: row.cast_entity_id as string,
+    castName: (row.cast_name as string) ?? null,
     contractStatus: row.contract_status as CastContract['contractStatus'],
     paymentType: row.payment_type as CastContract['paymentType'],
     dailyRate: row.daily_rate != null ? Number(row.daily_rate) : null,
@@ -72,6 +73,7 @@ export async function createCastContract(
     .insert({
       production_id: input.productionId,
       cast_entity_id: input.castEntityId,
+      cast_name: input.castName || null,
       contract_status: input.contractStatus || 'pending',
       payment_type: input.paymentType || null,
       daily_rate: input.dailyRate ?? null,
@@ -168,6 +170,7 @@ export async function updateCastContract(
 ): Promise<CastContract | null> {
   const updates: Record<string, unknown> = {};
 
+  if (input.castName !== undefined) updates.cast_name = input.castName;
   if (input.contractStatus !== undefined) updates.contract_status = input.contractStatus;
   if (input.paymentType !== undefined) updates.payment_type = input.paymentType;
   if (input.dailyRate !== undefined) updates.daily_rate = input.dailyRate;

@@ -145,6 +145,7 @@ function mapContractRow(row: Record<string, unknown>): CastContract {
     id: row.id as string,
     productionId: row.production_id as string,
     castEntityId: row.cast_entity_id as string,
+    castName: (row.cast_name as string) ?? null,
     contractStatus: row.contract_status as CastContract['contractStatus'],
     paymentType: row.payment_type as CastContract['paymentType'],
     dailyRate: row.daily_rate != null ? Number(row.daily_rate) : null,
