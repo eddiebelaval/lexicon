@@ -67,7 +67,7 @@ export default function ProductionLayout({
     <ProductionProvider universeId={universeId}>
       <div className="min-h-screen bg-surface-primary text-gray-100">
         <ProductionHeader universeId={universeId} />
-        <main className="p-6 max-w-7xl mx-auto">{children}</main>
+        <main className="p-3 sm:p-6 max-w-7xl mx-auto">{children}</main>
       </div>
     </ProductionProvider>
   );

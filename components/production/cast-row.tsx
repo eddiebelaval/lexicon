@@ -11,6 +11,7 @@ import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InlineEditText, InlineEditSelect } from '@/components/production/inline-edit';
 import { CONTRACT_STATUS_CONFIG } from '@/lib/production-config';
+import { getCastDisplayName } from '@/lib/cast-utils';
 import type { CompletionField } from '@/lib/production-config';
 import type { CastContract } from '@/types/production';
 
@@ -63,8 +64,8 @@ async function saveField(contractId: string, field: string, value: string) {
 export function CastRow({ contract, onToggle }: CastRowProps) {
   return (
     <tr className="border-b border-panel-border hover:bg-surface-secondary/50 transition-colors">
-      <td className="px-4 py-3 text-sm font-mono text-gray-300">
-        {contract.castEntityId}
+      <td className="px-4 py-3 text-sm font-medium text-gray-300">
+        {getCastDisplayName(contract)}
       </td>
       <td className="px-4 py-3">
         <InlineEditSelect

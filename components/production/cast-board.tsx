@@ -9,8 +9,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { AlertCircle, Loader2, RefreshCw, Users } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { CastRow } from '@/components/production/cast-row';
+import { KPIRow } from './bluf';
 import { useProduction } from '@/components/production/production-context';
 import { useRealtimeSubscription } from '@/lib/hooks/use-realtime';
 import type { CastContract } from '@/types/production';
@@ -89,6 +89,7 @@ export function CastBoard() {
     0
   );
   const completionPct = totalChecks > 0 ? Math.round((doneChecks / totalChecks) * 100) : 0;
+  const signedPct = totalCount > 0 ? Math.round((signedCount / totalCount) * 100) : 0;
 
   // Loading skeleton
   if (prodLoading || loading) {
@@ -120,25 +121,11 @@ export function CastBoard() {
 
   return (
     <div>
-      {/* Summary bar */}
-      <div className="mb-6 flex items-center gap-4 rounded-lg border border-panel-border bg-panel-bg px-5 py-3">
-        <span className="text-sm text-gray-400">
-          <span className="font-medium text-gray-200">{signedCount}</span> of{' '}
-          <span className="font-medium text-gray-200">{totalCount}</span> contracts signed
-        </span>
-        <span className="text-panel-border">|</span>
-        <span className="text-sm text-gray-400">
-          <span
-            className={cn(
-              'font-medium',
-              completionPct === 100 ? 'text-emerald-400' : 'text-vhs-400'
-            )}
-          >
-            {completionPct}%
-          </span>{' '}
-          complete
-        </span>
-      </div>
+      {/* KPI summary */}
+      <KPIRow items={[
+        { label: 'Signed', value: `${signedCount}/${contracts.length}`, color: signedPct >= 75 ? 'var(--bluf-healthy)' : 'var(--bluf-warning)' },
+        { label: 'Completion', value: `${completionPct}%`, color: completionPct >= 75 ? 'var(--bluf-healthy)' : completionPct >= 40 ? 'var(--bluf-warning)' : 'var(--bluf-critical)' },
+      ]} />
 
       {/* Table */}
       {contracts.length === 0 ? (
@@ -155,7 +142,7 @@ export function CastBoard() {
             <thead>
               <tr className="border-b border-panel-border bg-panel-header">
                 <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Cast Entity
+                  Name
                 </th>
                 <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
                   Status
@@ -167,13 +154,13 @@ export function CastBoard() {
                   Shoot
                 </th>
                 <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
-                  INTV
+                  Interview
                 </th>
                 <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
-                  PU
+                  Pickup
                 </th>
                 <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
-                  $
+                  Payment
                 </th>
                 <th className="px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-500">
                   Notes

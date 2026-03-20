@@ -16,6 +16,7 @@ import type {
   CastContract,
   ProductionSummary,
 } from '@/types';
+import { getCastDisplayName } from '@/lib/cast-utils';
 
 // ============================================
 // Lexi System Prompt
@@ -260,7 +261,7 @@ export async function buildProductionContext(
         if (!contract.pickupDone) missing.push('pickup');
         if (!contract.paymentDone) missing.push('payment');
         lines.push(
-          `- ${contract.castEntityId}: ${contract.contractStatus} | Missing: ${missing.join(', ')}`
+          `- ${getCastDisplayName(contract)}: ${contract.contractStatus} | Missing: ${missing.join(', ')}`
         );
       }
       lines.push('');
