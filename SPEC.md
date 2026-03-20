@@ -1,16 +1,19 @@
 ---
-last-reconciled: 2026-03-20
+last-reconciled: 2026-03-21
 status: CURRENT
 Build stage: Stage 9 (Launch Prep)
 Drift status: CURRENT
-vision-alignment: 60%
+vision-alignment: 75%
+version: v0.9.0-beta
 ---
 
 # SPEC
 
 ## Identity
 
-Lexicon is a production intelligence platform for unscripted TV, deployed at lexicon-phi.vercel.app. Its entity, Lexi, operates as institutional memory and operational agent across web UI and Telegram. The platform manages the full production lifecycle -- cast contracts, crew availability, shooting schedules, equipment custody, footage chain of custody, document tracking, and automated alerting -- through typed asset state machines and a 46-tool agent surface. Built on Next.js 15 + Supabase + Neo4j + Claude, with 227 tests and 67+ API routes.
+Lexicon is a production intelligence platform for unscripted TV, deployed at lexicon-phi.vercel.app. Its entity, Lexi, operates as institutional memory and operational agent across web UI and Telegram. The platform manages the full production lifecycle through typed asset state machines and a 62-tool agent surface. Built on Next.js 15 + Supabase + Neo4j + Claude, with 227 tests and 80+ API routes.
+
+**v0.9.0-beta changes (Mar 20-21):** Production-first shell with sidebar navigation, warm-dark design system (Playfair Display + Outfit + Burnt Coral #CD6B5A), BLUF dashboard, all 13 production pages live (zero placeholders), document templates system with Word-native rendering, landing page with Feedback Loop shader, 62 Lexi tools, Excel import with web enrichment.
 
 ## Current Capabilities
 
@@ -132,7 +135,7 @@ Lexicon is a production intelligence platform for unscripted TV, deployed at lex
 
 - **Auth:** Supabase Email OTP, universe isolation.
 - **API Surface:** 67+ routes, consistent response format: `{ success, data?, error? }`.
-- **Agent-Native Tools:** 46 tools with Pattern 6 completion signals.
+- **Agent-Native Tools:** 62 tools with Pattern 6 completion signals.
 - **Cron Jobs:** 3 Vercel cron jobs (monitoring 6AM, digest 7AM, triggers every 4h).
 - **UI:** Dark mode (ThemeProvider), Geist font, error handling (retry buttons, loading skeletons, auto-dismiss error banners).
 - **Shared Utilities:** hoursSince(), formatRelativeHours(), verifyCronSecret().
@@ -318,5 +321,7 @@ NEXT_PUBLIC_APP_URL, CRON_SECRET
 | 2026-03-17 | Infrastructure | Beta-hardening pass removed fake demo IDs from key entry points | Home, dashboard, header, and settings now distinguish public beta visitors from signed-in users | None |
 | 2026-03-17 | Infrastructure | Health route was misclassifying beta readiness | Supabase added as core dependency, Neo4j treated as degraded optional service for production beta | None |
 | 2026-03-17 | Verification | Production verification lagged behind shipped surface | Added health route tests and call-sheet smoke coverage; suite now passes at 196 tests | None |
-| 2026-03-18 | Capabilities (10-15) | Session 2: 5 PRs shipped -- onboarding, gear, footage, triggers, post, documents, tool parity | Lexi: 27 -> 46 tools. Asset types: 3 -> 7. UI pages: 6 -> 8. Cron jobs: 2 -> 3. 4,600+ lines shipped. | Pillars 1, 3 confirmed REALIZED |
+| 2026-03-18 | Capabilities (10-15) | Session 2: 5 PRs shipped -- onboarding, gear, footage, triggers, post, documents, tool parity | Lexi: 27 -> 62 tools. Asset types: 3 -> 7. UI pages: 6 -> 8. Cron jobs: 2 -> 3. 4,600+ lines shipped. | Pillars 1, 3 confirmed REALIZED |
 | 2026-03-20 | Structure | v2 format upgrade | Triad template standardization across all projects | Parallel upgrade |
+| 2026-03-20 | Capabilities (15-19) | Redesign session: 6 PRs, ~7,200 lines | BLUF dashboard, production-first shell, sidebar nav, warm-dark design, landing page, Excel import, web enrichment. Lexi: 46 -> 60 tools. | Design system locked |
+| 2026-03-21 | Capabilities | Finish build: 5 pages + templates | Chat, graph, settings, episodes, knowledge pages. Document templates system (docxtemplater). Lexi: 60 -> 62 tools. Episodes API routes. All placeholders eliminated. | v0.9.0-beta feature-complete |

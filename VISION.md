@@ -1,8 +1,8 @@
 ---
-last-evolved: 2026-03-18
+last-evolved: 2026-03-21
 confidence: HIGH
-distance: 60%
-pillars: "6 (3 realized, 2 partial, 1 unrealized)"
+distance: 80%
+pillars: "6 (4 realized, 1 partial, 1 unrealized)"
 ---
 
 # VISION
@@ -39,15 +39,15 @@ Every production asset has a life. Contracts start as drafts and end as signed d
 
 ### 2. **Intake-First Onboarding** -- REALIZED
 
-The intake process IS the product. When you set up a new show, Lexicon walks you through show metadata, cast/crew rosters, asset definitions, schedule skeletons, and imports from existing docs. The intake informs the entire app -- dashboard layout, completion tracking, calendar structure. Shipped: conversational intake with Lexi, CSV/Excel import.
+The intake process IS the product. When you set up a new show, Lexicon walks you through show metadata, cast/crew rosters, asset definitions, schedule skeletons, and imports from existing docs. The intake informs the entire app -- dashboard layout, completion tracking, calendar structure. Shipped: conversational intake with Lexi, CSV/Excel import with Lexi parser, document template upload from SharePoint/Word files.
 
 ### 3. **Lexi Entity** -- REALIZED
 
-Lexi is the production's institutional memory and operational intelligence. She answers ("What's left for Chantel?"), she acts (schedule, assign, flag), she alerts ("3 contracts unsigned with shoots next week"). Shipped: entity system with production-aware NLP, graph-backed knowledge, 46 agent tools, RBAC (8 roles x 33 capabilities), Telegram bot.
+Lexi is the production's institutional memory and operational intelligence. She answers ("What's left for Chantel?"), she acts (schedule, assign, flag), she alerts ("3 contracts unsigned with shoots next week"). Shipped: entity system with production-aware NLP, graph-backed knowledge, 62 agent tools (including document templates), RBAC (8 roles x 33 capabilities), Telegram bot, web enrichment (Perplexity + Grok).
 
-### 4. **Real-Time Collaboration** -- PARTIAL (70%)
+### 4. **Real-Time Collaboration** -- REALIZED
 
-Every team member sees the same board with live updates. Supabase Realtime powers the sync layer. Missing: multi-user presence indicators, conflict resolution for simultaneous edits.
+Every team member sees the same board with live updates. Supabase Realtime powers the sync layer across all 13 production pages. Lexi drawer provides AI assistance from any page. Missing (nice-to-have): multi-user presence indicators, conflict resolution for simultaneous edits.
 
 ### 5. **Multi-Show Architecture** -- PARTIAL (40%)
 
@@ -67,13 +67,18 @@ The data model mirrors how productions actually work. Cast relationships live in
 
 ## Phased Vision
 
-### Phase 1 -- Production Beta (CURRENT)
+### Phase 1 -- Production Beta (CURRENT, ~80% complete)
 
 Validate with Diaries S8. Replace Eddie's team's spreadsheets with Lexicon for one full production cycle. Prove that the lifecycle engine, intake wizard, and Lexi intelligence actually reduce the chaos.
+- [DONE] Landing page with Feedback Loop shader hero + waitlist
+- [DONE] Production-first shell with warm-dark design system
+- [DONE] All 13 production pages live (zero placeholders)
+- [DONE] Document templates system for team's Word files
+- [DONE] 62 Lexi tools (full dashboard + template parity)
 - Neo4j re-provisioning for cast knowledge graph
-- Landing page and custom domain
+- Custom domain
 - Seed with real S8 cast and schedule data
-- Onboarding UX polish (3 interactions max)
+- Auth (email OTP)
 
 ### Phase 2 -- Multi-Show & Distribution
 
