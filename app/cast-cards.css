@@ -1,0 +1,198 @@
+/*
+ * Cast Card Grid
+ * Visual card layout for cast members with completion rings.
+ */
+
+.cast-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.cast-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 12px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--dur-fast) ease;
+  text-align: center;
+  width: 100%;
+  font-family: inherit;
+  color: inherit;
+}
+
+.cast-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Avatar ring (conic gradient for completion) */
+.cast-card-avatar-ring {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cast-card-avatar {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: var(--bg-content);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.cast-card-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cast-card-initials {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: 0.02em;
+}
+
+.cast-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cast-card-status {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Completion checkpoints: 4 small circles */
+.cast-card-checkpoints {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.cast-card-checkpoint {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  transition: all var(--dur-fast) ease;
+}
+
+.cast-card-checkpoint--done {
+  background: var(--healthy-soft);
+  border-color: var(--healthy);
+  color: var(--healthy);
+}
+
+.cast-card-checkpoint-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.cast-card-completion {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+/* View toggle */
+.cast-view-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  width: fit-content;
+  margin-bottom: 16px;
+  margin-left: auto;
+}
+
+.cast-view-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all var(--dur-fast) ease;
+}
+
+.cast-view-btn:hover {
+  color: var(--text-primary);
+}
+
+.cast-view-btn--active {
+  background: var(--accent-muted);
+  color: var(--accent-text);
+}
+
+.cast-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px;
+  color: var(--text-tertiary);
+  font-size: 13px;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .cast-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .cast-card {
+    padding: 14px 8px 12px;
+  }
+
+  .cast-card-avatar-ring {
+    width: 56px;
+    height: 56px;
+  }
+
+  .cast-card-avatar {
+    width: 48px;
+    height: 48px;
+  }
+
+  .cast-card-initials {
+    font-size: 15px;
+  }
+}

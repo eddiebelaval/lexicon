@@ -1,0 +1,153 @@
+/**
+ * Cast Import Commit API Route
+ *
+ * POST /api/import/cast/commit - Takes parsed cast rows (from the parse step)
+ * and commits them to the database as cast_contracts entries.
+ *
+ * PII fields (phone, email, address, legal name, etc.) are stored as structured
+ * JSON in the notes field until a dedicated metadata JSONB column is added to
+ * the cast_contracts table.
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { getServiceSupabase } from '@/lib/supabase';
+import { castNameToEntityId } from '@/lib/cast-utils';
+import type { ParsedCastRow } from '@/lib/import/cast-spreadsheet-parser';
+
+/**
+ * Format rich PII data as structured text for the notes field.
+ * This preserves all imported data until we add a metadata column.
+ */
+function formatMetadataAsNotes(row: ParsedCastRow, existingNotes: string | null): string {
+  const sections: string[] = [];
+
+  if (existingNotes) {
+    sections.push(existingNotes);
+    sections.push('---');
+  }
+
+  sections.push(`[Imported ${new Date().toISOString().split('T')[0]}]`);
+
+  if (row.legalName) sections.push(`Legal Name: ${row.legalName}`);
+  if (row.phone) sections.push(`Phone: ${row.phone}`);
+  if (row.email) sections.push(`Email: ${row.email}`);
+  if (row.address) sections.push(`Address: ${row.address}`);
+  if (row.hometown) sections.push(`Hometown: ${row.hometown}`);
+  if (row.birthdays) sections.push(`Birthday: ${row.birthdays}`);
+  if (row.weddingDate) sections.push(`Wedding Date: ${row.weddingDate}`);
+  if (row.socialMedia) sections.push(`Social Media: ${row.socialMedia}`);
+  if (row.pastSeasons.length > 0) sections.push(`Past Seasons: ${row.pastSeasons.join(', ')}`);
+  if (row.currentSeason) sections.push(`Current Season: ${row.currentSeason}`);
+  if (row.upcoming) sections.push(`Upcoming: ${row.upcoming}`);
+  if (row.beingConsidered) sections.push(`Being Considered For: ${row.beingConsidered}`);
+
+  return sections.join('\n');
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { productionId, rows } = body as {
+      productionId: string;
+      rows: ParsedCastRow[];
+    };
+
+    if (!productionId) {
+      return NextResponse.json(
+        { success: false, error: { code: 'VALIDATION_ERROR', message: 'productionId is required' } },
+        { status: 400 }
+      );
+    }
+
+    if (!rows?.length) {
+      return NextResponse.json(
+        { success: false, error: { code: 'VALIDATION_ERROR', message: 'No rows to import' } },
+        { status: 400 }
+      );
+    }
+
+    const supabase = getServiceSupabase();
+
+    // Verify the production exists
+    const { data: production, error: prodError } = await supabase
+      .from('productions')
+      .select('id')
+      .eq('id', productionId)
+      .maybeSingle();
+
+    if (prodError || !production) {
+      return NextResponse.json(
+        { success: false, error: { code: 'NOT_FOUND', message: 'Production not found' } },
+        { status: 404 }
+      );
+    }
+
+    // Batch: get all existing entity IDs in one query
+    const allEntityIds = rows.map(r => castNameToEntityId(r.castName));
+    const { data: existingRows } = await supabase
+      .from('cast_contracts')
+      .select('cast_entity_id')
+      .eq('production_id', productionId)
+      .in('cast_entity_id', allEntityIds);
+
+    const existingIds = new Set((existingRows ?? []).map(r => r.cast_entity_id));
+
+    // Build insert batch for new rows only
+    const toInsert: { production_id: string; cast_entity_id: string; cast_name: string; contract_status: string; notes: string }[] = [];
+    let skipped = 0;
+
+    for (const row of rows) {
+      const entityId = castNameToEntityId(row.castName);
+      if (existingIds.has(entityId)) {
+        skipped++;
+        continue;
+      }
+      toInsert.push({
+        production_id: productionId,
+        cast_entity_id: entityId,
+        cast_name: row.castName,
+        contract_status: 'pending',
+        notes: formatMetadataAsNotes(row, row.notes),
+      });
+    }
+
+    // Batch insert (Supabase handles array natively)
+    let imported = 0;
+    const errors: string[] = [];
+
+    if (toInsert.length > 0) {
+      const { error: insertError, count } = await supabase
+        .from('cast_contracts')
+        .insert(toInsert);
+
+      if (insertError) {
+        errors.push(`Batch insert failed: ${insertError.message}`);
+      } else {
+        imported = count ?? toInsert.length;
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        imported,
+        skipped,
+        errors: errors.length > 0 ? errors : undefined,
+        total: rows.length,
+      },
+    });
+  } catch (error) {
+    console.error('Cast import commit error:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: {
+          code: 'COMMIT_ERROR',
+          message: 'Failed to commit cast import',
+          details: error instanceof Error ? error.message : undefined,
+        },
+      },
+      { status: 500 }
+    );
+  }
+}

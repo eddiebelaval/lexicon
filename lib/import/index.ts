@@ -16,3 +16,9 @@ export {
 } from './csv-parser';
 
 export { parseSpreadsheet } from './xlsx-parser';
+
+export {
+  parseCastSpreadsheet,
+  type ParsedCastRow,
+  type CastParseResult,
+} from './cast-spreadsheet-parser';

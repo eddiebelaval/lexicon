@@ -30,7 +30,7 @@ export function useProduction() {
 }
 
 interface ProductionProviderProps {
-  universeId: string;
+  universeId?: string;
   children: React.ReactNode;
 }
 
@@ -45,16 +45,16 @@ export function ProductionProvider({ universeId, children }: ProductionProviderP
     setError(null);
 
     try {
-      const res = await fetch(
-        `/api/productions?universeId=${universeId}&limit=1`,
-        { signal: controller.signal }
-      );
+      const query = universeId
+        ? `/api/productions?universeId=${universeId}&limit=1`
+        : `/api/productions?limit=1`;
+      const res = await fetch(query, { signal: controller.signal });
       const data = await res.json();
 
       if (data.success && data.data.items.length > 0) {
         setProduction(data.data.items[0]);
       } else {
-        setError('No production found for this universe');
+        setError('No production found');
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;

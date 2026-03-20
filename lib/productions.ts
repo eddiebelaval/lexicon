@@ -106,7 +106,7 @@ export async function getProduction(id: string): Promise<Production | null> {
  * List productions for a universe with pagination
  */
 export async function listProductions(
-  universeId: string,
+  universeId: string | undefined,
   options: {
     status?: Production['status'];
     limit?: number;
@@ -117,8 +117,11 @@ export async function listProductions(
 
   let query = getSupabase()
     .from('productions')
-    .select('*', { count: 'exact' })
-    .eq('universe_id', universeId);
+    .select('*', { count: 'exact' });
+
+  if (universeId) {
+    query = query.eq('universe_id', universeId);
+  }
 
   if (status) {
     query = query.eq('status', status);

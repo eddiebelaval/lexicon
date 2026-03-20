@@ -2,49 +2,51 @@
 @tailwind components;
 @tailwind utilities;
 
+@import './warm-dark.css';
 @import './bluf.css';
+@import './shell.css';
+@import './cast-cards.css';
 
 @layer base {
   :root {
     /* ID8Labs VHS Design System - Dark mode first */
-    /* Blue-black backgrounds for cinematic feel (matching ID8Composer) */
-    --bg-primary: hsl(240 4% 4%);
-    --bg-secondary: hsl(240 4% 6%);
-    --bg-tertiary: hsl(240 4% 8%);
-    --bg-elevated: hsl(240 4% 10%);
+    /* Warm dark surfaces (aliased from warm-dark.css) */
+    --bg-primary: var(--bg-app);
+    --bg-secondary: var(--bg-content);
+    --bg-tertiary: var(--bg-card);
+    --bg-elevated: var(--bg-card-hover);
 
     /* Surface hierarchy for cards and panels */
-    --surface-primary: hsl(240 4% 4%);
-    --surface-secondary: hsl(240 4% 6%);
-    --surface-tertiary: hsl(240 4% 8%);
+    --surface-primary: var(--bg-app);
+    --surface-secondary: var(--bg-card);
+    --surface-tertiary: var(--bg-card-hover);
+    --surface-elevated: var(--bg-card-hover);
 
     /* Panel colors */
-    --panel-bg: hsl(240 4% 5%);
-    --panel-border: hsl(0 0% 15%);
-    --panel-header: hsl(240 4% 7%);
+    --panel-bg: var(--bg-sidebar);
+    --panel-border: var(--border-strong);
+    --panel-header: var(--bg-content);
 
     /* Sidebar colors */
-    --sidebar-bg: hsl(240 4% 6%);
-    --sidebar-border: hsl(0 0% 15%);
-    --sidebar-hover: hsl(0 0% 12%);
-    --sidebar-active: hsl(17 85% 12%);
+    --sidebar-bg: var(--bg-sidebar);
+    --sidebar-border: var(--border-strong);
+    --sidebar-hover: var(--sidebar-hover-bg);
+    --sidebar-active: var(--sidebar-active-bg);
 
     /* Card colors */
-    --card-bg: hsl(240 4% 6%);
-    --card-border: hsl(240 4% 12%);
-    --card-hover: hsl(240 4% 8%);
+    --card-bg: var(--bg-card);
+    --card-border: var(--border);
+    --card-hover: var(--bg-card-hover);
 
-    /* Text colors */
-    --text-primary: #F2F2F2;
-    --text-secondary: hsl(0 0% 60%);
-    --text-tertiary: hsl(0 0% 45%);
-    --text-muted: hsl(0 0% 40%);
+    /* Text colors (warm off-whites from warm-dark.css) */
+    /* --text-primary, --text-secondary, --text-tertiary, --text-muted
+       are already set by warm-dark.css :root */
 
-    /* VHS Orange accent (ID8Labs brand) */
-    --vhs-orange: hsl(17 85% 62%);
-    --vhs-orange-hover: hsl(17 94% 53%);
-    --vhs-orange-light: hsl(17 85% 15%);
-    --vhs-orange-glow: hsl(17 94% 53%);
+    /* VHS Orange accent (aliased from warm-dark.css) */
+    --vhs-orange: var(--accent);
+    --vhs-orange-hover: var(--accent-hover);
+    --vhs-orange-light: var(--accent-muted);
+    --vhs-orange-glow: var(--accent-hover);
 
     /* Lexicon brand blue (secondary accent) */
     --lexicon-blue: #38bdf8;

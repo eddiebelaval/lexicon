@@ -18,6 +18,19 @@ export function getCastDisplayName(contract: { castName?: string | null; castEnt
  * "cast-chantel+ashley" -> "Chantel Ashley"
  * "cast-alliya" -> "Alliya"
  */
+/**
+ * Generate stable entity ID from cast name.
+ * "Kara & Guillermo" -> "cast-kara+guillermo"
+ */
+export function castNameToEntityId(name: string): string {
+  return 'cast-' + name
+    .toLowerCase()
+    .replace(/\s*&\s*/g, '+')
+    .replace(/[^a-z0-9+]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 export function entityIdToDisplayName(entityId: string): string {
   return entityId
     .replace(/^cast-/, '')
