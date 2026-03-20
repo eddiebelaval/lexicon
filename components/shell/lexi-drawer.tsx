@@ -9,7 +9,7 @@ interface LexiDrawerProps {
   productionId?: string;
 }
 
-export function LexiDrawer({ open, onClose, productionId }: LexiDrawerProps) {
+export function LexiDrawer({ open, onClose, productionId: _productionId }: LexiDrawerProps) {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string }[]>([]);
   const inputRef = useRef<HTMLTextAreaElement>(null);

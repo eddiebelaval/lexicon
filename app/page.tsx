@@ -138,9 +138,9 @@ export default function LandingPage() {
       <section className="landing-pitch">
         <h2 className="landing-pitch-title">Built for unscripted.</h2>
         <p className="landing-pitch-body">
-          Every production tool assumes you have a script. Reality TV doesn't work that way.
+          Every production tool assumes you have a script. Reality TV doesn&apos;t work that way.
           Your schedule changes daily. Cast logistics are chaos. Your coordinator is the only person
-          who knows where everything lives, and it's all in a spreadsheet.
+          who knows where everything lives, and it&apos;s all in a spreadsheet.
         </p>
         <p className="landing-pitch-body">
           Lexicon replaces the spreadsheet with a production OS that understands unscripted workflows.
