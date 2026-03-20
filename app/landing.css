@@ -93,162 +93,306 @@
   letter-spacing: -0.01em;
 }
 
-/* Dashboard Preview (CSS mockup) */
+/* ═══════════════════ Before/After Transformation ═══════════════════ */
 
-.landing-preview {
+.transform-scene {
   margin-top: 48px;
-  perspective: 1200px;
-}
-
-.landing-preview-window {
-  max-width: 800px;
-  margin: 0 auto;
-  border-radius: 12px;
-  border: 1px solid var(--border-strong);
-  overflow: hidden;
-  background: var(--bg-sidebar);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.03);
-  transform: rotateX(2deg);
-  transition: transform var(--dur-slow) var(--ease-out);
-}
-
-.landing-preview-window:hover {
-  transform: rotateX(0deg);
-}
-
-.landing-preview-titlebar {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 14px;
-  background: var(--bg-app);
-  border-bottom: 1px solid var(--border);
+  gap: 20px;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.landing-preview-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
+.transform-frame {
+  flex: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  position: relative;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
 }
 
-.landing-preview-url {
-  margin-left: 12px;
-  font-size: 11px;
+.transform-label {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   color: var(--text-muted);
+  z-index: 2;
+}
+
+.transform-label--accent {
+  color: var(--accent-text);
+}
+
+.transform-arrow {
+  flex-shrink: 0;
+  color: var(--accent);
+  animation: arrow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes arrow-pulse {
+  0%, 100% { opacity: 0.5; transform: translateX(0); }
+  50% { opacity: 1; transform: translateX(4px); }
+}
+
+/* ─── Excel Mock ─── */
+
+.excel-mock {
+  background: #1e1e1e;
+  min-height: 280px;
+}
+
+.excel-toolbar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid #333;
+  background: #252525;
+  padding: 0 8px;
+}
+
+.excel-tab {
+  padding: 8px 12px;
+  font-size: 10px;
+  color: #888;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+
+.excel-tab--active {
+  color: #4caf50;
+  border-bottom-color: #4caf50;
+  background: #1e1e1e;
+}
+
+.excel-grid {
+  padding: 0;
+}
+
+.excel-header {
+  display: grid;
+  grid-template-columns: 140px 90px 100px 70px 60px 90px;
+  background: #2a2a2a;
+  border-bottom: 1px solid #333;
+}
+
+.excel-header span {
+  padding: 4px 8px;
+  font-size: 9px;
+  color: #666;
+  text-align: center;
+  font-weight: 600;
+  border-right: 1px solid #333;
+}
+
+.excel-row {
+  display: grid;
+  grid-template-columns: 140px 90px 100px 70px 60px 90px;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.excel-row--header {
+  background: #252525;
+}
+
+.excel-row--header span {
+  font-weight: 600;
+  color: #aaa;
+}
+
+.excel-row--dim {
+  opacity: 0.4;
+}
+
+.excel-row span {
+  padding: 6px 8px;
+  font-size: 10px;
+  color: #ccc;
+  border-right: 1px solid #2a2a2a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--font-geist-mono), monospace;
 }
 
-.landing-preview-content {
-  display: flex;
-  min-height: 320px;
+.excel-overflow {
+  color: #777 !important;
 }
 
-/* Mock sidebar */
-.landing-mock-sidebar {
-  width: 48px;
+.excel-cell--warn {
+  color: #f59e0b !important;
+}
+
+.excel-cell--bad {
+  color: #ef4444 !important;
+}
+
+.excel-scrollbar {
+  height: 8px;
+  background: #252525;
+  position: relative;
+}
+
+.excel-scrollbar::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  width: 35%;
+  height: 4px;
+  background: #444;
+  border-radius: 2px;
+}
+
+/* ─── Lexicon Mock ─── */
+
+.lexicon-mock {
+  display: flex;
+  min-height: 280px;
   background: var(--bg-app);
+}
+
+.lex-sidebar {
+  width: 96px;
+  background: var(--bg-sidebar);
   border-right: 1px solid var(--border);
-  padding: 12px 8px;
+  padding: 28px 6px 6px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
 }
 
-.landing-mock-nav-item {
-  height: 28px;
+.lex-nav-item {
+  padding: 6px 8px;
+  font-size: 10px;
+  color: var(--text-tertiary);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.03);
+  white-space: nowrap;
 }
 
-.landing-mock-nav-active {
-  background: var(--accent-muted);
+.lex-nav-active {
+  color: var(--accent-text);
+  background: var(--sidebar-active-bg);
   border-left: 2px solid var(--accent);
 }
 
-/* Mock content */
-.landing-mock-content {
+.lex-main {
   flex: 1;
-  padding: 16px;
+  padding: 28px 12px 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.landing-mock-kpi-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
 
-.landing-mock-kpi {
-  height: 52px;
-  border-radius: 8px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+.lex-kpis {
+  display: flex;
+  gap: 6px;
 }
 
-.landing-mock-alert {
-  height: 36px;
+.lex-kpi {
+  flex: 1;
+  padding: 8px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 8px;
+}
+
+.lex-kpi-label {
+  display: block;
+  font-size: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+
+.lex-kpi-value {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: var(--font-geist-mono), monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.lex-alert {
+  padding: 6px 10px;
+  font-size: 10px;
+  color: var(--text-secondary);
   background: rgba(34, 197, 94, 0.06);
   border: 1px solid rgba(34, 197, 94, 0.12);
   border-left: 3px solid var(--healthy);
+  border-radius: 6px;
 }
 
-.landing-mock-cards {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+.lex-cards {
+  display: flex;
+  gap: 6px;
   flex: 1;
 }
 
-.landing-mock-card {
+.lex-card {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 16px 8px;
+  gap: 6px;
+  padding: 12px 6px 10px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 8px;
 }
 
-.landing-mock-ring {
-  width: 40px;
-  height: 40px;
+.lex-ring {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
+  background: conic-gradient(var(--border-strong) 0deg, var(--border) 0deg);
+}
+
+.lex-ring--25 {
   background: conic-gradient(var(--accent) 90deg, var(--border) 90deg);
 }
 
-.landing-mock-ring--half {
-  background: conic-gradient(var(--warning) 180deg, var(--border) 180deg);
+.lex-ring--75 {
+  background: conic-gradient(var(--accent) 270deg, var(--border) 270deg);
 }
 
-.landing-mock-ring--full {
-  background: conic-gradient(var(--healthy) 360deg, var(--border) 360deg);
+.lex-ring--100 {
+  background: conic-gradient(var(--healthy) 360deg, transparent 360deg);
 }
 
-.landing-mock-line {
-  width: 60%;
-  height: 8px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.06);
+.lex-card-name {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  line-height: 1.2;
 }
 
-.landing-mock-pill {
-  width: 40px;
-  height: 14px;
+.lex-card-pill {
+  font-size: 8px;
+  font-weight: 600;
+  padding: 2px 6px;
   border-radius: 999px;
-  background: var(--accent-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.landing-mock-pill--warn {
-  background: var(--warning-soft);
-}
-
-.landing-mock-pill--done {
+.lex-pill--signed {
   background: var(--healthy-soft);
+  color: var(--healthy);
+}
+
+.lex-pill--pending {
+  background: var(--warning-soft);
+  color: var(--warning);
 }
 
 /* ═══════════════════ Waitlist ═══════════════════ */
@@ -427,16 +571,18 @@
     font-size: 16px;
   }
 
-  .landing-preview-window {
-    transform: none;
+  .transform-scene {
+    flex-direction: column;
+    gap: 16px;
   }
 
-  .landing-mock-kpi-row {
-    grid-template-columns: repeat(2, 1fr);
+  .transform-arrow {
+    transform: rotate(90deg);
   }
 
-  .landing-mock-cards {
-    grid-template-columns: repeat(2, 1fr);
+  .transform-arrow svg {
+    width: 24px;
+    height: 24px;
   }
 
   .landing-steps {
@@ -461,7 +607,19 @@
     font-size: 28px;
   }
 
-  .landing-mock-sidebar {
+  .lex-sidebar {
+    display: none;
+  }
+
+  .excel-header,
+  .excel-row {
+    grid-template-columns: 120px 70px 80px 60px;
+  }
+
+  .excel-row span:nth-child(5),
+  .excel-row span:nth-child(6),
+  .excel-header span:nth-child(5),
+  .excel-header span:nth-child(6) {
     display: none;
   }
 
