@@ -1724,6 +1724,34 @@ export const lexiconTools: Tool[] = [
   },
 
   // ----------------------------------------
+  // Export Operations (Lexi)
+  // ----------------------------------------
+  {
+    name: 'export_csv',
+    description:
+      'Generate a CSV download link for production data. Use when someone asks to "export the cast list", "download the schedule", or "get me a spreadsheet of crew".',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID',
+        },
+        type: {
+          type: 'string',
+          enum: ['cast', 'crew', 'scenes', 'callsheet'],
+          description: 'What to export: cast (contracts + payments), crew (roster), scenes (schedule), callsheet (daily call sheet)',
+        },
+        date: {
+          type: 'string',
+          description: 'Required for callsheet export: the date (YYYY-MM-DD)',
+        },
+      },
+      required: ['productionId', 'type'],
+    },
+  },
+
+  // ----------------------------------------
   // Episode Management (Lexi)
   // ----------------------------------------
   {
@@ -3497,6 +3525,43 @@ export async function executeToolCall(
           result: {
             code,
             message: `Registration code: ${code} — crew member uses /start ${code} in Telegram to connect.`,
+          },
+          shouldContinue: false,
+        };
+      }
+
+      // ----------------------------------------
+      // Export Operations (Lexi)
+      // ----------------------------------------
+
+      case 'export_csv': {
+        const productionId = input.productionId as string;
+        const exportType = input.type as string;
+        const date = input.date as string | undefined;
+
+        if (exportType === 'callsheet' && !date) {
+          return {
+            success: false,
+            result: null,
+            error: 'Date is required for callsheet export. Provide a date in YYYY-MM-DD format.',
+            shouldContinue: true,
+          };
+        }
+
+        // Build the download URL
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : 'https://lexicon.id8labs.app';
+        const params = new URLSearchParams({ productionId, type: exportType });
+        if (date) params.set('date', date);
+        const downloadUrl = `${baseUrl}/api/export?${params.toString()}`;
+
+        return {
+          success: true,
+          result: {
+            downloadUrl,
+            type: exportType,
+            message: `CSV export ready. Download: ${downloadUrl}`,
           },
           shouldContinue: false,
         };

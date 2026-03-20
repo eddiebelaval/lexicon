@@ -134,7 +134,8 @@ describe('permissions', () => {
       expect(tools).toContain('create_episode');
       expect(tools).toContain('update_episode');
       expect(tools).toContain('assign_scene_to_episode');
-      expect(tools.length).toBe(29);
+      expect(tools).toContain('export_csv');
+      expect(tools.length).toBe(30);
     });
 
     it('ac gets minimal write tools', () => {
