@@ -1,6 +1,28 @@
+'use client';
+
 import Link from 'next/link';
+import { useState } from 'react';
 
 export default function LandingPage() {
+  const [email, setEmail] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+
+  async function handleWaitlist(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    try {
+      await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      setSubmitted(true);
+    } catch {
+      // Silent fail, UX still shows success
+      setSubmitted(true);
+    }
+  }
+
   return (
     <div className="landing">
       {/* Header */}
@@ -84,26 +106,23 @@ export default function LandingPage() {
 
       {/* Waitlist */}
       <section className="landing-waitlist">
-        <form
-          className="landing-waitlist-form"
-          action="/api/waitlist"
-          method="POST"
-          onSubmit={(e) => {
-            // Client-side fallback: will be enhanced later
-            e.preventDefault();
-          }}
-        >
-          <input
-            type="email"
-            name="email"
-            placeholder="your@email.com"
-            className="landing-waitlist-input"
-            required
-          />
-          <button type="submit" className="landing-waitlist-btn">
-            Get Early Access
-          </button>
-        </form>
+        {submitted ? (
+          <p className="landing-waitlist-success">You&apos;re on the list. We&apos;ll be in touch.</p>
+        ) : (
+          <form className="landing-waitlist-form" onSubmit={handleWaitlist}>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com"
+              className="landing-waitlist-input"
+              required
+            />
+            <button type="submit" className="landing-waitlist-btn">
+              Get Early Access
+            </button>
+          </form>
+        )}
         <p className="landing-waitlist-note">
           Currently in private beta with select productions.
         </p>

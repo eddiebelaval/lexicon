@@ -307,6 +307,13 @@
   transform: scale(0.98);
 }
 
+.landing-waitlist-success {
+  font-size: 15px;
+  color: var(--healthy);
+  font-weight: 500;
+  padding: 12px 0;
+}
+
 .landing-waitlist-note {
   margin-top: 12px;
   font-size: 12px;
