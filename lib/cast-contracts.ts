@@ -42,6 +42,11 @@ function parseCastContractFromDb(row: Record<string, unknown>): CastContract {
     castEntityId: row.cast_entity_id as string,
     contractStatus: row.contract_status as CastContract['contractStatus'],
     paymentType: row.payment_type as CastContract['paymentType'],
+    dailyRate: row.daily_rate != null ? Number(row.daily_rate) : null,
+    flatFee: row.flat_fee != null ? Number(row.flat_fee) : null,
+    totalPayment: row.total_payment != null ? Number(row.total_payment) : null,
+    paidAmount: row.paid_amount != null ? Number(row.paid_amount) : null,
+    paidDate: row.paid_date ? new Date(row.paid_date as string) : null,
     shootDone: row.shoot_done as boolean,
     interviewDone: row.interview_done as boolean,
     pickupDone: row.pickup_done as boolean,
@@ -69,6 +74,9 @@ export async function createCastContract(
       cast_entity_id: input.castEntityId,
       contract_status: input.contractStatus || 'pending',
       payment_type: input.paymentType || null,
+      daily_rate: input.dailyRate ?? null,
+      flat_fee: input.flatFee ?? null,
+      total_payment: input.totalPayment ?? null,
       notes: input.notes || null,
     })
     .select()
@@ -162,6 +170,11 @@ export async function updateCastContract(
 
   if (input.contractStatus !== undefined) updates.contract_status = input.contractStatus;
   if (input.paymentType !== undefined) updates.payment_type = input.paymentType;
+  if (input.dailyRate !== undefined) updates.daily_rate = input.dailyRate;
+  if (input.flatFee !== undefined) updates.flat_fee = input.flatFee;
+  if (input.totalPayment !== undefined) updates.total_payment = input.totalPayment;
+  if (input.paidAmount !== undefined) updates.paid_amount = input.paidAmount;
+  if (input.paidDate !== undefined) updates.paid_date = input.paidDate;
   if (input.shootDone !== undefined) updates.shoot_done = input.shootDone;
   if (input.interviewDone !== undefined) updates.interview_done = input.interviewDone;
   if (input.pickupDone !== undefined) updates.pickup_done = input.pickupDone;

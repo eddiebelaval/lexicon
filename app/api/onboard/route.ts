@@ -21,12 +21,21 @@ import { createEntity } from '@/lib/entities';
 import { createCrewMember } from '@/lib/crew';
 import { createCastContract } from '@/lib/cast-contracts';
 import { createAssetType, createLifecycleStage } from '@/lib/lifecycle';
+import { generateRegistrationCode } from '@/lib/telegram';
 import { DEFAULT_ASSET_TYPES } from '@/components/production/intake/intake-types';
 import type { OnboardingData } from '@/lib/onboarding/engine';
+
+interface CrewInvite {
+  crewMemberId: string;
+  name: string;
+  role: string;
+  code: string | null;
+}
 
 interface OnboardResult {
   universeId: string;
   productionId: string;
+  crewInvites: CrewInvite[];
   warnings: string[];
 }
 
@@ -103,7 +112,8 @@ export async function POST(
       });
     }
 
-    // 4. Create crew members (parallel)
+    // 4. Create crew members + generate registration codes (parallel creation, then codes)
+    const crewInvites: CrewInvite[] = [];
     if (data.crew && data.crew.length > 0) {
       const crewResults = await Promise.allSettled(
         data.crew.map((member) =>
@@ -117,11 +127,28 @@ export async function POST(
         )
       );
 
-      crewResults.forEach((r, i) => {
-        if (r.status === 'rejected') {
-          warnings.push(`Could not create crew member ${data.crew[i]?.name || i}`);
+      // Generate registration codes for successfully created crew
+      for (let i = 0; i < crewResults.length; i++) {
+        const result = crewResults[i];
+        const member = data.crew[i];
+        if (result.status === 'fulfilled') {
+          const crewRecord = result.value;
+          let code: string | null = null;
+          try {
+            code = await generateRegistrationCode(crewRecord.id);
+          } catch {
+            warnings.push(`Could not generate invite code for ${member.name}`);
+          }
+          crewInvites.push({
+            crewMemberId: crewRecord.id,
+            name: member.name,
+            role: member.role,
+            code,
+          });
+        } else {
+          warnings.push(`Could not create crew member ${member?.name || i}`);
         }
-      });
+      }
     }
 
     // 5. Create default asset types + lifecycle stages (parallel per type)
@@ -164,6 +191,7 @@ export async function POST(
       {
         universeId: universe.id,
         productionId: production.id,
+        crewInvites,
         warnings,
       },
       { status: 201 }

@@ -69,6 +69,7 @@ function parseSceneFromDb(row: Record<string, unknown>): ProdScene {
     status: row.status as ProdScene['status'],
     equipmentNotes: row.equipment_notes as string | null,
     isSelfShot: row.is_self_shot as boolean,
+    episodeId: (row.episode_id as string | null) ?? null,
     createdAt: new Date(row.created_at as string),
     updatedAt: new Date(row.updated_at as string),
   };

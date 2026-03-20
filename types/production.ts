@@ -100,6 +100,7 @@ export interface ProdScene {
   status: ProdSceneStatus;
   equipmentNotes: string | null;
   isSelfShot: boolean;
+  episodeId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -107,6 +108,7 @@ export interface ProdScene {
 export interface CreateProdSceneInput {
   productionId: string;
   sceneNumber?: string;
+  episodeId?: string;
   title: string;
   description?: string;
   castEntityIds?: string[];
@@ -131,6 +133,7 @@ export interface UpdateProdSceneInput {
   status?: ProdSceneStatus;
   equipmentNotes?: string | null;
   isSelfShot?: boolean;
+  episodeId?: string | null;
 }
 
 // ============================================
@@ -176,6 +179,11 @@ export interface CastContract {
   castEntityId: string;
   contractStatus: ContractStatus;
   paymentType: PaymentType | null;
+  dailyRate: number | null;
+  flatFee: number | null;
+  totalPayment: number | null;
+  paidAmount: number | null;
+  paidDate: Date | null;
   shootDone: boolean;
   interviewDone: boolean;
   pickupDone: boolean;
@@ -190,12 +198,20 @@ export interface CreateCastContractInput {
   castEntityId: string;
   contractStatus?: ContractStatus;
   paymentType?: PaymentType;
+  dailyRate?: number;
+  flatFee?: number;
+  totalPayment?: number;
   notes?: string;
 }
 
 export interface UpdateCastContractInput {
   contractStatus?: ContractStatus;
   paymentType?: PaymentType | null;
+  dailyRate?: number | null;
+  flatFee?: number | null;
+  totalPayment?: number | null;
+  paidAmount?: number | null;
+  paidDate?: Date | null;
   shootDone?: boolean;
   interviewDone?: boolean;
   pickupDone?: boolean;
@@ -227,6 +243,44 @@ export interface CreateCrewAvailabilityInput {
 export interface UpdateCrewAvailabilityInput {
   status?: AvailabilityStatus;
   notes?: string | null;
+}
+
+// ============================================
+// Episode Types
+// ============================================
+
+export type EpisodeStatus = 'planned' | 'in_production' | 'in_post' | 'delivered' | 'aired';
+
+export interface Episode {
+  id: string;
+  productionId: string;
+  episodeNumber: number;
+  title: string | null;
+  description: string | null;
+  airDate: string | null;
+  premiereDate: string | null;
+  status: EpisodeStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateEpisodeInput {
+  productionId: string;
+  episodeNumber: number;
+  title?: string;
+  description?: string;
+  airDate?: string;
+  premiereDate?: string;
+  status?: EpisodeStatus;
+}
+
+export interface UpdateEpisodeInput {
+  episodeNumber?: number;
+  title?: string | null;
+  description?: string | null;
+  airDate?: string | null;
+  premiereDate?: string | null;
+  status?: EpisodeStatus;
 }
 
 // ============================================

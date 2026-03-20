@@ -58,7 +58,7 @@ import {
 } from './production-queries';
 import { createScene, updateScene, getScene, deleteScene } from './scenes';
 import { updateCastContract, createCastContract, getCastContract, deleteCastContract } from './cast-contracts';
-import { createCrewMember, updateCrewMember } from './crew';
+import { createCrewMember, updateCrewMember, getCrewMember, listCrewMembers, deleteCrewMember } from './crew';
 import { generateCallSheet } from './call-sheet';
 import { getAllAlerts } from './production-alerts';
 import { updateProduction } from './productions';
@@ -70,6 +70,9 @@ import {
 import { advanceStage, createAssetInstance, updateAssetInstance, deleteAssetInstance, listAssetInstances, listAssetTypes, listLifecycleStages, getAssetInstance } from './lifecycle';
 import { listProductions, createProduction } from './productions';
 import { generateRegistrationCode } from './telegram';
+import { getServiceSupabase } from './supabase';
+import { createEpisode, getEpisode, listEpisodes, updateEpisode, deleteEpisode } from './episodes';
+import type { EpisodeStatus, CreateEpisodeInput, UpdateEpisodeInput } from '@/types';
 import type {
   CreateProdSceneInput,
   UpdateProdSceneInput,
@@ -968,6 +971,22 @@ export const lexiconTools: Tool[] = [
           type: 'boolean',
           description: 'Mark payment as completed',
         },
+        dailyRate: {
+          type: 'number',
+          description: 'Per-day rate in dollars (for daily-rate cast)',
+        },
+        flatFee: {
+          type: 'number',
+          description: 'Flat fee in dollars (for flat-rate cast)',
+        },
+        totalPayment: {
+          type: 'number',
+          description: 'Total payment amount in dollars',
+        },
+        paidAmount: {
+          type: 'number',
+          description: 'Amount paid so far in dollars',
+        },
         notes: {
           type: 'string',
           description: 'Additional notes for the contract',
@@ -1142,6 +1161,18 @@ export const lexiconTools: Tool[] = [
           type: 'string',
           enum: ['daily', 'flat'],
           description: 'Payment type',
+        },
+        dailyRate: {
+          type: 'number',
+          description: 'Per-day rate in dollars (for daily-rate cast)',
+        },
+        flatFee: {
+          type: 'number',
+          description: 'Flat fee in dollars (for flat-rate cast)',
+        },
+        totalPayment: {
+          type: 'number',
+          description: 'Total payment amount in dollars',
         },
         notes: {
           type: 'string',
@@ -1525,6 +1556,309 @@ export const lexiconTools: Tool[] = [
         },
       },
       required: ['crewMemberId'],
+    },
+  },
+
+  // ----------------------------------------
+  // Crew & Assignment Discovery Tools (Lexi)
+  // ----------------------------------------
+  {
+    name: 'list_crew',
+    description:
+      'List all crew members in a production. Shows name, role, contact info, and active status. Use when someone asks "who\'s on the crew" or "show me the team".',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID',
+        },
+        role: {
+          type: 'string',
+          enum: ['staff', 'ac', 'producer', 'fixer', 'editor', 'coordinator', 'field_producer', 'post_supervisor'],
+          description: 'Optional filter by crew role',
+        },
+        isActive: {
+          type: 'boolean',
+          description: 'If true, only return active crew members (default: true)',
+        },
+      },
+      required: ['productionId'],
+    },
+  },
+  {
+    name: 'get_crew_member',
+    description:
+      'Get full details of a specific crew member by ID, including contact info, role, Telegram status, and active status.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        crewMemberId: {
+          type: 'string',
+          description: 'The crew member ID',
+        },
+      },
+      required: ['crewMemberId'],
+    },
+  },
+  {
+    name: 'delete_crew_member',
+    description:
+      'Remove a crew member from the production. Requires explicit confirmation. This will also remove their scene assignments.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        crewMemberId: {
+          type: 'string',
+          description: 'The crew member ID to delete',
+        },
+        confirm: {
+          type: 'boolean',
+          description: 'Must be true to confirm deletion',
+        },
+      },
+      required: ['crewMemberId', 'confirm'],
+    },
+  },
+  {
+    name: 'remove_crew_assignment',
+    description:
+      'Remove a crew member from a scene assignment. Use when someone needs to be pulled off a shoot or reassigned.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        assignmentId: {
+          type: 'string',
+          description: 'The assignment ID to remove. Use list_scene_assignments to find it.',
+        },
+        confirm: {
+          type: 'boolean',
+          description: 'Must be true to confirm removal',
+        },
+      },
+      required: ['assignmentId', 'confirm'],
+    },
+  },
+  {
+    name: 'list_scene_assignments',
+    description:
+      'List all crew assigned to a specific scene. Shows crew name, role, and assignment status. Use before removing or reassigning crew.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        sceneId: {
+          type: 'string',
+          description: 'The scene ID to list assignments for',
+        },
+      },
+      required: ['sceneId'],
+    },
+  },
+  {
+    name: 'get_scene',
+    description:
+      'Get full details of a specific scene by ID, including title, date, location, cast, crew assignments, equipment notes, and status.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        sceneId: {
+          type: 'string',
+          description: 'The scene ID',
+        },
+      },
+      required: ['sceneId'],
+    },
+  },
+  {
+    name: 'find_available_crew',
+    description:
+      'Find crew members available on a specific date, optionally filtered by role. Use when staffing a scene: "who can shoot on Friday?" or "any ACs available March 25?".',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID',
+        },
+        date: {
+          type: 'string',
+          description: 'Date to check availability (YYYY-MM-DD)',
+        },
+        role: {
+          type: 'string',
+          enum: ['staff', 'ac', 'producer', 'fixer', 'editor', 'coordinator', 'field_producer', 'post_supervisor'],
+          description: 'Optional filter by crew role',
+        },
+      },
+      required: ['productionId', 'date'],
+    },
+  },
+  {
+    name: 'batch_update_availability',
+    description:
+      'Set a crew member\'s availability for multiple dates at once. Use when someone says "I\'m OOO Monday through Friday" or "mark me available for the whole week".',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        crewMemberId: {
+          type: 'string',
+          description: 'The crew member ID',
+        },
+        dates: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Array of dates (YYYY-MM-DD format)',
+        },
+        status: {
+          type: 'string',
+          enum: ['available', 'ooo', 'dark', 'holding', 'booked'],
+          description: 'Availability status to set for all dates',
+        },
+        notes: {
+          type: 'string',
+          description: 'Optional notes for all dates',
+        },
+      },
+      required: ['crewMemberId', 'dates', 'status'],
+    },
+  },
+
+  // ----------------------------------------
+  // Export Operations (Lexi)
+  // ----------------------------------------
+  {
+    name: 'export_csv',
+    description:
+      'Generate a CSV download link for production data. Use when someone asks to "export the cast list", "download the schedule", or "get me a spreadsheet of crew".',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID',
+        },
+        type: {
+          type: 'string',
+          enum: ['cast', 'crew', 'scenes', 'callsheet'],
+          description: 'What to export: cast (contracts + payments), crew (roster), scenes (schedule), callsheet (daily call sheet)',
+        },
+        date: {
+          type: 'string',
+          description: 'Required for callsheet export: the date (YYYY-MM-DD)',
+        },
+      },
+      required: ['productionId', 'type'],
+    },
+  },
+
+  // ----------------------------------------
+  // Episode Management (Lexi)
+  // ----------------------------------------
+  {
+    name: 'list_episodes',
+    description:
+      'List all episodes for a production. Shows episode number, title, air date, and status.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID',
+        },
+        status: {
+          type: 'string',
+          enum: ['planned', 'in_production', 'in_post', 'delivered', 'aired'],
+          description: 'Optional filter by episode status',
+        },
+      },
+      required: ['productionId'],
+    },
+  },
+  {
+    name: 'create_episode',
+    description:
+      'Create a new episode for a production. Use when someone says "add episode 5" or "set up the next episode".',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        productionId: {
+          type: 'string',
+          description: 'The production ID',
+        },
+        episodeNumber: {
+          type: 'number',
+          description: 'Episode number (e.g., 1, 2, 3)',
+        },
+        title: {
+          type: 'string',
+          description: 'Episode title',
+        },
+        description: {
+          type: 'string',
+          description: 'Episode description or synopsis',
+        },
+        airDate: {
+          type: 'string',
+          description: 'Scheduled air date (YYYY-MM-DD)',
+        },
+        status: {
+          type: 'string',
+          enum: ['planned', 'in_production', 'in_post', 'delivered', 'aired'],
+          description: 'Episode status (default: planned)',
+        },
+      },
+      required: ['productionId', 'episodeNumber'],
+    },
+  },
+  {
+    name: 'update_episode',
+    description:
+      'Update episode details such as title, air date, or status.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        episodeId: {
+          type: 'string',
+          description: 'The episode ID to update',
+        },
+        title: {
+          type: 'string',
+          description: 'Updated title',
+        },
+        description: {
+          type: 'string',
+          description: 'Updated description',
+        },
+        airDate: {
+          type: 'string',
+          description: 'Updated air date (YYYY-MM-DD)',
+        },
+        status: {
+          type: 'string',
+          enum: ['planned', 'in_production', 'in_post', 'delivered', 'aired'],
+          description: 'Updated status',
+        },
+      },
+      required: ['episodeId'],
+    },
+  },
+  {
+    name: 'assign_scene_to_episode',
+    description:
+      'Link a scene to an episode. Use when someone says "that shoot is for episode 3" or "assign this scene to episode 5".',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        sceneId: {
+          type: 'string',
+          description: 'The scene ID to link',
+        },
+        episodeId: {
+          type: 'string',
+          description: 'The episode ID to link to. Set to null to unlink.',
+        },
+      },
+      required: ['sceneId'],
     },
   },
 ];
@@ -2527,12 +2861,20 @@ export async function executeToolCall(
           contractUpdate.paymentDone = input.paymentDone as boolean;
         if (input.notes !== undefined)
           contractUpdate.notes = input.notes as string;
+        if (input.dailyRate !== undefined)
+          contractUpdate.dailyRate = input.dailyRate as number;
+        if (input.flatFee !== undefined)
+          contractUpdate.flatFee = input.flatFee as number;
+        if (input.totalPayment !== undefined)
+          contractUpdate.totalPayment = input.totalPayment as number;
+        if (input.paidAmount !== undefined)
+          contractUpdate.paidAmount = input.paidAmount as number;
 
         if (Object.keys(contractUpdate).length === 0) {
           return {
             success: false,
             result: null,
-            error: 'No fields provided to update. Specify at least one of: contractStatus, paymentType, shootDone, interviewDone, pickupDone, paymentDone, notes.',
+            error: 'No fields provided to update. Specify at least one of: contractStatus, paymentType, dailyRate, flatFee, totalPayment, paidAmount, shootDone, interviewDone, pickupDone, paymentDone, notes.',
             shouldContinue: true,
           };
         }
@@ -2729,6 +3071,9 @@ export async function executeToolCall(
           castEntityId: input.castEntityId as string,
           contractStatus: input.contractStatus as ContractStatus | undefined,
           paymentType: input.paymentType as PaymentType | undefined,
+          dailyRate: input.dailyRate as number | undefined,
+          flatFee: input.flatFee as number | undefined,
+          totalPayment: input.totalPayment as number | undefined,
           notes: input.notes as string | undefined,
         };
 
@@ -3182,6 +3527,460 @@ export async function executeToolCall(
             message: `Registration code: ${code} — crew member uses /start ${code} in Telegram to connect.`,
           },
           shouldContinue: false,
+        };
+      }
+
+      // ----------------------------------------
+      // Export Operations (Lexi)
+      // ----------------------------------------
+
+      case 'export_csv': {
+        const productionId = input.productionId as string;
+        const exportType = input.type as string;
+        const date = input.date as string | undefined;
+
+        if (exportType === 'callsheet' && !date) {
+          return {
+            success: false,
+            result: null,
+            error: 'Date is required for callsheet export. Provide a date in YYYY-MM-DD format.',
+            shouldContinue: true,
+          };
+        }
+
+        // Build the download URL
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : 'https://lexicon.id8labs.app';
+        const params = new URLSearchParams({ productionId, type: exportType });
+        if (date) params.set('date', date);
+        const downloadUrl = `${baseUrl}/api/export?${params.toString()}`;
+
+        return {
+          success: true,
+          result: {
+            downloadUrl,
+            type: exportType,
+            message: `CSV export ready. Download: ${downloadUrl}`,
+          },
+          shouldContinue: false,
+        };
+      }
+
+      // ----------------------------------------
+      // Episode Management (Lexi)
+      // ----------------------------------------
+
+      case 'list_episodes': {
+        const productionId = input.productionId as string;
+        const status = input.status as EpisodeStatus | undefined;
+
+        const result = await listEpisodes(productionId, { status });
+
+        return {
+          success: true,
+          result: {
+            episodes: result.items.map((e) => ({
+              id: e.id,
+              episodeNumber: e.episodeNumber,
+              title: e.title,
+              airDate: e.airDate,
+              status: e.status,
+            })),
+            total: result.total,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'create_episode': {
+        const episodeInput: CreateEpisodeInput = {
+          productionId: input.productionId as string,
+          episodeNumber: input.episodeNumber as number,
+          title: input.title as string | undefined,
+          description: input.description as string | undefined,
+          airDate: input.airDate as string | undefined,
+          status: input.status as EpisodeStatus | undefined,
+        };
+
+        const newEpisode = await createEpisode(episodeInput);
+
+        return {
+          success: true,
+          result: {
+            episode: newEpisode,
+            action: 'created' as const,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'update_episode': {
+        const episodeId = input.episodeId as string;
+        const episodeUpdate: UpdateEpisodeInput = {};
+        if (input.title !== undefined) episodeUpdate.title = input.title as string;
+        if (input.description !== undefined) episodeUpdate.description = input.description as string;
+        if (input.airDate !== undefined) episodeUpdate.airDate = input.airDate as string;
+        if (input.status !== undefined) episodeUpdate.status = input.status as EpisodeStatus;
+
+        if (Object.keys(episodeUpdate).length === 0) {
+          return {
+            success: false,
+            result: null,
+            error: 'No fields provided to update.',
+            shouldContinue: true,
+          };
+        }
+
+        const updatedEpisode = await updateEpisode(episodeId, episodeUpdate);
+        if (!updatedEpisode) {
+          return {
+            success: false,
+            result: null,
+            error: `Episode not found with ID: ${episodeId}`,
+            shouldContinue: true,
+          };
+        }
+
+        return {
+          success: true,
+          result: {
+            episode: updatedEpisode,
+            action: 'updated' as const,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'assign_scene_to_episode': {
+        const sceneId = input.sceneId as string;
+        const episodeId = (input.episodeId as string | null) || null;
+
+        const scene = await updateScene(sceneId, { episodeId });
+        if (!scene) {
+          return {
+            success: false,
+            result: null,
+            error: `Scene not found with ID: ${sceneId}`,
+            shouldContinue: true,
+          };
+        }
+
+        return {
+          success: true,
+          result: {
+            scene,
+            episodeId,
+            action: episodeId ? 'linked' : 'unlinked',
+          },
+          shouldContinue: true,
+        };
+      }
+
+      // ----------------------------------------
+      // Crew & Assignment Discovery (Lexi)
+      // ----------------------------------------
+
+      case 'list_crew': {
+        const productionId = input.productionId as string;
+        const role = input.role as CrewRole | undefined;
+        const isActive = input.isActive !== false ? true : undefined; // default true
+
+        const result = await listCrewMembers(productionId, { role, isActive });
+
+        return {
+          success: true,
+          result: {
+            crew: result.items.map((c) => ({
+              id: c.id,
+              name: c.name,
+              role: c.role,
+              contactEmail: c.contactEmail,
+              contactPhone: c.contactPhone,
+              isActive: c.isActive,
+            })),
+            total: result.total,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'get_crew_member': {
+        const crewMemberId = input.crewMemberId as string;
+        const crew = await getCrewMember(crewMemberId);
+
+        if (!crew) {
+          return {
+            success: false,
+            result: null,
+            error: `Crew member not found with ID: ${crewMemberId}`,
+            shouldContinue: true,
+          };
+        }
+
+        return {
+          success: true,
+          result: {
+            crewMember: {
+              id: crew.id,
+              name: crew.name,
+              role: crew.role,
+              contactEmail: crew.contactEmail,
+              contactPhone: crew.contactPhone,
+              isActive: crew.isActive,
+              createdAt: crew.createdAt,
+            },
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'delete_crew_member': {
+        const crewMemberId = input.crewMemberId as string;
+        const confirmDeletion = input.confirm as boolean;
+
+        if (!confirmDeletion) {
+          return {
+            success: false,
+            result: null,
+            error: 'Deletion not confirmed. Set confirm=true to delete the crew member.',
+            shouldContinue: false,
+          };
+        }
+
+        const existingCrew = await getCrewMember(crewMemberId);
+        if (!existingCrew) {
+          return {
+            success: false,
+            result: null,
+            error: `Crew member not found with ID: ${crewMemberId}`,
+            shouldContinue: false,
+          };
+        }
+
+        const crewDeleted = await deleteCrewMember(crewMemberId);
+        if (!crewDeleted) {
+          return {
+            success: false,
+            result: null,
+            error: `Failed to delete crew member: ${crewMemberId}`,
+            shouldContinue: false,
+          };
+        }
+
+        return {
+          success: true,
+          result: {
+            deletedCrewMemberId: crewMemberId,
+            name: existingCrew.name,
+            action: 'deleted' as const,
+          },
+          shouldContinue: false,
+        };
+      }
+
+      case 'remove_crew_assignment': {
+        const assignmentId = input.assignmentId as string;
+        const confirmRemoval = input.confirm as boolean;
+
+        if (!confirmRemoval) {
+          return {
+            success: false,
+            result: null,
+            error: 'Removal not confirmed. Set confirm=true to remove the assignment.',
+            shouldContinue: false,
+          };
+        }
+
+        const supabase = getServiceSupabase();
+
+        // Get assignment details before deleting
+        const { data: existing } = await supabase
+          .from('scene_assignments')
+          .select('*, crew_members(name)')
+          .eq('id', assignmentId)
+          .single();
+
+        if (!existing) {
+          return {
+            success: false,
+            result: null,
+            error: `Assignment not found with ID: ${assignmentId}`,
+            shouldContinue: false,
+          };
+        }
+
+        const { error: deleteError } = await supabase
+          .from('scene_assignments')
+          .delete()
+          .eq('id', assignmentId);
+
+        if (deleteError) {
+          throw new Error(`Failed to remove assignment: ${deleteError.message}`);
+        }
+
+        return {
+          success: true,
+          result: {
+            removedAssignmentId: assignmentId,
+            crewMemberName: (existing.crew_members as { name: string } | null)?.name || 'Unknown',
+            action: 'removed' as const,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'list_scene_assignments': {
+        const sceneId = input.sceneId as string;
+
+        const supabase = getServiceSupabase();
+        const { data: assignments, error: listError } = await supabase
+          .from('scene_assignments')
+          .select('*, crew_members(id, name, role, contact_email)')
+          .eq('scene_id', sceneId)
+          .order('created_at', { ascending: true });
+
+        if (listError) {
+          throw new Error(`Failed to list assignments: ${listError.message}`);
+        }
+
+        return {
+          success: true,
+          result: {
+            assignments: (assignments || []).map((a) => ({
+              assignmentId: a.id,
+              crewMemberId: a.crew_member_id,
+              crewMemberName: (a.crew_members as { name: string } | null)?.name || 'Unknown',
+              crewMemberRole: (a.crew_members as { role: string } | null)?.role || 'Unknown',
+              assignmentRole: a.role,
+              status: a.status,
+              notes: a.notes,
+            })),
+            count: (assignments || []).length,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'get_scene': {
+        const sceneId = input.sceneId as string;
+        const scene = await getScene(sceneId);
+
+        if (!scene) {
+          return {
+            success: false,
+            result: null,
+            error: `Scene not found with ID: ${sceneId}`,
+            shouldContinue: true,
+          };
+        }
+
+        return {
+          success: true,
+          result: { scene },
+          shouldContinue: true,
+        };
+      }
+
+      case 'find_available_crew': {
+        const productionId = input.productionId as string;
+        const date = input.date as string;
+        const roleFilter = input.role as CrewRole | undefined;
+
+        // Get all active crew for this production (single fetch for both roster + availability)
+        const allCrew = await listCrewMembers(productionId, {
+          isActive: true,
+          role: roleFilter,
+          limit: 100,
+        });
+
+        // Get only the availability records for the date (skip crew re-fetch by querying directly)
+        const crewIds = allCrew.items.map((c) => c.id);
+        const supabase = getServiceSupabase();
+        const { data: availData } = crewIds.length > 0
+          ? await supabase
+              .from('crew_availability')
+              .select('crew_member_id, status')
+              .in('crew_member_id', crewIds)
+              .eq('date', date)
+          : { data: [] };
+
+        // Build a lookup of crew who have an explicit non-available status
+        const unavailableIds = new Set<string>();
+        for (const record of availData || []) {
+          if (record.status && record.status !== 'available') {
+            unavailableIds.add(record.crew_member_id as string);
+          }
+        }
+
+        // Crew are available if: no record (implicit available) OR explicit "available"
+        const availableCrew = allCrew.items.filter(
+          (c) => !unavailableIds.has(c.id)
+        );
+
+        return {
+          success: true,
+          result: {
+            date,
+            availableCrew: availableCrew.map((c) => ({
+              crewMemberId: c.id,
+              name: c.name,
+              role: c.role,
+              contactEmail: c.contactEmail,
+            })),
+            count: availableCrew.length,
+            totalCrew: allCrew.total,
+          },
+          shouldContinue: true,
+        };
+      }
+
+      case 'batch_update_availability': {
+        const crewMemberId = input.crewMemberId as string;
+        const dates = input.dates as string[];
+        const status = (input.status as AvailabilityStatus) || 'available';
+        const notes = input.notes as string | undefined;
+
+        // Single fetch: get all existing availability for this crew member across all requested dates
+        const allExisting = await listCrewAvailability({ crewMemberId });
+        const existingByDate = new Map(
+          allExisting
+            .filter((a) => dates.includes(a.date))
+            .map((a) => [a.date, a.id])
+        );
+
+        // Parallel mutations
+        const mutations = dates.map(async (date): Promise<{ date: string; action: string }> => {
+          const existingId = existingByDate.get(date);
+          if (existingId) {
+            await updateCrewAvailability(existingId, {
+              status,
+              notes: notes ?? null,
+            });
+            return { date, action: 'updated' };
+          } else {
+            await createCrewAvailability({
+              crewMemberId,
+              date,
+              status,
+              notes,
+            });
+            return { date, action: 'created' };
+          }
+        });
+
+        const results = await Promise.all(mutations);
+
+        return {
+          success: true,
+          result: {
+            crewMemberId,
+            status,
+            dates: results,
+            count: results.length,
+            message: `Set ${results.length} date${results.length !== 1 ? 's' : ''} to "${status}"`,
+          },
+          shouldContinue: true,
         };
       }
 

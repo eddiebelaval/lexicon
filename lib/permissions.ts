@@ -51,6 +51,11 @@ export type Capability =
   | 'write:get_alerts'
   | 'write:update_production'
   | 'write:update_crew_member'
+  | 'write:delete_crew'
+  | 'write:remove_assignment'
+  | 'write:batch_availability'
+  | 'write:manage_episodes'
+  | 'write:export_data'
   // Email capabilities
   | 'write:email_call_sheet'
   | 'write:email_production_report'
@@ -74,6 +79,8 @@ const ROLE_CAPABILITIES: Record<CrewRole, Capability[]> = {
     'write:create_crew', 'write:delete_scene', 'write:create_contract',
     'write:delete_contract', 'write:get_alerts', 'write:update_production',
     'write:update_crew_member',
+    'write:delete_crew', 'write:remove_assignment', 'write:batch_availability',
+    'write:manage_episodes', 'write:export_data',
     'write:email_call_sheet', 'write:email_production_report', 'write:email_contract_summary',
   ],
 
@@ -88,6 +95,8 @@ const ROLE_CAPABILITIES: Record<CrewRole, Capability[]> = {
     'write:generate_call_sheet',
     'write:create_crew', 'write:delete_scene', 'write:create_contract',
     'write:get_alerts', 'write:update_crew_member',
+    'write:remove_assignment', 'write:batch_availability',
+    'write:manage_episodes', 'write:export_data',
     'write:email_call_sheet', 'write:email_production_report', 'write:email_contract_summary',
   ],
 
@@ -101,6 +110,7 @@ const ROLE_CAPABILITIES: Record<CrewRole, Capability[]> = {
     'write:mark_footage_picked_up', 'write:update_notes',
     'write:generate_call_sheet',
     'write:create_crew', 'write:get_alerts', 'write:update_crew_member',
+    'write:remove_assignment', 'write:batch_availability',
     'write:email_call_sheet',
   ],
 
@@ -140,6 +150,7 @@ const ROLE_CAPABILITIES: Record<CrewRole, Capability[]> = {
     'write:mark_footage_picked_up', 'write:update_notes',
     'write:generate_call_sheet',
     'write:create_crew', 'write:get_alerts', 'write:update_crew_member',
+    'write:remove_assignment', 'write:batch_availability',
     'write:mark_scene_shot',
   ],
 
@@ -197,6 +208,13 @@ export function canUseTool(role: CrewRole, toolName: string): boolean {
     email_call_sheet: 'write:email_call_sheet',
     email_production_report: 'write:email_production_report',
     email_contract_summary: 'write:email_contract_summary',
+    delete_crew_member: 'write:delete_crew',
+    remove_crew_assignment: 'write:remove_assignment',
+    batch_update_availability: 'write:batch_availability',
+    create_episode: 'write:manage_episodes',
+    update_episode: 'write:manage_episodes',
+    assign_scene_to_episode: 'write:manage_episodes',
+    export_csv: 'write:export_data',
   };
 
   const required = toolCapabilityMap[toolName];
@@ -224,6 +242,9 @@ export function getAllowedToolNames(role: CrewRole): string[] {
     'create_cast_contract', 'delete_cast_contract', 'generate_call_sheet',
     'get_production_alerts', 'update_production',
     'email_call_sheet', 'email_production_report', 'email_contract_summary',
+    'delete_crew_member', 'remove_crew_assignment', 'batch_update_availability',
+    'create_episode', 'update_episode', 'assign_scene_to_episode',
+    'export_csv',
   ];
 
   return allTools.filter((tool) => canUseTool(role, tool));
@@ -316,6 +337,9 @@ export function buildRoleInstructions(name: string, role: CrewRole): string {
     'update_crew_availability', 'create_crew_member', 'update_crew_member',
     'delete_scene', 'create_cast_contract', 'delete_cast_contract',
     'generate_call_sheet', 'get_production_alerts', 'update_production',
+    'delete_crew_member', 'remove_crew_assignment', 'batch_update_availability',
+    'create_episode', 'update_episode', 'assign_scene_to_episode',
+    'export_csv',
   ].filter((t) => !canUseTool(role, t));
 
   if (restrictedTools.length > 0) {
