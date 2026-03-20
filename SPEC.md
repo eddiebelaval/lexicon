@@ -1,156 +1,219 @@
-# SPEC.md — Lexicon
-
-> What it IS right now. The testable contract.
-
-**Last reconciled:** March 18, 2026 (session 2)
-**Product:** Lexicon + Lexi (production intelligence entity)
-**Repo:** https://github.com/eddiebelaval/lexicon
-**Deploy:** https://lexicon-phi.vercel.app
-**PRs merged:** #4-#8 (lexi-production through telegram), #9 (onboarding wizard), #10 (gear tracking), #11 (automated triggers), #12 (post-production + docs + tool parity), #13 (polish)
-**Pipeline Stage:** Stage 9 (Launch Prep) — feature-complete for production beta
-**Tests:** 227 (unit, integration, E2E, health, production, permissions, activity)
-**Agent Tools:** 46 (was 27 at start of session)
-**Asset Types:** 7 default (Contract, Shoot, Deliverable, Equipment, Footage, Document + custom)
-**Production UI:** 8 pages (dashboard, calendar, cast, crew, gear, post, call sheet, team) + intake
-**Cron Jobs:** 3 (monitoring 6AM, digest 7AM, triggers every 4h)
-Drift status: CURRENT
-
 ---
+last-reconciled: 2026-03-20
+status: CURRENT
+Build stage: Stage 9 (Launch Prep)
+Drift status: CURRENT
+vision-alignment: 60%
+---
+
+# SPEC
 
 ## Identity
 
-**Lexicon v0.2** — Production intelligence platform for unscripted TV. Entity: **Lexi**.
+Lexicon is a production intelligence platform for unscripted TV, deployed at lexicon-phi.vercel.app. Its entity, Lexi, operates as institutional memory and operational agent across web UI and Telegram. The platform manages the full production lifecycle -- cast contracts, crew availability, shooting schedules, equipment custody, footage chain of custody, document tracking, and automated alerting -- through typed asset state machines and a 46-tool agent surface. Built on Next.js 15 + Supabase + Neo4j + Claude, with 227 tests and 67+ API routes.
 
-Expanding from a narrative universe knowledge platform into a unified production management tool. Lexi is the production intelligence entity (same pattern as Ava/Parallax, Dae/Homer). Strategic anchor: Season 8 of Diaries (90 Day Fiance franchise).
+## Current Capabilities
 
-Core: Next.js 15 + Supabase (production data) + Neo4j (cast knowledge graph, currently down) + Claude (Lexi intelligence). Entity management, relationship mapping, AI-powered search, D3.js graph viz, Perplexity-style chat with Lexi production mode, wiki view, storylines, CSV import, notifications. NEW: production scheduling, crew management, cast contract tracking, scene management.
+### 1. Entity Management (CRUD 4/4)
 
----
+- **Entity Types:** 5 types: character, location, event, object, faction.
+- **Full CRUD:** Create, read, update, delete with Zod validation.
+- **Search:** By name, aliases, description (regex).
+- **Status Tracking:** Entity counts by type, active/inactive/deceased.
+- **UI:** EntityList, EntityCard, EntityDetail, EntityForm, EntityTypeBadge.
 
-## Tech Stack
+### 2. Relationship Mapping (CRUD 4/4)
 
-| Layer | Technology | Status |
-|-------|-----------|--------|
-| Frontend | Next.js 15, React 19, TypeScript 5.7, Tailwind CSS 3.4, shadcn/ui | Implemented |
-| Graph DB | Neo4j Aura (managed, free tier, ID: 0078a27e) | DOWN — instance hibernated after 66 days |
-| Production DB | Supabase (PostgreSQL) — 7 production tables, seeded with Diaries S7 | LIVE — migration applied, data seeded |
-| User DB | Supabase (PostgreSQL) — auth, universes, storylines, chat, notifications | Implemented |
-| AI | Claude API (@anthropic-ai/sdk 0.39.0) — search synthesis, query parsing | Implemented |
-| Graph Viz | D3.js 7.9 — force-directed graph (688 LOC, 5 files) | Implemented |
-| Web Enrichment | Firecrawl + Claude | Partial — wiki enrichment implemented, live search web augmentation still pending |
+- **Typed Relationships:** 9 types: knows, loves, opposes, works_for, family_of, located_at, participated_in, possesses, member_of.
+- **Strength Scoring:** 1-5 with context metadata, start/end dates.
+- **Path Finding:** Shortest path up to 5 hops, N-hop subgraph extraction.
+- **Bidirectional Support:** Relationships traversable in both directions.
+
+### 3. AI-Powered Search
+
+- **Intent Parsing:** Claude parses intent, extracts entities, determines web search need.
+- **Graph Queries:** Neo4j graph queries + storyline search.
+- **Synthesis:** Synthesized answers with source citations.
+- **UI:** 300ms debounced, Cmd/Ctrl+K shortcut, 15-second timeout with graceful fallback.
+- **Web Augmentation:** Live web search path designed but not active.
+
+### 4. Graph Visualization (688 LOC)
+
+- **D3.js Force-Directed:** Interactive: zoom, pan, drag (fixed after drag).
+- **Click-to-Select:** Yellow highlight on selection.
+- **Filtering:** By entity type, color-coded (5 colors).
+- **Controls:** Zoom in/out, fit-to-view, layout reset.
+- **Legend:** Entity types, relationships, interaction hints.
+- **Cleanup:** AbortController on unmount, 30-second timeout with retry.
+
+### 5. CSV/Excel Import
+
+- **Auto-Detect:** Delimiters (CSV, TSV, pipe), header row detection.
+- **Type Inference:** String, date, number, boolean. Field mapping.
+- **Excel Support:** SheetJS (xlsx) for Excel import with auto-detect for cast/crew/schedule sheets.
+- **Wizard UI:** Multi-step with progress tracking. Bulk import for entities and storylines.
+
+### 6. Chat Interface
+
+- **Perplexity-Style:** Sidebar conversation list, SSE streaming responses.
+- **Citations:** Inline citations, entity preview in chat.
+- **Mode Toggle:** 'universe' (original Lexicon) vs 'production' (Lexi).
+- **Conversations:** Create, read, list, update title, delete.
+
+### 7. Wiki View
+
+- **Wikipedia-Style:** Entity articles with relationship matrices.
+- **Infoboxes:** Table of contents, web data badges.
+
+### 8. Storylines (CRUD 4/4)
+
+- **Full CRUD:** With cast (entity) linking.
+- **Search & Pagination:** Plus CSV bulk import.
+
+### 9. Notifications (CRUD 4/4)
+
+- **Full System:** Create, list, mark read, dismiss, mark all read, unread count.
+- **Preferences:** User notification preferences.
+
+### 10. Production Management
+
+- **Productions:** CRUD for production seasons linked to universes.
+- **Scenes:** 20 scenes seeded. CRUD with cast linking, date/time/location, status tracking (scheduled/shot/cancelled/postponed/self_shot), equipment notes.
+- **Crew:** 10 crew members seeded. Roles: staff, ac, producer, fixer, editor, coordinator.
+- **Scene Assignments:** Link crew to scenes with role and status.
+- **Cast Contracts:** 15 contracts seeded. Status tracking (signed/pending/offer_sent/dnc/email_sent/declined), payment type (daily/flat), completion tracking (shoot/interview/pickup/payment done).
+- **Crew Availability:** 50 entries seeded. Daily status: available, ooo, dark, holding, booked.
+- **Upload Tasks:** Track footage pickup and upload logistics.
+
+### 11. Asset Lifecycle Engine
+
+- **Typed State Machines:** 5 tables backing typed lifecycle stages with transitions, timestamps, owners.
+- **Equipment:** 6-stage lifecycle (At Gear House -> Checked Out -> On Location -> Downloading -> In Transit -> Returned). Chain of custody with owner + location metadata.
+- **Footage:** 7-stage lifecycle (Shot -> Downloaded -> In Transit -> Uploaded -> Delivered to Post -> In Edit -> Final). Rich metadata (scene, camera, card, AC notes).
+- **Documents:** 5-stage lifecycle (Draft -> Sent -> Acknowledged -> Signed -> Filed). For scripts, releases, NDAs.
+- **Custom Types:** Show-defined asset types with custom stage definitions.
+
+### 12. Lexi Entity
+
+- **Production-Aware Prompt:** System prompt with gear/footage/document context (lib/lexi.ts).
+- **Live Context Injection:** buildProductionContext() injects live production state into Claude.
+- **46 Agent Tools:** Create/update/delete assets, productions, crew, contracts, scenes, documents, registration codes.
+- **RBAC:** 8 roles x 33 capabilities, tool-level enforcement.
+- **6 Query Functions:** Production-aware answering.
+- **Telegram Bot:** @LexiProductionBot with crew registration, tool execution, activity logging.
+
+### 13. Production UI
+
+- **Dashboard** (`/universe/[id]/production`): Stat cards, upcoming scenes, incomplete contracts.
+- **Calendar** (`/universe/[id]/production/calendar`): Week/month, scene chips, status color coding.
+- **Cast Board** (`/universe/[id]/production/cast`): Contract table, interactive completion checkboxes.
+- **Crew Board** (`/universe/[id]/production/crew`): Weekly availability grid, click-to-cycle.
+- **Gear Board** (`/universe/[id]/production/gear`): Stage-grouped columns for Equipment + Footage, overdue detection (isTerminal/isInitial flags), custody + location per asset.
+- **Post Board** (`/universe/[id]/production/post`): Footage timeline with rich metadata (scene, camera, card, AC notes, shot date), expandable with transition history, cast/stage filtering.
+- **Call Sheet** (`/universe/[id]/production/call-sheet`): Auto-generated from schedule + crew.
+- **Team** (`/universe/[id]/production/team`): Telegram registration codes.
+- **Scene Editor:** Modal form with cast assignment, all scheduling fields.
+- **Production Layout:** 8-tab navigation (Dashboard, Calendar, Cast, Crew, Gear, Post, Call Sheet, Team).
+
+### 14. Automated Triggers
+
+- **10 Alert Detectors:** Unsigned contracts, double-booked crew, overdue deliverables, stuck stages, unassigned scenes, gear overdue (48h/96h), footage not downloaded (24h), footage not uploaded (48h), approaching deadlines (3d/1d), idle cast (14d).
+- **Cron Route:** `/api/cron/triggers` every 4 hours via Vercel Cron.
+- **Telegram Delivery:** Routed by crew role, fallback to coordinator/staff.
+- **Deduplication:** Via activity_log (4-hour window).
+
+### 15. Onboarding
+
+- **Lexi-as-Conversation:** State machine engine (18 states, no LLM calls).
+- **Excel/CSV Import:** Via SheetJS with auto-detect for cast/crew/schedule sheets.
+- **Batch Creation API:** Universe + production + cast + crew + asset types in one POST.
+
+### 16. Infrastructure
+
+- **Auth:** Supabase Email OTP, universe isolation.
+- **API Surface:** 67+ routes, consistent response format: `{ success, data?, error? }`.
+- **Agent-Native Tools:** 46 tools with Pattern 6 completion signals.
+- **Cron Jobs:** 3 Vercel cron jobs (monitoring 6AM, digest 7AM, triggers every 4h).
+- **UI:** Dark mode (ThemeProvider), Geist font, error handling (retry buttons, loading skeletons, auto-dismiss error banners).
+- **Shared Utilities:** hoursSince(), formatRelativeHours(), verifyCronSecret().
+
+## Architecture Contract
+
+### Stack
+
+| Layer | Technology | Notes |
+|-------|-----------|-------|
+| Frontend | Next.js 15, React 19, TypeScript 5.7, Tailwind CSS 3.4, shadcn/ui | App Router |
+| Graph DB | Neo4j Aura (managed, free tier, ID: 0078a27e) | DOWN -- instance hibernated after 66 days |
+| Production DB | Supabase (PostgreSQL) -- 7 production tables | LIVE -- migration applied, data seeded with Diaries S7 |
+| User DB | Supabase (PostgreSQL) -- auth, universes, storylines, chat, notifications | Implemented |
+| AI | Claude API (@anthropic-ai/sdk 0.80.0) -- search synthesis, query parsing, Lexi intelligence | Implemented |
+| Graph Viz | D3.js 7.9 -- force-directed graph (688 LOC, 5 files) | Implemented |
+| Web Enrichment | Firecrawl + Claude | Partial -- wiki enrichment implemented, live search web augmentation pending |
+| Telegram | grammY 1.41 | @LexiProductionBot LIVE |
 | Email | Resend | Partial |
-| Deployment | Vercel | Deployed (homepage live, health semantics updated locally) |
+| Deployment | Vercel | Deployed (lexicon-phi.vercel.app) |
 | Unit/Integration | Vitest 2.1 | 179 tests passing |
 | E2E | Playwright 1.49 | 17 tests |
 
----
+### System Role
 
-## Capabilities (What Works)
+Lexicon is the production operations layer for id8Labs entertainment projects. It sits alongside Homer (relationship dashboard) and Parallax (companion platform) as a domain-specific product using the shared entity architecture (Lexi = Ava = Dae pattern). Diaries S8 production team is the first consumer.
 
-### 1. Entity Management (CRUD 4/4)
-- 5 entity types: character, location, event, object, faction
-- Full CRUD with Zod validation
-- Search by name, aliases, description (regex)
-- Entity counts by type, status tracking (active/inactive/deceased)
-- UI: EntityList, EntityCard, EntityDetail, EntityForm, EntityTypeBadge
+### Primary Actors
 
-### 2. Relationship Mapping (CRUD 4/4)
-- 9 typed relationships: knows, loves, opposes, works_for, family_of, located_at, participated_in, possesses, member_of
-- Strength scoring (1-5), context metadata, start/end dates
-- Shortest path finding (up to 5 hops), N-hop subgraph extraction
-- Bidirectional support
+- `Coordinator` -- manages day-to-day: schedules scenes, tracks contracts, checks gear
+- `AC (Assistant Coordinator)` -- field operations: picks up footage, checks out gear, manages on-location logistics
+- `Producer` -- oversight: reviews dashboards, assigns crew, approves call sheets
+- `Showrunner` -- strategic: monitors overall production health, cast dynamics
+- `Post Supervisor` -- receives footage, tracks edit progress, manages deliverables
+- `Lexi (Agent)` -- answers queries, executes tools, sends alerts, generates call sheets
+- `Cron (System)` -- runs monitoring (6AM), digest (7AM), triggers (every 4h)
 
-### 3. AI-Powered Search
-- Claude parses intent, extracts entities, determines web search need
-- Neo4j graph queries + storyline search
-- Live web augmentation in the search path is not active yet
-- Synthesized answers with source citations
-- 300ms debounced UI, Cmd/Ctrl+K shortcut
-- 15-second timeout, graceful fallback to basic search
+### Data Flow
 
-### 4. Graph Visualization (688 LOC)
-- D3.js force-directed, interactive: zoom, pan, drag (fixed after drag)
-- Click-to-select with yellow highlight
-- Filter by entity type, color-coded (5 colors)
-- Controls: zoom in/out, fit-to-view, layout reset
-- Legend with entity types, relationships, interaction hints
-- AbortController cleanup, 30-second timeout with retry
+```
+Excel/CSV Import ─────┐
+                       v
+Lexi Onboarding ──> Universe + Production Setup
+                       │
+                       v
+Cast/Crew/Schedule ──> Supabase (7 production tables)
+                       │              │
+                       v              v
+Neo4j (cast graph) <── Lexi ──> Production UI (8 pages)
+                       │              │
+                       v              v
+Automated Triggers ──> Telegram Alerts + Activity Log
+                       │
+                       v
+Call Sheet Generator ──> Printable Output
+```
 
-### 5. CSV Import
-- Auto-detect delimiters (CSV, TSV, pipe), header row detection
-- Type inference (string, date, number, boolean), field mapping
-- Multi-step wizard UI with progress tracking
-- Bulk import for entities AND storylines
+### Core Entities
 
-### 6. Chat Interface
-- Perplexity-style with sidebar conversation list
-- SSE streaming responses, inline citations
-- Entity preview in chat, discovery panel
-- Conversations: create, read, list, update title, delete
+| Entity | Purpose | Key Fields |
+|--------|---------|------------|
+| productions | Season-level container | universe_id, name, status, start_date, end_date |
+| scenes | Individual shooting events | production_id, title, date, location, status, cast[] |
+| crew_members | Production team roster | production_id, name, role, phone, email |
+| cast_contracts | Cast contract lifecycle | production_id, cast_member, status, payment_type, completion flags |
+| crew_availability | Daily crew scheduling | crew_id, date, status (available/ooo/dark/holding/booked) |
+| asset_types | Show-defined lifecycle definitions | production_id, name, stages[], initial_stage, terminal_stages |
+| assets | Individual tracked items (gear, footage, docs) | type_id, current_stage, metadata, owner, location |
 
-### 7. Wiki View
-- Wikipedia-style entity articles with relationship matrices
-- Infoboxes, table of contents, web data badges
+### Integrations
 
-### 8. Storylines (CRUD 4/4)
-- Full CRUD with cast (entity) linking
-- Search, pagination, CSV bulk import
-
-### 9. Notifications (CRUD 4/4)
-- Create, list, mark read, dismiss, mark all read, unread count
-- User notification preferences
-
-### 11. Production Management (NEW — Lexi)
-- **Productions:** CRUD for production seasons linked to universes
-- **Scenes:** 20 scenes seeded. CRUD with cast linking, date/time/location, status tracking (scheduled/shot/cancelled/postponed/self_shot), equipment notes
-- **Crew:** 10 crew members seeded. Roles: staff, ac, producer, fixer, editor, coordinator
-- **Scene Assignments:** Link crew to scenes with role and status
-- **Cast Contracts:** 15 contracts seeded. Status tracking (signed/pending/offer_sent/dnc/email_sent/declined), payment type (daily/flat), completion tracking (shoot/interview/pickup/payment done)
-- **Crew Availability:** 50 entries seeded. Daily status: available, ooo, dark, holding, booked
-- **Upload Tasks:** Track footage pickup and upload logistics
-
-### 12. Lexi Entity
-- Production-aware system prompt with gear/footage/document context (lib/lexi.ts)
-- buildProductionContext() injects live production state into Claude
-- Chat mode toggle: 'universe' (original Lexicon) vs 'production' (Lexi)
-- 6 production query functions for answering questions
-- 46 agent tools (create/update/delete assets, productions, crew, contracts, scenes, documents, registration codes)
-- RBAC: 8 roles x 33 capabilities, tool-level enforcement
-- Telegram bot: @LexiProductionBot with crew registration, tool execution, activity logging
-
-### 13. Production UI
-- **Dashboard** (`/universe/[id]/production`): stat cards, upcoming scenes, incomplete contracts
-- **Calendar** (`/universe/[id]/production/calendar`): week/month, scene chips, status color coding
-- **Cast Board** (`/universe/[id]/production/cast`): contract table, interactive completion checkboxes
-- **Crew Board** (`/universe/[id]/production/crew`): weekly availability grid, click-to-cycle
-- **Gear Board** (`/universe/[id]/production/gear`): stage-grouped columns for Equipment + Footage, overdue detection (isTerminal/isInitial flags), custody + location per asset
-- **Post Board** (`/universe/[id]/production/post`): footage timeline with rich metadata (scene, camera, card, AC notes, shot date), expandable with transition history, cast/stage filtering
-- **Call Sheet** (`/universe/[id]/production/call-sheet`): auto-generated from schedule + crew
-- **Team** (`/universe/[id]/production/team`): Telegram registration codes
-- **Scene Editor**: modal form with cast assignment, all scheduling fields
-- **Production Layout**: 8-tab navigation (Dashboard, Calendar, Cast, Crew, Gear, Post, Call Sheet, Team)
-
-### 14. Automated Triggers
-- 10 alert detectors running in parallel: unsigned contracts, double-booked crew, overdue deliverables, stuck stages, unassigned scenes, gear overdue (48h/96h), footage not downloaded (24h), footage not uploaded (48h), approaching deadlines (3d/1d), idle cast (14d)
-- Cron route (`/api/cron/triggers`) every 4 hours via Vercel Cron
-- Telegram delivery routed by crew role, fallback to coordinator/staff
-- Deduplication via activity_log (4-hour window)
-
-### 15. Onboarding
-- Lexi-as-conversation: state machine engine (18 states, no LLM calls)
-- Excel/CSV import via SheetJS with auto-detect for cast/crew/schedule sheets
-- Batch creation API: universe + production + cast + crew + asset types in one POST
-
-### 16. Infrastructure
-- Supabase Email OTP auth, universe isolation
-- 67+ API routes, consistent response format: `{ success, data?, error? }`
-- 46 agent-native tools with Pattern 6 completion signals
-- 3 Vercel cron jobs (monitoring, digest, triggers)
-- Dark mode (ThemeProvider), Geist font
-- Shared utilities: hoursSince(), formatRelativeHours(), verifyCronSecret()
-- Error handling: retry buttons, loading skeletons, auto-dismiss error banners
-
----
+| Service | Purpose | Status |
+|---------|---------|--------|
+| Supabase | Production data + auth + realtime | LIVE |
+| Neo4j Aura | Cast knowledge graph | DOWN (hibernated) |
+| Claude API | Lexi intelligence + search synthesis | LIVE |
+| Telegram (grammY) | Crew alerts + tool execution | LIVE |
+| Vercel Cron | Monitoring, digest, triggers | LIVE |
+| Firecrawl | Wiki enrichment | Partial |
+| Resend | Email notifications | Partial |
+| SheetJS (xlsx) | Excel import | LIVE |
 
 ## API Surface
 
@@ -163,61 +226,69 @@ Core: Next.js 15 + Supabase (production data) + Neo4j (cast knowledge graph, cur
 | Notifications | 6 | 4/4 |
 | Search & AI | 5 | Complete |
 | Preferences | 2 | 2/2 |
-| **Productions** | **2** | **4/4** |
-| **Scenes** | **2** | **4/4** |
-| **Crew** | **2** | **4/4** |
-| **Cast Contracts** | **2** | **4/4** |
-| **Crew Availability** | **2** | **4/4** |
+| Productions | 2 | 4/4 |
+| Scenes | 2 | 4/4 |
+| Crew | 2 | 4/4 |
+| Cast Contracts | 2 | 4/4 |
+| Crew Availability | 2 | 4/4 |
 | Infrastructure | 3 | Complete |
-| **Total** | **Expanded beyond original Stage 8 surface** | |
 
 Full audit: see `PARITY_MAP.md`
 
----
+## Current Boundaries
+
+- Does NOT have a landing page or custom domain -- new users hit raw app UI
+- Does NOT have auth on `/api/onboard` (TODO placeholder user ID)
+- Does NOT have CI/CD pipeline
+- Does NOT have error monitoring or analytics
+- Does NOT have Neo4j operational -- graph-first features degraded
+- Does NOT have live web search augmentation in search path
+- Does NOT support cross-show crew sharing or calendar overlay
+- Does NOT have mobile-optimized views for field use
+- Does NOT handle payroll, invoicing, or financial transactions
 
 ## Verification Surface
 
-| Capability | How to Verify | Last Verified |
-|-----------|---------------|---------------|
-| Entity CRUD | Create character, edit, delete, see in list | Jan 8, 2026 (129 tests) |
-| Relationships | Link entities, see in graph, path find | Jan 8, 2026 (34 tests) |
-| AI Search | "Who knows the location of X?" | Jan 8, 2026 (25 tests) |
-| Graph Viz | Open graph, nodes + edges, interact | Jan 8, 2026 (manual) |
-| CSV Import | Upload CSV, entities appear | Jan 8, 2026 (18 tests) |
-| Chat | Send message, streaming response, citations | Jan 8, 2026 (manual) |
-| Wiki View | Entity article renders | Jan 8, 2026 (manual) |
-| Storylines | Create with cast, search | Jan 9, 2026 (manual) |
-| Notifications | Trigger, see in UI, dismiss | Jan 9, 2026 (manual) |
-| Auth | Sign up, log in, universe isolation | Jan 6, 2026 (manual) |
-| Build | `npm run build` passes | **Mar 17, 2026** |
-| Tests | `npm run test -- --run` — 196 passing | **Mar 17, 2026** |
-| Deploy | lexicon-phi.vercel.app loads | Jan 8, 2026 |
-| Production Dashboard | Stats, upcoming scenes, incomplete contracts render | **Mar 16, 2026** (visual) |
-| Cast Board | 15 contracts, checkboxes, status badges render | **Mar 16, 2026** (visual) |
-| Crew Board | 10 crew, availability grid, week nav render | **Mar 16, 2026** (visual) |
-| Calendar | Month view, scene chips, today highlight render | **Mar 16, 2026** (visual) |
-| Health Route | `/api/health` reports beta-ready vs degraded vs unhealthy | **Mar 17, 2026** (3 unit tests) |
-| Call Sheet | `generateCallSheet()` returns crew/cast names and empty-day fallback | **Mar 17, 2026** (2 unit tests) |
+### Entity & Graph
+- [ ] Create character entity, edit, delete, verify in list
+- [ ] Link two entities with relationship, verify in graph, path find
+- [ ] "Who knows the location of X?" returns synthesized answer with citations
 
-**Current read:** private production beta is credible; full graph-first public launch still blocked by Neo4j and live web search.
+### Graph Visualization
+- [ ] Open graph, nodes + edges render, zoom/pan/drag functional
 
----
+### Import
+- [ ] Upload CSV, entities appear in list
+- [ ] Upload Excel file via onboarding, cast/crew auto-detected
 
-## Known Gaps
+### Chat & Wiki
+- [ ] Send message to Lexi, streaming response with citations
+- [ ] Entity wiki article renders with infobox and relationship matrix
 
-### Beta Blockers (Priority 1)
-- Neo4j still down — graph-first launch parity not restored
-- No landing page or custom domain — new users hit raw app UI
-- No auth on `/api/onboard` (TODO placeholder user ID)
+### Production Management
+- [ ] Dashboard shows stat cards, upcoming scenes, incomplete contracts
+- [ ] Calendar renders month view with scene chips and status colors
+- [ ] Cast board shows 15 contracts with interactive checkboxes
+- [ ] Crew board shows 10 crew with weekly availability grid
+- [ ] Gear board shows equipment grouped by stage with overdue detection
+- [ ] Post board shows footage timeline with transition history
 
-### Nice to Have (Priority 3)
-- Onboarding UX: condense to 3 interactions (combined form + immediate file upload)
-- Design system alignment with Mission Control patterns
-- Live web search augmentation in search path
-- CI/CD pipeline
-- Error monitoring / analytics
+### Automated Triggers
+- [ ] `/api/cron/triggers` detects unsigned contracts and sends Telegram alert
+- [ ] Deduplication prevents duplicate alerts within 4-hour window
 
----
+### Onboarding
+- [ ] Lexi onboarding wizard completes 18-state flow without errors
+- [ ] Batch creation API creates universe + production + cast + crew in one POST
+
+### Infrastructure
+- [ ] `npm run build` succeeds
+- [ ] `npx tsc --noEmit` passes
+- [ ] `npm run test -- --run` -- 227 tests passing
+- [ ] `/api/health` reports beta-ready vs degraded vs unhealthy
+- [ ] lexicon-phi.vercel.app loads
+
+**Current read:** Private production beta is credible; full graph-first public launch still blocked by Neo4j and live web search.
 
 ## Environment Dependencies
 
@@ -231,22 +302,21 @@ RESEND_API_KEY, RESEND_FROM_EMAIL
 NEXT_PUBLIC_APP_URL, CRON_SECRET
 ```
 
----
-
 ## Drift Log
 
-| Date | Drift | Resolution |
-|------|-------|------------|
-| 2026-03-15 | Original Triad understated build (missing 6+ features, 129 tests, 97% parity) | SPEC updated from PIPELINE_STATUS.md + PARITY_MAP.md + codebase audit |
-| 2026-03-15 | All services potentially down after 66-day dormancy | Supabase: LIVE. Neo4j: DOWN (hibernated). Vercel: pending |
-| 2026-03-16 | Strategic pivot: Lexicon expanding to production management with Lexi entity | 7 production tables, 10 API routes, Lexi system prompt, 5 agent tools built overnight |
-| 2026-03-16 | Neo4j Aura instance dead (0078a27e) | Confirmed down. Production features work on Supabase alone. Re-provision later for cast graph. |
-| 2026-03-16 | Supabase migration conflicts on shared project | Repaired migration history, applied production schema successfully |
-| 2026-03-16 | Bug: lexi.ts and production-queries.ts referenced `prod_scenes` instead of `scenes` | Fixed — table name aligned with migration |
-| 2026-03-16 | Phase 2 Production UI built | 13 components, 4 pages, 1 layout. Dashboard, calendar, cast board, crew board, scene editor. All visually verified. |
-| 2026-03-16 | Cast board API parsing bug | Fixed — was treating ApiResponse as raw array, causing productionId=undefined |
-| 2026-03-16 | Pipeline advanced to Stage 9 (Launch Prep) | All feature blocks complete. Remaining: polish, deploy, onboard. |
-| 2026-03-17 | Beta-hardening pass removed fake demo IDs from key entry points | Home, dashboard, header, and settings now distinguish public beta visitors from signed-in users |
-| 2026-03-17 | Health route was misclassifying beta readiness | Supabase added as core dependency, Neo4j treated as degraded optional service for production beta |
-| 2026-03-17 | Production verification lagged behind shipped surface | Added health route tests and call-sheet smoke coverage; suite now passes at 196 tests |
-| 2026-03-18 | Session 2: 5 PRs shipped — onboarding, gear, footage, triggers, post, documents, tool parity | Lexi: 27 -> 46 tools. Asset types: 3 -> 7. UI pages: 6 -> 8. Cron jobs: 2 -> 3. 4,600+ lines shipped. |
+| Date | Section | What Changed | Why | VISION Impact |
+|------|---------|-------------|-----|---------------|
+| 2026-03-15 | All | Original Triad understated build (missing 6+ features, 129 tests, 97% parity) | SPEC updated from PIPELINE_STATUS.md + PARITY_MAP.md + codebase audit | None -- VISION already accurate |
+| 2026-03-15 | Infrastructure | All services potentially down after 66-day dormancy | Supabase: LIVE. Neo4j: DOWN (hibernated). Vercel: pending | None |
+| 2026-03-16 | Identity, Capabilities | Strategic pivot: Lexicon expanding to production management with Lexi entity | 7 production tables, 10 API routes, Lexi system prompt, 5 agent tools built overnight | Soul rewritten. Pillars expanded. |
+| 2026-03-16 | Stack | Neo4j Aura instance dead (0078a27e) | Confirmed down. Production features work on Supabase alone. Re-provision later for cast graph. | Pillar 6 remains REALIZED (Supabase carries the load) |
+| 2026-03-16 | Infrastructure | Supabase migration conflicts on shared project | Repaired migration history, applied production schema successfully | None |
+| 2026-03-16 | Capabilities | Bug: lexi.ts and production-queries.ts referenced `prod_scenes` instead of `scenes` | Fixed -- table name aligned with migration | None |
+| 2026-03-16 | Capabilities (13) | Phase 2 Production UI built | 13 components, 4 pages, 1 layout. Dashboard, calendar, cast board, crew board, scene editor. | None |
+| 2026-03-16 | Capabilities (13) | Cast board API parsing bug | Fixed -- was treating ApiResponse as raw array, causing productionId=undefined | None |
+| 2026-03-16 | All | Pipeline advanced to Stage 9 (Launch Prep) | All feature blocks complete. Remaining: polish, deploy, onboard. | None |
+| 2026-03-17 | Infrastructure | Beta-hardening pass removed fake demo IDs from key entry points | Home, dashboard, header, and settings now distinguish public beta visitors from signed-in users | None |
+| 2026-03-17 | Infrastructure | Health route was misclassifying beta readiness | Supabase added as core dependency, Neo4j treated as degraded optional service for production beta | None |
+| 2026-03-17 | Verification | Production verification lagged behind shipped surface | Added health route tests and call-sheet smoke coverage; suite now passes at 196 tests | None |
+| 2026-03-18 | Capabilities (10-15) | Session 2: 5 PRs shipped -- onboarding, gear, footage, triggers, post, documents, tool parity | Lexi: 27 -> 46 tools. Asset types: 3 -> 7. UI pages: 6 -> 8. Cron jobs: 2 -> 3. 4,600+ lines shipped. | Pillars 1, 3 confirmed REALIZED |
+| 2026-03-20 | Structure | v2 format upgrade | Triad template standardization across all projects | Parallel upgrade |
