@@ -1,0 +1,464 @@
+/*
+ * Landing Page CSS
+ * "Your production, off Excel."
+ * Warm-dark aesthetic, Claude-inspired minimalism.
+ */
+
+.landing {
+  min-height: 100vh;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ═══════════════════ Header ═══════════════════ */
+
+.landing-header {
+  width: 100%;
+  max-width: 1080px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+}
+
+.landing-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.landing-logo-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.landing-logo-text {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.landing-signin {
+  padding: 8px 20px;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all var(--dur-fast) ease;
+}
+
+.landing-signin:hover {
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ═══════════════════ Hero ═══════════════════ */
+
+.landing-hero {
+  width: 100%;
+  max-width: 1080px;
+  text-align: center;
+  padding: 80px 24px 40px;
+}
+
+.landing-headline {
+  font-size: 52px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.landing-subhead {
+  font-size: 18px;
+  color: var(--text-secondary);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* Dashboard Preview (CSS mockup) */
+
+.landing-preview {
+  margin-top: 48px;
+  perspective: 1200px;
+}
+
+.landing-preview-window {
+  max-width: 800px;
+  margin: 0 auto;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  overflow: hidden;
+  background: var(--bg-sidebar);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.03);
+  transform: rotateX(2deg);
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+
+.landing-preview-window:hover {
+  transform: rotateX(0deg);
+}
+
+.landing-preview-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: var(--bg-app);
+  border-bottom: 1px solid var(--border);
+}
+
+.landing-preview-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.landing-preview-url {
+  margin-left: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-geist-mono), monospace;
+}
+
+.landing-preview-content {
+  display: flex;
+  min-height: 320px;
+}
+
+/* Mock sidebar */
+.landing-mock-sidebar {
+  width: 48px;
+  background: var(--bg-app);
+  border-right: 1px solid var(--border);
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.landing-mock-nav-item {
+  height: 28px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.landing-mock-nav-active {
+  background: var(--accent-muted);
+  border-left: 2px solid var(--accent);
+}
+
+/* Mock content */
+.landing-mock-content {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.landing-mock-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.landing-mock-kpi {
+  height: 52px;
+  border-radius: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+.landing-mock-alert {
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(34, 197, 94, 0.06);
+  border: 1px solid rgba(34, 197, 94, 0.12);
+  border-left: 3px solid var(--healthy);
+}
+
+.landing-mock-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  flex: 1;
+}
+
+.landing-mock-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.landing-mock-ring {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent) 90deg, var(--border) 90deg);
+}
+
+.landing-mock-ring--half {
+  background: conic-gradient(var(--warning) 180deg, var(--border) 180deg);
+}
+
+.landing-mock-ring--full {
+  background: conic-gradient(var(--healthy) 360deg, var(--border) 360deg);
+}
+
+.landing-mock-line {
+  width: 60%;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.landing-mock-pill {
+  width: 40px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--accent-muted);
+}
+
+.landing-mock-pill--warn {
+  background: var(--warning-soft);
+}
+
+.landing-mock-pill--done {
+  background: var(--healthy-soft);
+}
+
+/* ═══════════════════ Waitlist ═══════════════════ */
+
+.landing-waitlist {
+  width: 100%;
+  max-width: 480px;
+  padding: 40px 24px 0;
+  text-align: center;
+}
+
+.landing-waitlist-form {
+  display: flex;
+  gap: 8px;
+}
+
+.landing-waitlist-input {
+  flex: 1;
+  padding: 12px 16px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color var(--dur-fast) ease;
+}
+
+.landing-waitlist-input::placeholder {
+  color: var(--text-muted);
+}
+
+.landing-waitlist-input:focus {
+  border-color: var(--accent);
+}
+
+.landing-waitlist-btn {
+  padding: 12px 24px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-lg);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--dur-fast) ease;
+  white-space: nowrap;
+}
+
+.landing-waitlist-btn:hover {
+  background: var(--accent-hover);
+}
+
+.landing-waitlist-btn:active {
+  transform: scale(0.98);
+}
+
+.landing-waitlist-note {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ═══════════════════ Steps ═══════════════════ */
+
+.landing-steps {
+  width: 100%;
+  max-width: 800px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  padding: 80px 24px 40px;
+}
+
+.landing-step {
+  text-align: center;
+}
+
+.landing-step-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-muted);
+  color: var(--accent-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 auto 12px;
+  font-family: var(--font-geist-mono), monospace;
+}
+
+.landing-step-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+
+.landing-step-desc {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  line-height: 1.6;
+}
+
+/* ═══════════════════ Pitch ═══════════════════ */
+
+.landing-pitch {
+  width: 100%;
+  max-width: 600px;
+  padding: 40px 24px 80px;
+  text-align: center;
+}
+
+.landing-pitch-title {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+}
+
+.landing-pitch-body {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+/* ═══════════════════ Footer ═══════════════════ */
+
+.landing-footer {
+  width: 100%;
+  max-width: 1080px;
+  padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.landing-footer-logo {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: -0.01em;
+}
+
+.landing-footer-copy {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ═══════════════════ Responsive ═══════════════════ */
+
+@media (max-width: 768px) {
+  .landing-hero {
+    padding: 48px 20px 32px;
+  }
+
+  .landing-headline {
+    font-size: 34px;
+  }
+
+  .landing-subhead {
+    font-size: 16px;
+  }
+
+  .landing-preview-window {
+    transform: none;
+  }
+
+  .landing-mock-kpi-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .landing-mock-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .landing-steps {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 48px 20px 32px;
+  }
+
+  .landing-waitlist-form {
+    flex-direction: column;
+  }
+
+  .landing-footer {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .landing-headline {
+    font-size: 28px;
+  }
+
+  .landing-mock-sidebar {
+    display: none;
+  }
+
+  .landing-pitch-title {
+    font-size: 22px;
+  }
+}

@@ -6,6 +6,7 @@
 @import './bluf.css';
 @import './shell.css';
 @import './cast-cards.css';
+@import './landing.css';
 
 @layer base {
   :root {
