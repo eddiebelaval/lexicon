@@ -246,9 +246,56 @@ Full audit: see `PARITY_MAP.md`
 - Does NOT have error monitoring or analytics
 - Does NOT have Neo4j operational -- graph-first features degraded
 - Does NOT have live web search augmentation in search path
-- Does NOT support cross-show crew sharing or calendar overlay
+- Does NOT support cross-show crew sharing or calendar overlay (see Multi-Show Architecture status below)
 - Does NOT have mobile-optimized views for field use
 - Does NOT handle payroll, invoicing, or financial transactions
+
+## Multi-Show Architecture Status
+
+**VISION Pillar 5 — PARTIAL (40%)**
+
+Multi-Show Architecture is the largest gap between the current build and the VISION. This section documents what exists, what's missing, and what's required.
+
+### What's Built (the 40%)
+
+- **Multiple productions per universe:** The `productions` table supports multiple records per `universe_id`. A user can create several productions (seasons) within one universe.
+- **Production isolation:** Each production has its own crew, scenes, contracts, availability, and asset instances — clean separation by `production_id` FK constraints.
+- **Production switcher design:** The IA redesign (workspace/prep/2026-03-20-ia-redesign.md) specifies a sidebar dropdown for switching between productions. Not yet implemented in code.
+- **`listProductions()` accepts optional `universeId`:** When omitted, returns all productions — the raw query path for a cross-production list exists.
+
+### What's Missing
+
+#### Crew Sharing Across Shows
+- **Current:** `crew_members` has a hard FK to `production_id`. Each crew member belongs to exactly one production. If the same person works two shows, they exist as two separate records with no link.
+- **Needed:** A shared crew identity layer. Options:
+  1. **Crew pool table** (`crew_pool`): production-agnostic crew profiles. `crew_members` becomes an assignment junction table linking pool entries to productions.
+  2. **Cross-reference by Telegram ID:** Crew who register via Telegram already have a `telegram_user_id`. This could serve as a natural cross-production identifier without a new table.
+- **Depends on:** A `listProductionsForUser(userId)` query (not yet built) so the system knows which productions to check for shared crew.
+
+#### Cross-Show Calendar Overlay
+- **Current:** The calendar view (`/production/calendar`) queries scenes for a single `productionId`. No API supports querying scenes across multiple productions.
+- **Needed:**
+  1. API endpoint: `GET /api/scenes?productionIds=id1,id2` (multi-production scene query).
+  2. Calendar UI: color-coded by production, toggle visibility per show.
+  3. Conflict detection: crew member assigned to overlapping scenes across different productions.
+- **Depends on:** Crew sharing (above) — conflict detection requires knowing that "Jane" in Production A and "Jane" in Production B are the same person.
+
+#### Supporting Infrastructure (Not Yet Built)
+- `listProductionsForUser(userId)`: joins universes to productions for a user's full portfolio.
+- Production switcher dropdown in sidebar (designed, not coded).
+- Cross-production availability rollup (crew availability aggregated across shows).
+- Trigger: double-booked crew across productions (extends existing double-booking detector).
+
+### Implementation Path (Phase 2)
+
+Per VISION Phase 2, Multi-Show Architecture ships after Production Beta validates with Diaries S8. The recommended build order:
+
+1. **Production switcher** — sidebar dropdown, `listProductionsForUser()` query.
+2. **Crew pool** — shared identity layer, assignment junction, migration.
+3. **Cross-show calendar** — multi-production scene query, overlay UI.
+4. **Conflict detection** — cross-production double-booking alerts.
+
+This is Phase 2 work. Phase 1 (Production Beta) focuses on validating the single-show experience with Diaries S8.
 
 ## Verification Surface
 
@@ -325,3 +372,4 @@ NEXT_PUBLIC_APP_URL, CRON_SECRET
 | 2026-03-20 | Structure | v2 format upgrade | Triad template standardization across all projects | Parallel upgrade |
 | 2026-03-20 | Capabilities (15-19) | Redesign session: 6 PRs, ~7,200 lines | BLUF dashboard, production-first shell, sidebar nav, warm-dark design, landing page, Excel import, web enrichment. Lexi: 46 -> 60 tools. | Design system locked |
 | 2026-03-21 | Capabilities | Finish build: 5 pages + templates | Chat, graph, settings, episodes, knowledge pages. Document templates system (docxtemplater). Lexi: 60 -> 62 tools. Episodes API routes. All placeholders eliminated. | v0.9.0-beta feature-complete |
+| 2026-03-20 | Multi-Show Architecture | Added detailed status section for Pillar 5 | Heal session: documented what's built (40%), what's missing (crew sharing, calendar overlay), and Phase 2 implementation path | Pillar 5 status clarified, remains PARTIAL |

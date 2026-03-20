@@ -467,6 +467,20 @@ The session that eliminated all "Coming soon" pages and added the document templ
 
 **Stats:** 2 commits. 5 placeholder pages replaced. 2 new API route groups (episodes, templates, documents). 60 -> 62 Lexi tools. docxtemplater + pizzip added as dependencies. Every sidebar nav item now leads to a real page.
 
+### March 20, 2026 — Heal Session: Multi-Show Architecture Gap Analysis
+
+**Context:** At 92% progress, the largest documented gap between VISION and shipped product is Pillar 5: Multi-Show Architecture (40%). The two missing slices: crew sharing across shows and cross-show calendar overlay.
+
+**Assessment:** Both features are Phase 2 work. The current codebase is designed for single-production focus — crew_members have a hard FK to production_id, calendar queries are single-production, and no cross-production query layer exists. This isolation is intentional and correct for Phase 1.
+
+**What was done:** Updated SPEC.md with a detailed Multi-Show Architecture Status section documenting:
+- What's built (the 40%): multi-production support, isolation, switcher design
+- What's missing: crew sharing mechanism, cross-show calendar API/UI, conflict detection
+- Implementation path for Phase 2: switcher -> crew pool -> calendar overlay -> conflict alerts
+- Key architectural insight: Telegram user ID could serve as natural cross-production crew identifier
+
+**Why documentation instead of code:** Phase 1 validates the single-show experience with Diaries S8. Building multi-show infrastructure before that validation would be premature. The SPEC now clearly captures what exists, what's needed, and the recommended build order so Phase 2 can start cleanly.
+
 ---
 
 ## Key Decisions (and Why)
