@@ -273,6 +273,28 @@
   border-color: rgba(239, 111, 46, 0.35);
 }
 
+/* ═══════════════════ Mobile Shell Header ═══════════════════ */
+
+.shell-mobile-header {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.shell-mobile-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+  .shell-mobile-header {
+    display: flex;
+  }
+}
+
 /* ═══════════════════ Lexi Drawer ═══════════════════ */
 
 .lexi-drawer {

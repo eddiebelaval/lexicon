@@ -108,7 +108,7 @@ export const updateProductionSchema = z
   });
 
 export const listProductionsQuerySchema = z.object({
-  universeId: z.string().uuid('Invalid universe ID'),
+  universeId: z.string().uuid('Invalid universe ID').optional(),
   status: productionStatusSchema.optional(),
   limit: z.coerce.number().int().min(1).max(100).optional().default(50),
   offset: z.coerce.number().int().min(0).optional().default(0),

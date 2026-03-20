@@ -43,7 +43,7 @@ export async function GET(
     }
 
     const { universeId, ...options } = parseResult.data;
-    const result = await listProductions(universeId, options);
+    const result = await listProductions(universeId ?? undefined, options);
 
     return NextResponse.json({
       success: true,

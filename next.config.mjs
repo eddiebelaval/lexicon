@@ -1,5 +1,24 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async redirects() {
+    return [
+      {
+        source: '/universe/:id/production',
+        destination: '/production',
+        permanent: false,
+      },
+      {
+        source: '/universe/:id/production/:path*',
+        destination: '/production/:path*',
+        permanent: false,
+      },
+      {
+        source: '/dashboard',
+        destination: '/production',
+        permanent: false,
+      },
+    ];
+  },
   experimental: {
     // Enable server actions for form handling
     serverActions: {
