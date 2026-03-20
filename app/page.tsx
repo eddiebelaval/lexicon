@@ -67,19 +67,19 @@ export default function LandingPage() {
                   <span>Cast</span><span>Phone</span><span>Email</span><span>Status</span><span>Rate</span><span>Notes</span>
                 </div>
                 <div className="excel-row">
-                  <span>Kara &amp; Guillermo</span><span className="excel-overflow">434-242-08...</span><span className="excel-overflow">karaleonab...</span><span>signed</span><span>$2,500</span><span className="excel-overflow">needs updat...</span>
+                  <span>Alex &amp; Jordan</span><span className="excel-overflow">555-012-34...</span><span className="excel-overflow">alex.j@gm...</span><span>signed</span><span>$2,500</span><span className="excel-overflow">needs updat...</span>
                 </div>
                 <div className="excel-row">
-                  <span>Elizabeth &amp; Andrei</span><span className="excel-overflow">704-918-78...</span><span className="excel-overflow">elizabethp...</span><span className="excel-cell--warn">pending</span><span></span><span className="excel-overflow">waiting on l...</span>
+                  <span>Maya &amp; Carlos</span><span className="excel-overflow">555-067-89...</span><span className="excel-overflow">maya.c@gm...</span><span className="excel-cell--warn">pending</span><span></span><span className="excel-overflow">waiting on l...</span>
                 </div>
                 <div className="excel-row">
-                  <span>Angela &amp; Michael</span><span className="excel-overflow">478-555-12...</span><span className="excel-overflow">angela.dee...</span><span className="excel-cell--bad">offer sent</span><span>$3,000</span><span></span>
+                  <span>Priya &amp; Marco</span><span className="excel-overflow">555-098-76...</span><span className="excel-overflow">priya.m@g...</span><span className="excel-cell--bad">offer sent</span><span>$3,000</span><span></span>
                 </div>
                 <div className="excel-row excel-row--dim">
-                  <span>Chantel &amp; Pedro</span><span className="excel-overflow">678-555-34...</span><span className="excel-overflow">chantel.ev...</span><span>signed</span><span>$2,800</span><span className="excel-overflow">confirmed f...</span>
+                  <span>Suki &amp; Ren</span><span className="excel-overflow">555-043-21...</span><span className="excel-overflow">suki.r@gm...</span><span>signed</span><span>$2,800</span><span className="excel-overflow">confirmed f...</span>
                 </div>
                 <div className="excel-row excel-row--dim">
-                  <span>Loren &amp; Alexei</span><span className="excel-overflow">954-555-67...</span><span className="excel-overflow">lorenbrook...</span><span>signed</span><span>$2,200</span><span></span>
+                  <span>Dana &amp; Liam</span><span className="excel-overflow">555-876-54...</span><span className="excel-overflow">dana.l@gm...</span><span>signed</span><span>$2,200</span><span></span>
                 </div>
               </div>
               <div className="excel-scrollbar" />
@@ -124,17 +124,17 @@ export default function LandingPage() {
                 <div className="lex-cards">
                   <div className="lex-card">
                     <div className="lex-ring lex-ring--75" />
-                    <span className="lex-card-name">Kara &amp; Guillermo</span>
+                    <span className="lex-card-name">Alex &amp; Jordan</span>
                     <span className="lex-card-pill lex-pill--signed">Signed</span>
                   </div>
                   <div className="lex-card">
                     <div className="lex-ring lex-ring--25" />
-                    <span className="lex-card-name">Elizabeth &amp; Andrei</span>
+                    <span className="lex-card-name">Maya &amp; Carlos</span>
                     <span className="lex-card-pill lex-pill--pending">Pending</span>
                   </div>
                   <div className="lex-card">
                     <div className="lex-ring lex-ring--100" />
-                    <span className="lex-card-name">Chantel &amp; Pedro</span>
+                    <span className="lex-card-name">Suki &amp; Ren</span>
                     <span className="lex-card-pill lex-pill--signed">Signed</span>
                   </div>
                 </div>
