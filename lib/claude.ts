@@ -12,7 +12,7 @@ import Anthropic from '@anthropic-ai/sdk';
 // Singleton client instance
 let client: Anthropic | null = null;
 
-function getClient(): Anthropic {
+export function getClient(): Anthropic {
   if (!client) {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {

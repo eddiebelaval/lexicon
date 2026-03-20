@@ -25,7 +25,7 @@ export function RankedList({
             </svg>
             <span>
               <strong>{item.label}</strong>
-              {item.detail && ` \u2014 ${item.detail}`}
+              {item.detail && `: ${item.detail}`}
             </span>
           </li>
         ))}

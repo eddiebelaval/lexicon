@@ -1,6 +1,6 @@
-type HealthStatus = 'healthy' | 'warning' | 'critical' | 'unknown'
+import type { BlufStatus } from './BriefingParts'
 
-function healthPillClass(health: string): string {
+function healthPillClass(health: BlufStatus): string {
   switch (health) {
     case 'healthy':
       return 'pill--healthy'
@@ -8,12 +8,14 @@ function healthPillClass(health: string): string {
       return 'pill--warning'
     case 'critical':
       return 'pill--critical'
+    case 'idle':
+    case 'unknown':
     default:
-      return 'pill--unknown'
+      return 'pill--neutral'
   }
 }
 
-function healthLabel(health: string): string {
+function healthLabel(health: BlufStatus): string {
   switch (health) {
     case 'healthy':
       return 'Healthy'
@@ -21,12 +23,15 @@ function healthLabel(health: string): string {
       return 'Warning'
     case 'critical':
       return 'Critical'
+    case 'idle':
+      return 'Idle'
+    case 'unknown':
     default:
       return 'Unknown'
   }
 }
 
-export function StatusBadge({ health }: { health: HealthStatus | string }) {
+export function StatusBadge({ health }: { health: BlufStatus }) {
   return (
     <span className={`pill ${healthPillClass(health)}`}>
       <span className="pill-dot" />

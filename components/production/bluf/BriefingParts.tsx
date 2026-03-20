@@ -10,6 +10,12 @@ const statusColors: Record<BlufStatus, string> = {
   unknown: 'var(--text-tertiary)',
 }
 
+export function getHealthColor(pct: number): string {
+  if (pct >= 75) return 'var(--bluf-healthy)'
+  if (pct >= 40) return 'var(--bluf-warning)'
+  return 'var(--bluf-critical)'
+}
+
 export function renderBold(text: string) {
   const parts = text.split(/\*\*(.+?)\*\*/)
   if (parts.length === 1) return text

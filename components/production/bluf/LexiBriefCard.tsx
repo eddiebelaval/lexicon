@@ -1,15 +1,9 @@
 'use client'
 
+import { renderBold } from './BriefingParts'
+
 const TELEGRAM_BOT_URL = 'https://t.me/LexiProductionBot'
 const ACCENT_COLOR = 'var(--vhs-orange)'
-
-function renderBold(text: string) {
-  const parts = text.split(/\*\*(.+?)\*\*/)
-  if (parts.length === 1) return text
-  return parts.map((part, i) =>
-    i % 2 === 1 ? <strong key={i}>{part}</strong> : part
-  )
-}
 
 export function LexiBriefCard({
   briefText,

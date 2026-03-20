@@ -8,15 +8,19 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
+import { getClient } from '@/lib/claude';
 import { buildProductionSummary } from '@/lib/lexi';
 
-// Simple 5-minute cache keyed by productionId + time bucket
-const cache = new Map<string, { text: string; generatedAt: string }>();
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const MAX_CACHE_SIZE = 100;
 
-function getCacheKey(productionId: string): string {
-  const bucket = Math.floor(Date.now() / (5 * 60 * 1000));
-  return `${productionId}:${bucket}`;
+const cache = new Map<string, { text: string; generatedAt: string; expiresAt: number }>();
+
+function evictExpired() {
+  const now = Date.now();
+  for (const [key, entry] of cache) {
+    if (entry.expiresAt <= now) cache.delete(key);
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -37,11 +41,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check cache
-    const cacheKey = getCacheKey(productionId);
-    const cached = cache.get(cacheKey);
-    if (cached) {
-      return NextResponse.json({ success: true, data: cached });
+    // Check cache (evict stale entries first)
+    evictExpired();
+    const cached = cache.get(productionId);
+    if (cached && cached.expiresAt > Date.now()) {
+      return NextResponse.json({
+        success: true,
+        data: { text: cached.text, generatedAt: cached.generatedAt },
+      });
     }
 
     // Build production summary
@@ -62,10 +69,7 @@ export async function GET(request: NextRequest) {
     let text: string;
 
     try {
-      const apiKey = process.env.ANTHROPIC_API_KEY;
-      if (!apiKey) throw new Error('Missing ANTHROPIC_API_KEY');
-
-      const client = new Anthropic({ apiKey });
+      const client = getClient();
       const response = await client.messages.create({
         model: 'claude-sonnet-4-5-20250514',
         max_tokens: 150,
@@ -81,17 +85,20 @@ export async function GET(request: NextRequest) {
       text = block.type === 'text' ? block.text : '';
     } catch (err) {
       console.error('Lexi brief Claude call failed, using fallback:', err);
-      // Computed fallback: no API dependency
       text = `**${summary.signedCast}/${summary.totalCast}** contracts signed. **${summary.scenesShot}/${summary.totalScenes}** scenes shot. **${summary.totalCrew}** active crew.`;
     }
 
     const generatedAt = new Date().toISOString();
-    const result = { text, generatedAt };
 
-    // Store in cache
-    cache.set(cacheKey, result);
+    // Cap cache size to prevent unbounded growth
+    if (cache.size >= MAX_CACHE_SIZE) {
+      const oldest = cache.keys().next().value;
+      if (oldest) cache.delete(oldest);
+    }
 
-    return NextResponse.json({ success: true, data: result });
+    cache.set(productionId, { text, generatedAt, expiresAt: Date.now() + CACHE_TTL_MS });
+
+    return NextResponse.json({ success: true, data: { text, generatedAt } });
   } catch (error) {
     console.error('Error generating Lexi brief:', error);
     return NextResponse.json(
