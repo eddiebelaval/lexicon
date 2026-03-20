@@ -50,7 +50,7 @@ function parseJsonFromText(text: string): Record<string, unknown> {
   try {
     return JSON.parse(text);
   } catch {
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const jsonMatch = text.match(/\{[\s\S]*?\}/);
     if (jsonMatch) {
       try {
         return JSON.parse(jsonMatch[0]);
@@ -67,7 +67,7 @@ function parseJsonArrayFromText(text: string): unknown[] {
     const result = JSON.parse(text);
     if (Array.isArray(result)) return result;
   } catch {
-    const arrayMatch = text.match(/\[[\s\S]*\]/);
+    const arrayMatch = text.match(/\[[\s\S]*?\]/);
     if (arrayMatch) {
       try {
         const result = JSON.parse(arrayMatch[0]);
@@ -97,30 +97,32 @@ export async function enrichCastWithPerplexity(
 }
 Only include facts you are confident about. Return valid JSON only, no markdown.`;
 
-  const bioResult = await searchPerplexity(bioQuery);
-  const parsed = parseJsonFromText(bioResult);
-
-  // Query 2: Recent news
+  // Run all 3 queries in parallel (no dependencies between them)
   const newsQuery = `What are the most recent news articles or social media highlights about "${castName}" from 90 Day Fiance? Return a JSON array:
 [{"title": "headline", "url": "article url", "date": "YYYY-MM-DD if known", "source": "publication name"}]
 Only include real, verifiable articles from the last 6 months. Return valid JSON array only, no markdown.`;
 
-  let recentNews: CastProfile['recentNews'] = [];
-  try {
-    const newsResult = await searchPerplexity(newsQuery);
-    recentNews = parseJsonArrayFromText(newsResult) as CastProfile['recentNews'];
-  } catch {
-    // News is optional, don't fail
-  }
-
-  // Query 3: Photo URL (search for press photos/Instagram profile)
   const photoQuery = `What is the Instagram profile URL for "${castName}" from 90 Day Fiance? Also, find a publicly available press photo or profile image URL. Return JSON: {"instagramUrl": "url", "photoUrl": "direct image url if available", "photoSource": "where the photo is from"}. Return valid JSON only.`;
+
+  const [bioResult, newsResult, photoResult] = await Promise.allSettled([
+    searchPerplexity(bioQuery),
+    searchPerplexity(newsQuery),
+    searchPerplexity(photoQuery),
+  ]);
+
+  const parsed = bioResult.status === 'fulfilled'
+    ? parseJsonFromText(bioResult.value)
+    : {};
+
+  let recentNews: CastProfile['recentNews'] = [];
+  if (newsResult.status === 'fulfilled') {
+    recentNews = parseJsonArrayFromText(newsResult.value) as CastProfile['recentNews'];
+  }
 
   let photoUrl: string | null = null;
   let photoSource: string | null = null;
-  try {
-    const photoResult = await searchPerplexity(photoQuery);
-    const photoData = parseJsonFromText(photoResult);
+  if (photoResult.status === 'fulfilled') {
+    const photoData = parseJsonFromText(photoResult.value);
     photoUrl = (photoData.photoUrl as string) || null;
     photoSource = (photoData.photoSource as string) || null;
     if (
@@ -131,8 +133,6 @@ Only include real, verifiable articles from the last 6 months. Return valid JSON
       (parsed.socialMedia as Record<string, string>).instagram =
         photoData.instagramUrl as string;
     }
-  } catch {
-    // Photo is optional
   }
 
   return {

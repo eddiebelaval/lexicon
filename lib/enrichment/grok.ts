@@ -40,7 +40,7 @@ export async function searchGrok(query: string): Promise<string> {
     throw new Error(`Grok API error ${response.status}: ${text}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as { choices?: { message?: { content?: string } }[] };
   return data.choices?.[0]?.message?.content ?? '';
 }
 
@@ -70,7 +70,7 @@ Return valid JSON only.`;
 
   try {
     const result = await searchGrok(query);
-    const jsonMatch = result.match(/\{[\s\S]*\}/);
+    const jsonMatch = result.match(/\{[\s\S]*?\}/);
     if (!jsonMatch) return { sources: [] };
 
     const parsed = JSON.parse(jsonMatch[0]);

@@ -11,7 +11,9 @@ interface CastCardProps {
 
 export function CastCard({ contract, onSelect }: CastCardProps) {
   const name = getCastDisplayName(contract);
-  const statusConfig = CONTRACT_STATUS_CONFIG[contract.contractStatus];
+  const statusConfig = CONTRACT_STATUS_CONFIG[contract.contractStatus] ?? {
+    label: contract.contractStatus, bg: 'bg-gray-800/50', text: 'text-gray-400',
+  };
 
   // Completion: 4 checkpoints
   const checkpoints = [

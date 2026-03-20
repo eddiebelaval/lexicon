@@ -1,24 +1,13 @@
 import type { CastProfile, EnrichmentResult } from './types';
 import { enrichCastWithPerplexity } from './perplexity';
 import { enrichCastWithGrok } from './grok';
-
-function generateEntityId(castName: string): string {
-  return (
-    'cast-' +
-    castName
-      .toLowerCase()
-      .replace(/\s*&\s*/g, '+')
-      .replace(/[^a-z0-9+]/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '')
-  );
-}
+import { castNameToEntityId } from '@/lib/cast-utils';
 
 export async function enrichCastMember(
   castName: string
 ): Promise<EnrichmentResult> {
   const errors: string[] = [];
-  const entityId = generateEntityId(castName);
+  const entityId = castNameToEntityId(castName);
 
   // Run both engines in parallel
   const [perplexityResult, grokResult] = await Promise.allSettled([

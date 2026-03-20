@@ -11,20 +11,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/lib/supabase';
+import { castNameToEntityId } from '@/lib/cast-utils';
 import type { ParsedCastRow } from '@/lib/import/cast-spreadsheet-parser';
-
-/**
- * Generate a stable entity ID from a cast name.
- * "Kara & Guillermo" -> "cast-kara+guillermo"
- */
-function castNameToEntityId(name: string): string {
-  return 'cast-' + name
-    .toLowerCase()
-    .replace(/\s*&\s*/g, '+')
-    .replace(/[^a-z0-9+]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-}
 
 /**
  * Format rich PII data as structured text for the notes field.
@@ -94,48 +82,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let imported = 0;
+    // Batch: get all existing entity IDs in one query
+    const allEntityIds = rows.map(r => castNameToEntityId(r.castName));
+    const { data: existingRows } = await supabase
+      .from('cast_contracts')
+      .select('cast_entity_id')
+      .eq('production_id', productionId)
+      .in('cast_entity_id', allEntityIds);
+
+    const existingIds = new Set((existingRows ?? []).map(r => r.cast_entity_id));
+
+    // Build insert batch for new rows only
+    const toInsert: { production_id: string; cast_entity_id: string; cast_name: string; contract_status: string; notes: string }[] = [];
     let skipped = 0;
-    const errors: string[] = [];
 
     for (const row of rows) {
-      try {
-        const entityId = castNameToEntityId(row.castName);
+      const entityId = castNameToEntityId(row.castName);
+      if (existingIds.has(entityId)) {
+        skipped++;
+        continue;
+      }
+      toInsert.push({
+        production_id: productionId,
+        cast_entity_id: entityId,
+        cast_name: row.castName,
+        contract_status: 'pending',
+        notes: formatMetadataAsNotes(row, row.notes),
+      });
+    }
 
-        // Check for existing contract (unique constraint: production_id + cast_entity_id)
-        const { data: existing } = await supabase
-          .from('cast_contracts')
-          .select('id')
-          .eq('production_id', productionId)
-          .eq('cast_entity_id', entityId)
-          .maybeSingle();
+    // Batch insert (Supabase handles array natively)
+    let imported = 0;
+    const errors: string[] = [];
 
-        if (existing) {
-          skipped++;
-          continue;
-        }
+    if (toInsert.length > 0) {
+      const { error: insertError, count } = await supabase
+        .from('cast_contracts')
+        .insert(toInsert);
 
-        // Build notes with all the rich data
-        const notes = formatMetadataAsNotes(row, row.notes);
-
-        const { error: insertError } = await supabase
-          .from('cast_contracts')
-          .insert({
-            production_id: productionId,
-            cast_entity_id: entityId,
-            cast_name: row.castName,
-            contract_status: 'pending',
-            notes,
-          });
-
-        if (insertError) {
-          errors.push(`${row.castName}: ${insertError.message}`);
-          continue;
-        }
-
-        imported++;
-      } catch (err) {
-        errors.push(`${row.castName}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      if (insertError) {
+        errors.push(`Batch insert failed: ${insertError.message}`);
+      } else {
+        imported = count ?? toInsert.length;
       }
     }
 
