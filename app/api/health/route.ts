@@ -1,7 +1,11 @@
 /**
  * Health Check API Route
  *
- * Returns status of all backend services
+ * Returns status of all backend services.
+ *
+ * In production-beta mode, Supabase is the core dependency.
+ * Neo4j is optional (used for knowledge graph features only).
+ * Health is determined by core services only.
  */
 
 import { NextResponse } from 'next/server';
@@ -33,17 +37,23 @@ export async function GET() {
     checks.neo4j = false;
   }
 
-  const betaReady = checks.api && checks.supabase;
-  const allHealthy = betaReady && checks.neo4j;
-  const status = allHealthy ? 'healthy' : betaReady ? 'degraded' : 'unhealthy';
+  // Core services: API + Supabase. Neo4j is optional in production-beta.
+  const coreHealthy = checks.api && checks.supabase;
+  const status = coreHealthy ? 'healthy' : 'unhealthy';
 
   return NextResponse.json(
     {
       status,
-      betaReady,
       mode: 'production-beta',
       checks,
+      optional: {
+        neo4j: {
+          status: checks.neo4j ? 'connected' : 'hibernated',
+          required: false,
+          note: checks.neo4j ? undefined : 'Knowledge graph features unavailable. All production features operational via Supabase.',
+        },
+      },
     },
-    { status: betaReady ? 200 : 503 }
+    { status: coreHealthy ? 200 : 503 }
   );
 }
