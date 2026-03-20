@@ -128,7 +128,10 @@ describe('permissions', () => {
       expect(tools).toContain('email_call_sheet');
       expect(tools).toContain('email_production_report');
       expect(tools).toContain('email_contract_summary');
-      expect(tools.length).toBe(16);
+      expect(tools).toContain('delete_crew_member');
+      expect(tools).toContain('remove_crew_assignment');
+      expect(tools).toContain('batch_update_availability');
+      expect(tools.length).toBe(26);
     });
 
     it('ac gets minimal write tools', () => {
@@ -138,6 +141,9 @@ describe('permissions', () => {
       expect(tools).not.toContain('mark_contract');
       expect(tools).not.toContain('create_crew_member');
       expect(tools).not.toContain('delete_scene');
+      expect(tools).not.toContain('delete_crew_member');
+      expect(tools).not.toContain('remove_crew_assignment');
+      expect(tools).not.toContain('batch_update_availability');
       expect(tools).toContain('update_crew_availability');
     });
 
