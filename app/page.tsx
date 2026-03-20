@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { Footer } from '@/components/shell/footer';
 
 export default function LandingPage() {
   const [email, setEmail] = useState('');
@@ -208,14 +209,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="landing-footer">
-        <div className="landing-footer-brand">
-          <span className="landing-footer-logo">id8Labs</span>
-        </div>
-        <p className="landing-footer-copy">
-          Professional tools for the AI era.
-        </p>
-      </footer>
+      <Footer />
     </div>
   );
 }
