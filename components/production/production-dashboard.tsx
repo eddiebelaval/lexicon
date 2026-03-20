@@ -7,7 +7,7 @@
  * contracts, and activity feed.
  */
 
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
@@ -16,7 +16,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { KPIRow, BLUFAlert, CollapsibleSection, DataTable, LexiBriefCard } from './bluf';
+import { KPIRow, BLUFAlert, CollapsibleSection, DataTable, LexiBriefCard, getHealthColor } from './bluf';
 import type { AlertItem } from './bluf';
 import ActivityFeed from './activity-feed';
 import { useProduction } from './production-context';
@@ -216,58 +216,64 @@ export function ProductionDashboard() {
   });
 
   // -----------------------------------------------------------------------
-  // Derived data
+  // Derived data (memoized to avoid recomputation on every render)
   // -----------------------------------------------------------------------
 
-  const totalCast = contracts.length;
-  const signedCount = contracts.filter(
-    (c) => c.contractStatus === 'signed'
-  ).length;
-  const signedPct = totalCast > 0 ? Math.round((signedCount / totalCast) * 100) : 0;
-  const scenesShot = scenes.filter(
-    (s) => s.status === 'shot' || s.status === 'self_shot'
-  ).length;
-  const activeCrew = crew.filter((c) => c.isActive).length;
+  const derived = useMemo(() => {
+    const totalCast = contracts.length;
+    const signedCount = contracts.filter(
+      (c) => c.contractStatus === 'signed'
+    ).length;
+    const signedPct = totalCast > 0 ? Math.round((signedCount / totalCast) * 100) : 0;
+    const scenesShot = scenes.filter(
+      (s) => s.status === 'shot' || s.status === 'self_shot'
+    ).length;
+    const activeCrew = crew.filter((c) => c.isActive).length;
 
-  // Completion: average of (signed%, scenes shot%, contract items done%)
-  const contractItemsDone = contracts.reduce((sum, c) => {
-    let done = 0;
-    if (c.shootDone) done++;
-    if (c.interviewDone) done++;
-    if (c.pickupDone) done++;
-    if (c.paymentDone) done++;
-    return sum + done;
-  }, 0);
-  const contractItemsTotal = contracts.length * 4;
-  const completionPct =
-    totalCast > 0 && scenes.length > 0
-      ? Math.round(
-          ((signedPct +
-            (scenesShot / scenes.length) * 100 +
-            (contractItemsTotal > 0 ? (contractItemsDone / contractItemsTotal) * 100 : 0)) /
-            3)
-        )
-      : 0;
+    const contractItemsDone = contracts.reduce((sum, c) => {
+      let done = 0;
+      if (c.shootDone) done++;
+      if (c.interviewDone) done++;
+      if (c.pickupDone) done++;
+      if (c.paymentDone) done++;
+      return sum + done;
+    }, 0);
+    const contractItemsTotal = contracts.length * 4;
+    const completionPct =
+      totalCast > 0 && scenes.length > 0
+        ? Math.round(
+            ((signedPct +
+              (scenesShot / scenes.length) * 100 +
+              (contractItemsTotal > 0 ? (contractItemsDone / contractItemsTotal) * 100 : 0)) /
+              3)
+          )
+        : 0;
 
-  const alertCount = alerts.length;
-  const criticalCount = alerts.filter((a) => a.severity === 'critical').length;
-  const warningCount = alerts.filter((a) => a.severity === 'warning').length;
+    const criticalCount = alerts.filter((a) => a.severity === 'critical').length;
+    const warningCount = alerts.filter((a) => a.severity === 'warning').length;
 
-  const upcomingScenes = scenes
-    .filter(
-      (s) => s.status === 'scheduled' || s.status === 'postponed'
-    )
-    .sort((a, b) => {
-      if (!a.scheduledDate) return 1;
-      if (!b.scheduledDate) return -1;
-      return a.scheduledDate.localeCompare(b.scheduledDate);
-    })
-    .slice(0, 10);
+    const upcomingScenes = scenes
+      .filter(
+        (s) => s.status === 'scheduled' || s.status === 'postponed'
+      )
+      .sort((a, b) => {
+        if (!a.scheduledDate) return 1;
+        if (!b.scheduledDate) return -1;
+        return a.scheduledDate.localeCompare(b.scheduledDate);
+      })
+      .slice(0, 10);
 
-  const incompleteContracts = contracts.filter(
-    (c) =>
-      !c.shootDone || !c.interviewDone || !c.pickupDone || !c.paymentDone
-  );
+    const incompleteContracts = contracts.filter(
+      (c) =>
+        !c.shootDone || !c.interviewDone || !c.pickupDone || !c.paymentDone
+    );
+
+    return {
+      totalCast, signedCount, signedPct, scenesShot, activeCrew,
+      completionPct, criticalCount, warningCount,
+      upcomingScenes, incompleteContracts,
+    };
+  }, [scenes, contracts, crew, alerts]);
 
   // -----------------------------------------------------------------------
   // Render helpers
@@ -291,7 +297,7 @@ export function ProductionDashboard() {
     { key: 'status', label: 'Status' },
   ];
 
-  const sceneRows: Record<string, ReactNode>[] = upcomingScenes.map((scene) => ({
+  const sceneRows: Record<string, ReactNode>[] = derived.upcomingScenes.map((scene) => ({
     number: scene.sceneNumber ? `#${scene.sceneNumber}` : '',
     title: scene.title,
     date: scene.scheduledDate ? formatDateShort(scene.scheduledDate) : '',
@@ -310,12 +316,12 @@ export function ProductionDashboard() {
 
   // Contract DataTable columns/rows
   const contractColumns = [
-    { key: 'name', label: 'Name' },
+    { key: 'name', label: 'Name', className: 'name' },
     { key: 'status', label: 'Status' },
     { key: 'missing', label: 'Missing' },
   ];
 
-  const contractRows: Record<string, ReactNode>[] = incompleteContracts.map((contract) => ({
+  const contractRows: Record<string, ReactNode>[] = derived.incompleteContracts.map((contract) => ({
     name: getCastDisplayName(contract),
     status: (
       <span
@@ -397,11 +403,11 @@ export function ProductionDashboard() {
     <div className="space-y-0">
       {/* 1. KPI Row */}
       <KPIRow items={[
-        { label: 'Cast Signed', value: `${signedCount}/${contracts.length}`, color: signedPct >= 75 ? 'var(--bluf-healthy)' : signedPct >= 40 ? 'var(--bluf-warning)' : 'var(--bluf-critical)' },
-        { label: 'Scenes Shot', value: `${scenesShot}/${scenes.length}`, meta: 'completed' },
-        { label: 'Active Crew', value: String(activeCrew) },
-        { label: 'Completion', value: `${completionPct}%`, color: completionPct >= 75 ? 'var(--bluf-healthy)' : completionPct >= 40 ? 'var(--bluf-warning)' : 'var(--bluf-critical)' },
-        { label: 'Alerts', value: String(alertCount), color: criticalCount > 0 ? 'var(--bluf-critical)' : warningCount > 0 ? 'var(--bluf-warning)' : 'var(--bluf-healthy)' },
+        { label: 'Cast Signed', value: `${derived.signedCount}/${contracts.length}`, color: getHealthColor(derived.signedPct) },
+        { label: 'Scenes Shot', value: `${derived.scenesShot}/${scenes.length}`, meta: 'completed' },
+        { label: 'Active Crew', value: String(derived.activeCrew) },
+        { label: 'Completion', value: `${derived.completionPct}%`, color: getHealthColor(derived.completionPct) },
+        { label: 'Alerts', value: String(alerts.length), color: derived.criticalCount > 0 ? 'var(--bluf-critical)' : derived.warningCount > 0 ? 'var(--bluf-warning)' : 'var(--bluf-healthy)' },
       ]} />
 
       {/* 2. BLUF Alert */}
@@ -413,12 +419,12 @@ export function ProductionDashboard() {
       )}
 
       {/* 4. Upcoming Scenes (collapsible) */}
-      <CollapsibleSection title="Upcoming Scenes" count={upcomingScenes.length} defaultOpen={upcomingScenes.length > 0}>
+      <CollapsibleSection title="Upcoming Scenes" count={derived.upcomingScenes.length} defaultOpen={derived.upcomingScenes.length > 0}>
         <DataTable columns={sceneColumns} rows={sceneRows} compact />
       </CollapsibleSection>
 
       {/* 5. Contracts Needing Attention */}
-      <CollapsibleSection title="Contracts Needing Attention" count={incompleteContracts.length} defaultOpen={incompleteContracts.length > 0}>
+      <CollapsibleSection title="Contracts Needing Attention" count={derived.incompleteContracts.length} defaultOpen={derived.incompleteContracts.length > 0}>
         <DataTable columns={contractColumns} rows={contractRows} compact />
       </CollapsibleSection>
 

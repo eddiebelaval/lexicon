@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AlertCircle, Loader2, RefreshCw, Users } from 'lucide-react';
 import { CastRow } from '@/components/production/cast-row';
-import { KPIRow } from './bluf';
+import { KPIRow, getHealthColor } from './bluf';
 import { useProduction } from '@/components/production/production-context';
 import { useRealtimeSubscription } from '@/lib/hooks/use-realtime';
 import type { CastContract } from '@/types/production';
@@ -123,8 +123,8 @@ export function CastBoard() {
     <div>
       {/* KPI summary */}
       <KPIRow items={[
-        { label: 'Signed', value: `${signedCount}/${contracts.length}`, color: signedPct >= 75 ? 'var(--bluf-healthy)' : 'var(--bluf-warning)' },
-        { label: 'Completion', value: `${completionPct}%`, color: completionPct >= 75 ? 'var(--bluf-healthy)' : completionPct >= 40 ? 'var(--bluf-warning)' : 'var(--bluf-critical)' },
+        { label: 'Signed', value: `${signedCount}/${contracts.length}`, color: getHealthColor(signedPct) },
+        { label: 'Completion', value: `${completionPct}%`, color: getHealthColor(completionPct) },
       ]} />
 
       {/* Table */}

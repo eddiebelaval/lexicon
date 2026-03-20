@@ -4,6 +4,7 @@ export type Column = {
   key: string
   label: string
   align?: 'left' | 'right'
+  className?: string
 }
 
 export function DataTable({
@@ -33,8 +34,8 @@ export function DataTable({
               <td
                 key={col.key}
                 className={
-                  col.key === 'name'
-                    ? 'name'
+                  col.className
+                    ? col.className
                     : col.align === 'right'
                       ? 'num'
                       : ''

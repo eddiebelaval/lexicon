@@ -123,6 +123,14 @@
   background: var(--bluf-neutral);
 }
 
+.pill--unknown {
+  background: rgba(107, 114, 128, 0.1);
+  color: var(--text-secondary);
+}
+.pill--unknown .pill-dot {
+  background: var(--bluf-neutral);
+}
+
 @keyframes bluf-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.35; }
@@ -496,6 +504,29 @@
   height: 8px;
   border-radius: 50%;
   margin-right: 4px;
+  background: var(--dot-color, var(--text-tertiary));
+}
+
+/* ═══════════════════ Agent Brief Send Link ═══════════════════ */
+
+.agent-brief-send {
+  padding: 8px 16px;
+  background: var(--surface-tertiary);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.agent-brief-send:hover {
+  background: rgba(239, 111, 46, 0.08);
+  border-color: rgba(239, 111, 46, 0.3);
+  color: var(--vhs-orange);
 }
 
 /* ═══════════════════ Scrollbar Hide ═══════════════════ */
