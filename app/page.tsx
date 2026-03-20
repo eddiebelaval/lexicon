@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { SequinWave } from '@/components/landing/sequin-wave';
 import { Footer } from '@/components/shell/footer';
 
 export default function LandingPage() {
@@ -19,36 +20,68 @@ export default function LandingPage() {
       });
       setSubmitted(true);
     } catch {
-      // Silent fail, UX still shows success
       setSubmitted(true);
     }
   }
 
   return (
     <div className="landing">
-      {/* Header */}
-      <header className="landing-header">
-        <div className="landing-logo">
-          <span className="landing-logo-mark">L</span>
-          <span className="landing-logo-text">Lexicon</span>
-        </div>
-        <Link href="/production" className="landing-signin">
-          Sign In
-        </Link>
-      </header>
-
-      {/* Hero */}
+      {/* Hero: Shader background with content overlay */}
       <section className="landing-hero">
-        <h1 className="landing-headline">
-          Your production, off Excel.
-        </h1>
-        <p className="landing-subhead">
-          Upload your spreadsheet. Lexi does the rest.
-        </p>
+        <SequinWave className="landing-shader" />
+        <div className="landing-hero-overlay" />
 
-        {/* Before/After Transformation */}
+        {/* Header (over shader) */}
+        <header className="landing-header">
+          <div className="landing-logo">
+            <span className="landing-logo-mark">L</span>
+            <span className="landing-logo-text">Lexicon</span>
+          </div>
+          <Link href="/production" className="landing-signin">
+            Sign In
+          </Link>
+        </header>
+
+        {/* Headline (over shader) */}
+        <div className="landing-hero-content">
+          <h1 className="landing-headline">
+            Your production,<br />off Excel.
+          </h1>
+          <p className="landing-subhead">
+            Upload your spreadsheet. Lexi does the rest.
+          </p>
+
+          {/* CTA */}
+          <div className="landing-hero-cta">
+            {submitted ? (
+              <p className="landing-waitlist-success">You&apos;re on the list. We&apos;ll be in touch.</p>
+            ) : (
+              <form className="landing-waitlist-form" onSubmit={handleWaitlist}>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="landing-waitlist-input"
+                  required
+                />
+                <button type="submit" className="landing-waitlist-btn">
+                  Get Early Access
+                </button>
+              </form>
+            )}
+            <p className="landing-waitlist-note">
+              Private beta. Built for unscripted TV production.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Before/After Transformation */}
+      <section className="landing-transform-section">
+        <h2 className="landing-section-title">From chaos to clarity</h2>
         <div className="transform-scene">
-          {/* BEFORE: Excel chaos */}
+          {/* BEFORE: Excel */}
           <div className="transform-frame transform-before">
             <div className="transform-label">Before</div>
             <div className="excel-mock">
@@ -142,30 +175,6 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-      </section>
-
-      {/* Waitlist */}
-      <section className="landing-waitlist">
-        {submitted ? (
-          <p className="landing-waitlist-success">You&apos;re on the list. We&apos;ll be in touch.</p>
-        ) : (
-          <form className="landing-waitlist-form" onSubmit={handleWaitlist}>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              className="landing-waitlist-input"
-              required
-            />
-            <button type="submit" className="landing-waitlist-btn">
-              Get Early Access
-            </button>
-          </form>
-        )}
-        <p className="landing-waitlist-note">
-          Currently in private beta with select productions.
-        </p>
       </section>
 
       {/* How it works */}
