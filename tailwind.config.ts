@@ -10,6 +10,20 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Warm dark surfaces
+        app: 'var(--bg-app)',
+        'sidebar-surface': 'var(--bg-sidebar)',
+        content: 'var(--bg-content)',
+        'card-warm': { DEFAULT: 'var(--bg-card)', hover: 'var(--bg-card-hover)' },
+
+        // Accent (warm-dark)
+        'accent-warm': { DEFAULT: 'var(--accent)', hover: 'var(--accent-hover)', muted: 'var(--accent-muted)', text: 'var(--accent-text)' },
+
+        // Status
+        healthy: { DEFAULT: 'var(--healthy)', soft: 'var(--healthy-soft)' },
+        warning: { DEFAULT: 'var(--warning)', soft: 'var(--warning-soft)' },
+        critical: { DEFAULT: 'var(--critical)', soft: 'var(--critical-soft)' },
+
         // ID8Labs VHS Surface colors (blue-black for cinematic feel)
         surface: {
           primary: "hsl(240 4% 4%)",

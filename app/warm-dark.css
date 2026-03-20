@@ -1,0 +1,70 @@
+/*
+ * Warm Dark Design System
+ * Inspired by Claude.ai's warm palette.
+ * Dark mode with brown undertones, not cold grey.
+ */
+
+:root {
+  /* Surfaces (warm dark brown, NOT cold grey) */
+  --bg-app: #1a1815;
+  --bg-sidebar: #1f1d19;
+  --bg-content: #23211d;
+  --bg-card: #2b2924;
+  --bg-card-hover: #33312b;
+  --bg-input: #1a1815;
+  --bg-overlay: rgba(0, 0, 0, 0.6);
+
+  /* Text (warm off-whites and greys) */
+  --text-primary: #ede9e3;
+  --text-secondary: #9a9590;
+  --text-tertiary: #6b6660;
+  --text-muted: #4d4944;
+  --text-inverse: #1a1815;
+
+  /* Accent: VHS Orange */
+  --accent: #ef6f2e;
+  --accent-hover: #f58442;
+  --accent-muted: rgba(239, 111, 46, 0.12);
+  --accent-text: #f5a574;
+
+  /* Borders (near-invisible, Claude-style) */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --border-subtle: rgba(255, 255, 255, 0.03);
+
+  /* Status (BLUF health) */
+  --healthy: #22c55e;
+  --warning: #f59e0b;
+  --critical: #ef4444;
+  --healthy-soft: rgba(34, 197, 94, 0.10);
+  --warning-soft: rgba(245, 158, 11, 0.12);
+  --critical-soft: rgba(239, 68, 68, 0.12);
+
+  /* Shadows (barely perceptible) */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.20);
+
+  /* Sidebar specific */
+  --sidebar-width: 240px;
+  --sidebar-collapsed: 56px;
+  --sidebar-active-bg: rgba(239, 111, 46, 0.08);
+  --sidebar-active-border: #ef6f2e;
+  --sidebar-hover-bg: rgba(255, 255, 255, 0.04);
+
+  /* Drawer */
+  --drawer-width: 360px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Transitions */
+  --ease-out: cubic-bezier(0.165, 0.85, 0.45, 1);
+  --dur-fast: 150ms;
+  --dur-normal: 250ms;
+  --dur-slow: 400ms;
+}
