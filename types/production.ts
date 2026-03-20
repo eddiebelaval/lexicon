@@ -333,6 +333,40 @@ export interface CastContractWithEntity extends CastContract {
   castType: string;
 }
 
+// ============================================
+// Document Template Types
+// ============================================
+
+export type TemplateCategory = 'call_sheet' | 'contract' | 'memo' | 'report' | 'checklist' | 'release_form' | 'custom';
+export type TemplateSourceFormat = 'docx' | 'pdf' | 'html' | 'text';
+
+export interface DocumentTemplate {
+  id: string;
+  productionId: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  content: string | null;
+  sourceFormat: TemplateSourceFormat;
+  variables: string[];
+  category: TemplateCategory;
+  storagePath: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateDocumentTemplateInput {
+  productionId: string;
+  name: string;
+  slug?: string;
+  description?: string;
+  content?: string;
+  sourceFormat?: TemplateSourceFormat;
+  variables?: string[];
+  category?: TemplateCategory;
+  storagePath?: string;
+}
+
 export interface ProductionSummary {
   production: Production;
   totalCast: number;

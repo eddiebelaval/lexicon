@@ -2,7 +2,7 @@
 
 > How we got here. The build journal.
 
-**Last updated:** March 18, 2026
+**Last updated:** March 21, 2026
 **Product:** Lexicon
 **Builder:** Eddie Belaval / ID8Labs
 
@@ -417,6 +417,56 @@ Extracted shared utilities (formatRelativeHours, hoursSince) to lib/utils.ts. Pa
 
 **Stats:** 5 PRs merged. ~4,600 lines shipped. 27 -> 46 Lexi tools. 3 -> 7 default asset types. 6 -> 8 production UI pages. 2 -> 3 cron jobs. 5 -> 10 alert detectors.
 
+### March 20, 2026 — The Redesign Session (6 PRs, ~7,200 lines)
+
+The session that turned Lexicon from a developer prototype into something a production team would actually use. Six PRs in a single day, each building on the last.
+
+**PR #15 — Lexi Tools Expansion (46 -> 60 tools):**
+Full crew management (create, update, delete), assignment management, CSV export tool, episode CRUD tools. Lexi went from "can answer questions and do some things" to "can do everything the UI can do."
+
+**PR #16 — BLUF Dashboard Overhaul:**
+Replaced the simple stat cards with a real BLUF (Bottom Line Up Front) dashboard. KPI header row (signed/total, scenes shot/total, crew count, alert count), collapsible sections for alerts and Lexi brief, cast names inline. Mobile tabs for sections. The dashboard now answers "what do I need to know right now?" without scrolling.
+
+**PR #17 — Polish Pass (13 fixes):**
+Code quality review via /simplify caught 13 issues across the codebase. Redundant API calls, inconsistent error handling, dead imports, unsafe type casts. Pure cleanup, no features.
+
+**PR #18 — Production-First Shell:**
+The biggest architectural change: route migration from `/universe/[id]/production/*` to `/production/*`. New sidebar navigation (Claude.ai-inspired warm-dark). Warm-dark design system with CSS custom properties. Cast card grid with completion tracking. Excel import API with Lexi parser. Web enrichment via Perplexity + Grok dual-engine.
+
+Design decisions locked:
+- **Headline font:** Playfair Display (serif, editorial)
+- **Body/UI font:** Outfit (geometric sans)
+- **Accent color:** Burnt Coral #CD6B5A (replaced VHS Orange #ef6f2e)
+- **Layout:** sidebar + content + Lexi drawer
+- **Version:** v0.9.0-beta
+
+**PR #19 — Landing Page:**
+Marketing page at the root route. Feedback Loop shader from Radiant Shaders (MIT) as hero. Feature showcase sections with production workflow mockups. Waitlist API endpoint. Footer with id8Labs branding. Responsive at 375px.
+
+**Stats:** 6 PRs merged (#15-#19). ~7,200 lines shipped. 46 -> 60 Lexi tools. Design system locked. Production-first routes live.
+
+### March 21, 2026 — Finishing the Build
+
+The session that eliminated all "Coming soon" pages and added the document templates system.
+
+**5 placeholder pages replaced:**
+- **Chat** (`/production/chat`): Full streaming chat with Lexi in production mode. Reuses ChatThread + ChatInput components with `mode: 'production'` API calls. Suggestion chips seed common queries. AbortController cleanup.
+- **Graph** (`/production/graph`): Canvas2D cast visualization with status-colored nodes (signed=green, pending=amber, etc.), gentle physics simulation, proximity connection lines. Neo4j status banner explains hibernated state.
+- **Settings** (`/production/settings`): 5-tab page (General, Templates, Notifications, Import, Team). Edit production metadata, manage document templates, toggle notification preferences, upload Excel cast data, link to team management.
+- **Episodes** (`/production/episodes`): Status pipeline header (planned > in_production > in_post > delivered > aired), expandable episode rows with inline status advancement, add episode form. New API routes: GET/POST /api/episodes, GET/PUT/DELETE /api/episodes/[id].
+- **Knowledge** (`/production/knowledge`): Searchable card grid of cast members. Notes display from cast_contracts. On-demand web enrichment via Perplexity/Grok (click to research). No Neo4j dependency.
+
+**Document Templates System:**
+- Supabase migration: `document_templates` table with categories, variables (JSONB), storage path
+- Template engine (`lib/template-engine.ts`): docxtemplater for .docx files, string replacement for HTML/text
+- API routes: GET/POST /api/templates, POST /api/documents/generate
+- Lexi tools: `list_templates` and `generate_document` (62 total tools)
+- Settings UI: Templates tab with create form, variable preview, category badges
+
+**Architecture decision: Word-native templates.** Eddie's team uses SharePoint templates for call sheets, release forms, crew memos. The system accepts real .docx files, scans for `{placeholder}` variables via docxtemplater, stores files in Supabase Storage, and fills them with production data on demand. Output is a proper .docx that looks identical to the original. This means zero training cost for the team: they upload what they already use.
+
+**Stats:** 2 commits. 5 placeholder pages replaced. 2 new API route groups (episodes, templates, documents). 60 -> 62 Lexi tools. docxtemplater + pizzip added as dependencies. Every sidebar nav item now leads to a real page.
+
 ---
 
 ## Key Decisions (and Why)
@@ -458,23 +508,22 @@ Full control over rendering, interaction, styling. Libraries like vis.js or cyto
 
 | Metric | Value |
 |--------|-------|
-| Total LOC | ~58,000+ |
-| Components | 90+ (55 original + 13 production + 4 lifecycle + 8 intake + 2 realtime + 1 activity feed + 1 team + 3 onboarding + 2 gear/post + 1 nav update) |
-| Production UI Pages | 8 (dashboard, calendar, cast, crew, gear, post, call sheet, team) + intake + onboard |
-| API Endpoints | 70+ (28 original + 10 production + 8 lifecycle + 13 other + 4 telegram/activity + 1 onboard + 1 footage-timeline + 1 triggers cron + 4 asset mgmt) |
-| Agent Tools | 46 Claude-facing tools (was 27 at session start, 5 at project start) |
+| Version | v0.9.0-beta |
+| Total LOC | ~68,000+ |
+| Components | 100+ |
+| Production UI Pages | 13 (dashboard, calendar, cast, crew, gear, post, call sheet, team, chat, graph, settings, episodes, knowledge) + intake + onboard |
+| API Endpoints | 80+ |
+| Agent Tools | 62 Claude-facing tools |
 | Default Asset Types | 7 (Contract, Shoot, Deliverable, Equipment, Footage, Document + custom) |
-| Alert Detectors | 10 (5 original + gear overdue, footage not downloaded, footage not uploaded, approaching deadline, idle cast) |
+| Alert Detectors | 10 |
 | Cron Jobs | 3 (monitoring 6AM, digest 7AM, triggers 4h) |
-| Lifecycle Tables | 5 (asset_types, lifecycle_stages, asset_instances, stage_transitions, allowed_transitions) |
 | Tests | 227 (unit, integration, E2E, health, production, permissions, activity) |
-| Supabase Tables | 14 |
-| Supabase Migrations | 14 |
+| Supabase Tables | 15 (+ document_templates) |
+| Supabase Migrations | 16 |
+| Design System | Warm-dark, Playfair Display + Outfit, Burnt Coral #CD6B5A |
+| Fonts | Playfair Display (headlines), Outfit (body), Geist Mono (code) |
+| PRs merged | #4-#19 (16 PRs total) |
 | Build time (original) | 3 days (Jan 5-8) |
-| Dormancy | 66 days (Jan 9 — Mar 15) |
-| Build time (Lexi backend) | 1 overnight session (Mar 15-16) |
-| Build time (Production UI + Lifecycle + Intake + Realtime + Polish) | 1 session (Mar 16) |
-| Build time (Beta Hardening) | 1 session (Mar 17) |
-| Build time (Telegram + RBAC + Docs) | 1 session (Mar 18 AM) |
-| Build time (Onboarding + Gear + Triggers + Post + Documents + Tool Parity) | 1 session (Mar 18 PM) |
-| PRs merged | #4-#13 (10 PRs total) |
+| Dormancy | 66 days (Jan 9 to Mar 15) |
+| Build time (Lexi + Production) | 4 sessions (Mar 15-18) |
+| Build time (Redesign + Finish) | 2 sessions (Mar 20-21) |
