@@ -29,12 +29,13 @@ describe('/api/health', () => {
 
     expect(response.status).toBe(200);
     expect(body.status).toBe('healthy');
-    expect(body.betaReady).toBe(true);
+    expect(body.mode).toBe('production-beta');
     expect(body.checks.supabase).toBe(true);
     expect(body.checks.neo4j).toBe(true);
+    expect(body.optional.neo4j.status).toBe('connected');
   });
 
-  it('returns degraded but beta-ready when Neo4j is down', async () => {
+  it('returns healthy when Neo4j is down (optional service)', async () => {
     mockSupabaseHealthCheck.mockResolvedValue(true);
     mockNeo4jHealthCheck.mockResolvedValue(false);
 
@@ -42,10 +43,11 @@ describe('/api/health', () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(body.status).toBe('degraded');
-    expect(body.betaReady).toBe(true);
+    expect(body.status).toBe('healthy');
     expect(body.checks.supabase).toBe(true);
     expect(body.checks.neo4j).toBe(false);
+    expect(body.optional.neo4j.status).toBe('hibernated');
+    expect(body.optional.neo4j.required).toBe(false);
   });
 
   it('returns unhealthy when Supabase is unavailable', async () => {
@@ -57,7 +59,6 @@ describe('/api/health', () => {
 
     expect(response.status).toBe(503);
     expect(body.status).toBe('unhealthy');
-    expect(body.betaReady).toBe(false);
     expect(body.checks.supabase).toBe(false);
   });
 });
