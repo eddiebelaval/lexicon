@@ -71,7 +71,7 @@ import { advanceStage, createAssetInstance, updateAssetInstance, deleteAssetInst
 import { listProductions, createProduction } from './productions';
 import { generateRegistrationCode } from './telegram';
 import { getServiceSupabase } from './supabase';
-import { createEpisode, getEpisode, listEpisodes, updateEpisode, deleteEpisode } from './episodes';
+import { createEpisode, listEpisodes, updateEpisode } from './episodes';
 import type { EpisodeStatus, CreateEpisodeInput, UpdateEpisodeInput } from '@/types';
 import type {
   CreateProdSceneInput,
