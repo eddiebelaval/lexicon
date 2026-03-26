@@ -1,16 +1,24 @@
+---
+last-updated: 2026-03-26
+status: CURRENT
+active-milestone: 1
+---
+
 # MILESTONE_TASKLISTS.md — Lexicon
 
 > Execution task lists for all roadmap milestones.
-> Use this as the operational companion to `ROADMAP.md`.
+> Strategy and sequencing: `ROADMAP.md`
 > Canonical execution board: `TICKETS.md`
+> Current milestone deep-dive: `MILESTONE_1_CHECKLIST.md`
 
 ---
 
 ## How To Use This Doc
 
 - `ROADMAP.md` explains sequence, intent, and gates.
-- This doc turns each milestone into a practical task list.
-- `MILESTONE_1_CHECKLIST.md` remains the deepest breakdown for the current phase.
+- This doc turns each milestone into a practical task list with verification criteria.
+- `TICKETS.md` is the canonical execution board. Agents work from tickets, not this file.
+- The current milestone always has a dedicated checklist (e.g., `MILESTONE_1_CHECKLIST.md`) with file-level detail.
 
 If a task is vague, it is not ready. Break it down further before starting.
 
@@ -18,7 +26,7 @@ If a task is vague, it is not ready. Break it down further before starting.
 
 ## Milestone 1 — Production Beta Completion
 
-Reference: `MILESTONE_1_CHECKLIST.md`
+Deep-dive: `MILESTONE_1_CHECKLIST.md`
 
 ### Todo
 - [ ] Replace placeholder onboarding ownership with real authenticated ownership
@@ -27,7 +35,14 @@ Reference: `MILESTONE_1_CHECKLIST.md`
 - [ ] Restore Neo4j-backed graph workflows or explicitly scope them out
 - [ ] Configure final beta domain and correct app URLs
 - [ ] Complete the Milestone 1 verification pass
-- [ ] Reconcile triad docs after the work lands
+- [ ] Reconcile triad and execution docs after the work lands
+
+### Verification
+- [ ] Signed-in user owns created productions
+- [ ] Real S8 data renders across all production pages
+- [ ] Graph features are live or honestly scoped out
+- [ ] Final beta domain resolves and generates correct links
+- [ ] Build, type-check, and tests pass
 
 ### Done When
 - [ ] Real user ownership is working
@@ -146,11 +161,6 @@ Reference: `MILESTONE_1_CHECKLIST.md`
 
 ---
 
-## Suggested Working Order
+## Execution Order
 
-- [ ] Finish Milestone 1
-- [ ] Finish Milestone 2
-- [ ] Run Milestone 3
-- [ ] Close Milestone 4 gaps
-- [ ] Start Milestone 5 only after pilot validation
-- [ ] Start Milestone 6 only after multi-show validation
+See `TICKETS.md` for the canonical priority order and dependency graph. Milestones are sequential: each milestone's gate must close before the next opens.

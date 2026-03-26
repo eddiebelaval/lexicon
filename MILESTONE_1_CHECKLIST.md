@@ -1,6 +1,13 @@
+---
+last-updated: 2026-03-26
+status: CURRENT
+active-milestone: 1
+---
+
 # MILESTONE_1_CHECKLIST.md — Production Beta Completion
 
-> Execution checklist for Milestone 1 from `ROADMAP.md`.
+> Deep-dive checklist for the current milestone.
+> Strategy: `ROADMAP.md` | Tickets: `TICKETS.md` | Tasklists: `MILESTONE_TASKLISTS.md`
 > Goal: make Lexicon usable for a real Diaries S8 production without demo assumptions.
 
 ---
@@ -184,7 +191,7 @@ Reasoning:
 
 ---
 
-## Definition of Done
+## Milestone Exit Checklist
 
 Milestone 1 is done only when all of these are true:
 - [ ] A signed-in user can create and access a production without placeholder ownership.
@@ -192,6 +199,8 @@ Milestone 1 is done only when all of these are true:
 - [ ] Neo4j-backed features are restored or honestly scoped out.
 - [ ] The final beta domain is live and correctly wired.
 - [ ] The Milestone 1 verification pass is complete.
-- [ ] `ROADMAP.md`, `SPEC.md`, and `BUILDING.md` still tell the truth after the work ships.
+- [ ] Triad docs (`VISION.md`, `SPEC.md`, `BUILDING.md`) still tell the truth after the work ships.
+- [ ] Execution docs (`ROADMAP.md`, `TICKETS.md`, `MILESTONE_TASKLISTS.md`) reflect shipped state.
+- [ ] All completed tickets in `TICKETS.md` are marked `done` with verification evidence.
 
 If any box above is still open, Milestone 1 is still in progress.

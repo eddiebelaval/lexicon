@@ -1,9 +1,15 @@
+---
+last-updated: 2026-03-26
+status: CURRENT
+active-milestone: 1
+---
+
 # TICKETS.md — Lexicon Execution Board
 
 > Canonical ticket board for agent-driven execution.
-> Strategy lives in `ROADMAP.md`.
-> Milestone grouping lives in `MILESTONE_TASKLISTS.md`.
-> Detailed current-phase breakdown lives in `MILESTONE_1_CHECKLIST.md`.
+> Strategy and sequencing: `ROADMAP.md`
+> Milestone grouping: `MILESTONE_TASKLISTS.md`
+> Current milestone deep-dive: `MILESTONE_1_CHECKLIST.md`
 
 ---
 
@@ -17,6 +23,7 @@ This file is the operational source of truth for execution.
 - Only mark a ticket `done` when it is built, verified, and reflected in docs if needed.
 - If work uncovers new necessary tasks, add new tickets under the right milestone instead of burying them in notes.
 - If a ticket is too large for one session, split it into smaller tickets before starting.
+- Future milestone tickets are stubs. Before starting a new milestone, expand its tickets to include Goal, Primary Targets, and Verification details (matching the depth of the current milestone).
 
 ### Status Values
 - `todo` — ready to pick up
@@ -176,7 +183,7 @@ When an agent gets blocked:
 ### M1-10 Run Milestone 1 verification sweep
 - Status: `todo`
 - Priority: `P0`
-- Depends on: `M1-02`, `M1-05`, `M1-08`, `M1-09`
+- Depends on: `M1-02`, `M1-03`, `M1-05`, `M1-06`, `M1-08`, `M1-09`
 - Goal: verify the full Milestone 1 beta surface end-to-end
 - Verification:
   - `npm run build`
@@ -190,14 +197,13 @@ When an agent gets blocked:
 - Depends on: `M1-10`
 - Goal: keep triad and execution docs truthful after the milestone lands
 - Primary targets:
-  - `SPEC.md`
-  - `VISION.md`
-  - `BUILDING.md`
-  - `ROADMAP.md`
-  - `MILESTONE_TASKLISTS.md`
-  - `TICKETS.md`
+  - Triad: `VISION.md`, `SPEC.md`, `BUILDING.md`
+  - Execution: `ROADMAP.md`, `MILESTONE_TASKLISTS.md`, `TICKETS.md`
+  - Current checklist: `MILESTONE_1_CHECKLIST.md` (archive or replace with M2 checklist)
 - Verification:
   - docs reflect the shipped state and remaining gaps
+  - all frontmatter timestamps updated
+  - `active-milestone` incremented to 2 where applicable
 
 ---
 
