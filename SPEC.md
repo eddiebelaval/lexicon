@@ -1,5 +1,5 @@
 ---
-last-reconciled: 2026-03-21
+last-reconciled: 2026-03-26
 status: CURRENT
 Build stage: Stage 9 (Launch Prep)
 Drift status: CURRENT
@@ -11,7 +11,7 @@ version: v0.9.0-beta
 
 ## Identity
 
-Lexicon is a production intelligence platform for unscripted TV, deployed at lexicon-phi.vercel.app. Its entity, Lexi, operates as institutional memory and operational agent across web UI and Telegram. The platform manages the full production lifecycle through typed asset state machines and a 62-tool agent surface. Built on Next.js 15 + Supabase + Neo4j + Claude, with 227 tests and 80+ API routes.
+Lexicon is a production intelligence platform for unscripted TV, deployed at lexicon-phi.vercel.app. Its entity, Lexi, operates as institutional memory and operational agent across web UI and Telegram. The platform manages the full production lifecycle through typed asset state machines and a 62-tool agent surface. Built on Next.js 15 + Supabase + Neo4j + Claude, with 227 tests and 62 API route handlers.
 
 **v0.9.0-beta changes (Mar 20-21):** Production-first shell with sidebar navigation, warm-dark design system (Playfair Display + Outfit + Burnt Coral #CD6B5A), BLUF dashboard, all 13 production pages live (zero placeholders), document templates system with Word-native rendering, landing page with Feedback Loop shader, 62 Lexi tools, Excel import with web enrichment.
 
@@ -134,7 +134,7 @@ Lexicon is a production intelligence platform for unscripted TV, deployed at lex
 ### 16. Infrastructure
 
 - **Auth:** Supabase Email OTP, universe isolation.
-- **API Surface:** 67+ routes, consistent response format: `{ success, data?, error? }`.
+- **API Surface:** 62 route handlers, consistent response format: `{ success, data?, error? }`.
 - **Agent-Native Tools:** 62 tools with Pattern 6 completion signals.
 - **Cron Jobs:** 3 Vercel cron jobs (monitoring 6AM, digest 7AM, triggers every 4h).
 - **UI:** Dark mode (ThemeProvider), Geist font, error handling (retry buttons, loading skeletons, auto-dismiss error banners).
@@ -156,7 +156,7 @@ Lexicon is a production intelligence platform for unscripted TV, deployed at lex
 | Telegram | grammY 1.41 | @LexiProductionBot LIVE |
 | Email | Resend | Partial |
 | Deployment | Vercel | Deployed (lexicon-phi.vercel.app) |
-| Unit/Integration | Vitest 2.1 | 179 tests passing |
+| Unit/Integration | Vitest 2.1 | 227 tests passing |
 | E2E | Playwright 1.49 | 17 tests |
 
 ### System Role
@@ -246,9 +246,56 @@ Full audit: see `PARITY_MAP.md`
 - Does NOT have error monitoring or analytics
 - Does NOT have Neo4j operational -- graph-first features degraded
 - Does NOT have live web search augmentation in search path
-- Does NOT support cross-show crew sharing or calendar overlay
+- Does NOT support cross-show crew sharing or calendar overlay (see Multi-Show Architecture status below)
 - Does NOT have mobile-optimized views for field use
 - Does NOT handle payroll, invoicing, or financial transactions
+
+## Multi-Show Architecture Status
+
+**VISION Pillar 5 — PARTIAL (40%)**
+
+Multi-Show Architecture is the largest gap between the current build and the VISION. This section documents what exists, what's missing, and what's required.
+
+### What's Built (the 40%)
+
+- **Multiple productions per universe:** The `productions` table supports multiple records per `universe_id`. A user can create several productions (seasons) within one universe.
+- **Production isolation:** Each production has its own crew, scenes, contracts, availability, and asset instances — clean separation by `production_id` FK constraints.
+- **Production switcher design:** The IA redesign (workspace/prep/2026-03-20-ia-redesign.md) specifies a sidebar dropdown for switching between productions. Not yet implemented in code.
+- **`listProductions()` accepts optional `universeId`:** When omitted, returns all productions — the raw query path for a cross-production list exists.
+
+### What's Missing
+
+#### Crew Sharing Across Shows
+- **Current:** `crew_members` has a hard FK to `production_id`. Each crew member belongs to exactly one production. If the same person works two shows, they exist as two separate records with no link.
+- **Needed:** A shared crew identity layer. Options:
+  1. **Crew pool table** (`crew_pool`): production-agnostic crew profiles. `crew_members` becomes an assignment junction table linking pool entries to productions.
+  2. **Cross-reference by Telegram ID:** Crew who register via Telegram already have a `telegram_user_id`. This could serve as a natural cross-production identifier without a new table.
+- **Depends on:** A `listProductionsForUser(userId)` query (not yet built) so the system knows which productions to check for shared crew.
+
+#### Cross-Show Calendar Overlay
+- **Current:** The calendar view (`/production/calendar`) queries scenes for a single `productionId`. No API supports querying scenes across multiple productions.
+- **Needed:**
+  1. API endpoint: `GET /api/scenes?productionIds=id1,id2` (multi-production scene query).
+  2. Calendar UI: color-coded by production, toggle visibility per show.
+  3. Conflict detection: crew member assigned to overlapping scenes across different productions.
+- **Depends on:** Crew sharing (above) — conflict detection requires knowing that "Jane" in Production A and "Jane" in Production B are the same person.
+
+#### Supporting Infrastructure (Not Yet Built)
+- `listProductionsForUser(userId)`: joins universes to productions for a user's full portfolio.
+- Production switcher dropdown in sidebar (designed, not coded).
+- Cross-production availability rollup (crew availability aggregated across shows).
+- Trigger: double-booked crew across productions (extends existing double-booking detector).
+
+### Implementation Path (Phase 2)
+
+Per VISION Phase 2, Multi-Show Architecture ships after Production Beta validates with Diaries S8. The recommended build order:
+
+1. **Production switcher** — sidebar dropdown, `listProductionsForUser()` query.
+2. **Crew pool** — shared identity layer, assignment junction, migration.
+3. **Cross-show calendar** — multi-production scene query, overlay UI.
+4. **Conflict detection** — cross-production double-booking alerts.
+
+This is Phase 2 work. Phase 1 (Production Beta) focuses on validating the single-show experience with Diaries S8.
 
 ## Verification Surface
 
@@ -288,7 +335,7 @@ Full audit: see `PARITY_MAP.md`
 - [ ] `npm run build` succeeds
 - [ ] `npx tsc --noEmit` passes
 - [ ] `npm run test -- --run` -- 227 tests passing
-- [ ] `/api/health` reports beta-ready vs degraded vs unhealthy
+- [ ] `/api/health` reports `healthy`/`unhealthy` with `mode: production-beta` and optional Neo4j component detail
 - [ ] lexicon-phi.vercel.app loads
 
 **Current read:** Private production beta is credible; full graph-first public launch still blocked by Neo4j and live web search.
@@ -325,3 +372,4 @@ NEXT_PUBLIC_APP_URL, CRON_SECRET
 | 2026-03-20 | Structure | v2 format upgrade | Triad template standardization across all projects | Parallel upgrade |
 | 2026-03-20 | Capabilities (15-19) | Redesign session: 6 PRs, ~7,200 lines | BLUF dashboard, production-first shell, sidebar nav, warm-dark design, landing page, Excel import, web enrichment. Lexi: 46 -> 60 tools. | Design system locked |
 | 2026-03-21 | Capabilities | Finish build: 5 pages + templates | Chat, graph, settings, episodes, knowledge pages. Document templates system (docxtemplater). Lexi: 60 -> 62 tools. Episodes API routes. All placeholders eliminated. | v0.9.0-beta feature-complete |
+| 2026-03-20 | Multi-Show Architecture | Added detailed status section for Pillar 5 | Heal session: documented what's built (40%), what's missing (crew sharing, calendar overlay), and Phase 2 implementation path | Pillar 5 status clarified, remains PARTIAL |
