@@ -47,7 +47,7 @@ Lexi is the production's institutional memory and operational intelligence. She 
 
 ### 4. **Real-Time Collaboration** -- REALIZED
 
-Every team member sees the same board with live updates. Supabase Realtime powers the sync layer across all 13 production pages. Lexi drawer provides AI assistance from any page. Missing (nice-to-have): multi-user presence indicators, conflict resolution for simultaneous edits.
+Every team member sees the same board with live updates. Supabase Realtime powers the sync pattern on the dashboard, cast, crew, and other core production surfaces, though coverage is not yet uniform across every page. Production chat is live; the universal in-shell Lexi drawer remains partial. Missing (nice-to-have): multi-user presence indicators, conflict resolution for simultaneous edits.
 
 ### 5. **Multi-Show Architecture** -- PARTIAL (40%)
 

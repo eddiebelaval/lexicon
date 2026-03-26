@@ -1,5 +1,5 @@
 ---
-last-reconciled: 2026-03-21
+last-reconciled: 2026-03-26
 status: CURRENT
 Build stage: Stage 9 (Launch Prep)
 Drift status: CURRENT
@@ -11,7 +11,7 @@ version: v0.9.0-beta
 
 ## Identity
 
-Lexicon is a production intelligence platform for unscripted TV, deployed at lexicon-phi.vercel.app. Its entity, Lexi, operates as institutional memory and operational agent across web UI and Telegram. The platform manages the full production lifecycle through typed asset state machines and a 62-tool agent surface. Built on Next.js 15 + Supabase + Neo4j + Claude, with 227 tests and 80+ API routes.
+Lexicon is a production intelligence platform for unscripted TV, deployed at lexicon-phi.vercel.app. Its entity, Lexi, operates as institutional memory and operational agent across web UI and Telegram. The platform manages the full production lifecycle through typed asset state machines and a 62-tool agent surface. Built on Next.js 15 + Supabase + Neo4j + Claude, with 227 tests and 62 API route handlers.
 
 **v0.9.0-beta changes (Mar 20-21):** Production-first shell with sidebar navigation, warm-dark design system (Playfair Display + Outfit + Burnt Coral #CD6B5A), BLUF dashboard, all 13 production pages live (zero placeholders), document templates system with Word-native rendering, landing page with Feedback Loop shader, 62 Lexi tools, Excel import with web enrichment.
 
@@ -134,7 +134,7 @@ Lexicon is a production intelligence platform for unscripted TV, deployed at lex
 ### 16. Infrastructure
 
 - **Auth:** Supabase Email OTP, universe isolation.
-- **API Surface:** 67+ routes, consistent response format: `{ success, data?, error? }`.
+- **API Surface:** 62 route handlers, consistent response format: `{ success, data?, error? }`.
 - **Agent-Native Tools:** 62 tools with Pattern 6 completion signals.
 - **Cron Jobs:** 3 Vercel cron jobs (monitoring 6AM, digest 7AM, triggers every 4h).
 - **UI:** Dark mode (ThemeProvider), Geist font, error handling (retry buttons, loading skeletons, auto-dismiss error banners).
@@ -156,7 +156,7 @@ Lexicon is a production intelligence platform for unscripted TV, deployed at lex
 | Telegram | grammY 1.41 | @LexiProductionBot LIVE |
 | Email | Resend | Partial |
 | Deployment | Vercel | Deployed (lexicon-phi.vercel.app) |
-| Unit/Integration | Vitest 2.1 | 179 tests passing |
+| Unit/Integration | Vitest 2.1 | 227 tests passing |
 | E2E | Playwright 1.49 | 17 tests |
 
 ### System Role
@@ -335,7 +335,7 @@ This is Phase 2 work. Phase 1 (Production Beta) focuses on validating the single
 - [ ] `npm run build` succeeds
 - [ ] `npx tsc --noEmit` passes
 - [ ] `npm run test -- --run` -- 227 tests passing
-- [ ] `/api/health` reports beta-ready vs degraded vs unhealthy
+- [ ] `/api/health` reports `healthy`/`unhealthy` with `mode: production-beta` and optional Neo4j component detail
 - [ ] lexicon-phi.vercel.app loads
 
 **Current read:** Private production beta is credible; full graph-first public launch still blocked by Neo4j and live web search.
