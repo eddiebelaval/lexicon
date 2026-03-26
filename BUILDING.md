@@ -2,7 +2,7 @@
 
 > How we got here. The build journal.
 
-**Last updated:** March 21, 2026
+**Last updated:** March 26, 2026
 **Product:** Lexicon
 **Builder:** Eddie Belaval / ID8Labs
 
@@ -481,6 +481,16 @@ The session that eliminated all "Coming soon" pages and added the document templ
 
 **Why documentation instead of code:** Phase 1 validates the single-show experience with Diaries S8. Building multi-show infrastructure before that validation would be premature. The SPEC now clearly captures what exists, what's needed, and the recommended build order so Phase 2 can start cleanly.
 
+### March 26, 2026 — Triad Reconciliation Audit
+
+Verification pass against the live repo before roadmap planning.
+
+**What was verified:** `npm test -- --run` passes at 227 tests, `npm run build` succeeds, `npm run type-check` passes after generated Next types are present, `lib/tools.ts` contains 62 Claude-facing tools, and `app/api` contains 62 route handlers.
+
+**What was corrected:** SPEC route/test counts were updated to match the codebase, the health route verification language now reflects `production-beta` mode with optional Neo4j detail, and VISION's realtime language was tightened so it no longer overstates cross-page sync or the universal Lexi drawer.
+
+**Why it matters:** The triad is now trustworthy enough to use as roadmap input instead of a mix of current truth and historical snapshots.
+
 ---
 
 ## Key Decisions (and Why)
@@ -526,7 +536,7 @@ Full control over rendering, interaction, styling. Libraries like vis.js or cyto
 | Total LOC | ~68,000+ |
 | Components | 100+ |
 | Production UI Pages | 13 (dashboard, calendar, cast, crew, gear, post, call sheet, team, chat, graph, settings, episodes, knowledge) + intake + onboard |
-| API Endpoints | 80+ |
+| API Endpoints | 62 route handlers |
 | Agent Tools | 62 Claude-facing tools |
 | Default Asset Types | 7 (Contract, Shoot, Deliverable, Equipment, Footage, Document + custom) |
 | Alert Detectors | 10 |
